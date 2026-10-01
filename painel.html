@@ -1,0 +1,963 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Painel de aplicações – Fazenda Reata, Soja 26/27</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#EDF0EB;--panel:#FFFFFF;--panel2:#F5F7F3;--ink:#17221C;--muted:#53605A;--line:#D9E0D7;--brand:#21513B;--brand-ink:#FFFFFF;--focus:#1E6FB8;
+  --s-atrasada:#C2410C;--s-janela:#D99A06;--s-prox7:#6FA6D2;--s-programada:#B4BDB7;--s-exec_atraso:#9A5A1C;--s-adiantada:#7462C4;--s-exec_prazo:#1E4E79;--s-none:#E1E6DF;
+  --shadow:0 1px 2px rgba(23,34,28,.06);
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111814;--panel:#18211D;--panel2:#1F2A25;--ink:#E5ECE7;--muted:#9AA8A0;--line:#2C3832;--brand:#7CC6A0;--brand-ink:#0D1411;--focus:#7DB8EE;
+    --s-atrasada:#F07A3C;--s-janela:#F0B52B;--s-prox7:#7DB4E0;--s-programada:#5E6A63;--s-exec_atraso:#C98543;--s-adiantada:#9B8BE0;--s-exec_prazo:#4F8FD0;--s-none:#25302A;
+    --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111814;--panel:#18211D;--panel2:#1F2A25;--ink:#E5ECE7;--muted:#9AA8A0;--line:#2C3832;--brand:#7CC6A0;--brand-ink:#0D1411;--focus:#7DB8EE;
+  --s-atrasada:#F07A3C;--s-janela:#F0B52B;--s-prox7:#7DB4E0;--s-programada:#5E6A63;--s-exec_atraso:#C98543;--s-adiantada:#9B8BE0;--s-exec_prazo:#4F8FD0;--s-none:#25302A;
+  --shadow:none;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Barlow','Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.45}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.wrap{max-width:1440px;margin:0 auto;padding:0 20px 48px}
+.num{font-family:'Barlow Condensed','Barlow',sans-serif;font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+
+/* topo */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.top-inner{max-width:1440px;margin:0 auto;padding:14px 20px 0;display:flex;flex-direction:column;gap:12px}
+.title-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand svg{flex-shrink:0}
+.brand h1{margin:0;font-family:'Barlow Condensed','Barlow',sans-serif;font-weight:600;font-size:28px;line-height:1}
+.brand p{margin:2px 0 0;font-size:14px;color:var(--muted)}
+.controls{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 14px}
+.ctl{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+.ctl input[type=date],.ctl select,.search{height:40px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);min-width:0}
+.ctl input[type=range]{width:130px;accent-color:var(--brand);height:40px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+.seg button{border:0;background:transparent;padding:0 12px;height:40px;cursor:pointer;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink)}
+.btn{height:40px;padding:0 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-size:14px;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.tabs{display:flex;gap:4px;overflow-x:auto}
+.tabs button{border:0;background:transparent;padding:10px 14px 12px;cursor:pointer;font-size:15px;font-weight:500;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--brand)}
+
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0 0;min-height:32px;font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 6px 5px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line)}
+.chip button{border:0;background:transparent;cursor:pointer;width:22px;height:22px;border-radius:50%;line-height:1;color:var(--muted)}
+.chip button:hover{background:var(--panel2);color:var(--ink)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex-shrink:0}
+
+section.view{display:none;margin-top:16px}
+section.view.on{display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:var(--shadow);min-width:0}
+.card h2{margin:0;font-size:17px;font-weight:600}
+.card .sub{margin:3px 0 0;font-size:13px;color:var(--muted)}
+.card-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr))}
+.g-5-7{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
+@media (max-width:980px){.g-5-7{grid-template-columns:minmax(0,1fr)}}
+
+/* indicadores */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpi{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;cursor:pointer;display:flex;flex-direction:column;gap:2px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:0;background:var(--k)}
+.kpi:hover{border-color:var(--muted)}
+.kpi[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.kpi .lab{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.kpi .val{font-family:'Barlow Condensed','Barlow',sans-serif;font-weight:600;font-size:40px;line-height:1.05}
+.kpi .val small{font-size:18px;font-weight:500;color:var(--muted);margin-left:4px}
+.kpi .bar{height:4px;border-radius:2px;background:var(--panel2);margin-top:8px;overflow:hidden}
+.kpi .bar i{display:block;height:100%;background:var(--k)}
+.kpi .foot{font-size:12.5px;color:var(--muted);margin-top:6px}
+
+.chart-box{position:relative;height:300px}
+.chart-box.tall{height:340px}
+.donut-wrap{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:18px;align-items:center}
+@media (max-width:520px){.donut-wrap{grid-template-columns:minmax(0,1fr)}}
+.legend{display:flex;flex-direction:column;gap:2px}
+.legend button{display:grid;grid-template-columns:14px 1fr auto auto;gap:10px;align-items:center;text-align:left;border:0;background:transparent;padding:8px 8px;border-radius:8px;cursor:pointer;font-size:14px}
+.legend button:hover,.legend button[aria-pressed="true"]{background:var(--panel2)}
+.legend .n{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:600}
+.legend .h{font-size:12.5px;color:var(--muted);min-width:84px;text-align:right}
+
+.cap{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.cap input{width:96px;height:36px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.cap-msg{font-size:13px;margin-top:8px;min-height:20px}
+
+.prio{display:flex;flex-direction:column}
+.prio button{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:14px;align-items:center;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;padding:10px 4px;cursor:pointer}
+.prio button:hover{background:var(--panel2)}
+.prio .t{font-weight:600;min-width:64px}
+.prio .ha{font-family:'Barlow Condensed',sans-serif;font-size:17px}
+.empty{padding:28px 10px;text-align:center;color:var(--muted)}
+
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12.5px;font-weight:500;white-space:nowrap;background:color-mix(in srgb,var(--c) 16%,var(--panel));color:var(--ink);border:1px solid color-mix(in srgb,var(--c) 45%,var(--panel))}
+.pill::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+
+/* cronograma */
+.gantt-tools{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.check{display:inline-flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;min-height:40px}
+.check input{width:18px;height:18px;accent-color:var(--brand)}
+.gantt-scroll{overflow-x:auto;margin-top:14px;border:1px solid var(--line);border-radius:10px}
+.gantt{min-width:900px;position:relative}
+.g-row{display:grid;grid-template-columns:150px minmax(0,1fr);border-bottom:1px solid var(--line);min-height:40px}
+.g-row:last-child{border-bottom:0}
+.g-row.head{position:sticky;top:0;background:var(--panel2);z-index:3;min-height:46px}
+.g-label{border:0;background:var(--panel);text-align:left;padding:6px 10px 6px 14px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;position:relative;border-right:1px solid var(--line)}
+.g-label::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:4px;border-radius:0 3px 3px 0;background:var(--c)}
+.g-label:hover{background:var(--panel2)}
+.g-label b{font-weight:600;font-size:14px}
+.g-label span{font-size:12px;color:var(--muted)}
+.g-track{position:relative;background:var(--panel)}
+.g-head-track{position:relative;font-size:11.5px;color:var(--muted)}
+.tick{position:absolute;top:0;bottom:0;border-left:1px solid var(--line);padding:6px 0 0 4px;white-space:nowrap}
+.tick.wk{border-left-color:color-mix(in srgb,var(--muted) 45%,transparent)}
+.gl{position:absolute;top:0;bottom:0;border-left:1px solid var(--line);pointer-events:none}
+.today{position:absolute;top:0;bottom:0;border-left:2px solid var(--brand);z-index:2;pointer-events:none}
+.today-tag{position:absolute;bottom:4px;transform:translateX(-50%);background:var(--brand);color:var(--brand-ink);font-size:11px;padding:1px 6px;border-radius:4px;z-index:4;white-space:nowrap}
+.win{position:absolute;top:50%;height:16px;transform:translateY(-50%);border-radius:8px;background:color-mix(in srgb,var(--c) 22%,transparent);border:1px solid color-mix(in srgb,var(--c) 55%,transparent)}
+.lnk{position:absolute;top:50%;height:2px;transform:translateY(-50%);background:var(--c)}
+.mk{position:absolute;top:50%;width:14px;height:14px;transform:translate(-50%,-50%);border-radius:50%;z-index:2;cursor:default}
+.mk.prog{background:var(--panel);border:2.5px solid var(--c)}
+.mk.exec{background:var(--c);border:2px solid var(--panel);width:16px;height:16px}
+.mk.seed{width:0;height:0;border-radius:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid var(--brand);transform:translate(-50%,-60%)}
+.mk.germ{width:10px;height:10px;transform:translate(-50%,-50%) rotate(45deg);border-radius:2px;background:color-mix(in srgb,var(--brand) 55%,var(--panel))}
+.g-legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:12.5px;color:var(--muted);margin-top:12px;align-items:center}
+.g-legend span{display:inline-flex;align-items:center;gap:6px}
+.lg{position:relative;width:16px;height:16px;display:inline-block}
+.lg .mk{position:absolute;left:50%;top:50%}
+
+/* talhões */
+.tm-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tm{width:100%;display:block;margin-top:14px;border-radius:10px;overflow:hidden}
+.tm rect{stroke:var(--panel);stroke-width:2;cursor:pointer}
+.tm rect:hover{stroke:var(--ink)}
+.tm text{pointer-events:none;font-family:'Barlow',sans-serif}
+.scale{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:12px;flex-wrap:wrap}
+.scale .grad{width:200px;height:10px;border-radius:5px}
+
+/* tabela */
+.tbl-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.search{width:min(320px,100%)}
+.tbl-scroll{overflow-x:auto;margin-top:14px}
+table{width:100%;border-collapse:collapse;min-width:1020px;font-size:14px}
+th{position:sticky;top:0;background:var(--panel2);text-align:left;font-weight:500;font-size:13px;color:var(--muted);padding:0;border-bottom:1px solid var(--line)}
+th button{border:0;background:transparent;width:100%;text-align:inherit;padding:10px;cursor:pointer;display:flex;gap:4px;align-items:center;justify-content:inherit}
+th.r{text-align:right}th.r button{justify-content:flex-end}
+td{padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.r{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr{cursor:pointer}
+tbody tr:hover td{background:var(--panel2)}
+
+/* gaveta */
+.scrim{position:fixed;inset:0;background:rgba(10,16,13,.35);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--panel);z-index:41;transform:translateX(100%);transition:transform .25s ease;display:flex;flex-direction:column;border-left:1px solid var(--line);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.drawer.on{transform:none}
+.dr-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:18px 20px;border-bottom:1px solid var(--line)}
+.dr-head h3{margin:0;font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:600;line-height:1}
+.dr-body{overflow-y:auto;padding:16px 20px 28px;display:flex;flex-direction:column;gap:16px}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.fact{background:var(--panel2);border-radius:10px;padding:10px 12px}
+.fact span{display:block;font-size:12px;color:var(--muted)}
+.fact b{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:600}
+.oplist{display:flex;flex-direction:column}
+.oprow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.oprow .nm{font-weight:500}
+.oprow .dt{grid-column:1/-1;font-size:13px;color:var(--muted)}
+.icon-btn{width:44px;height:44px;border:1px solid var(--line);border-radius:10px;background:var(--panel);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+
+.tip{position:fixed;z-index:60;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12.5px;padding:8px 10px;border-radius:8px;max-width:260px;opacity:0;transition:opacity .1s;line-height:1.35}
+.tip.on{opacity:1}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:all .25s;z-index:70;pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.src{font-size:12.5px;color:var(--muted);margin-top:28px}
+.dline{display:flex;align-items:center;gap:6px;margin:4px 0 0;font-size:12.5px;color:var(--muted)}
+.sdot{width:8px;height:8px;border-radius:50%;background:var(--s-programada);flex-shrink:0}
+.dline.ok .sdot{background:#3a9b6a}.dline.busy .sdot{background:var(--s-janela)}.dline.err .sdot{background:var(--s-atrasada)}
+.dline.err{color:var(--s-atrasada)}
+.spin svg{animation:sp 1s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+.ptbl{width:100%;min-width:640px}
+.ptbl td{white-space:normal}
+.pbar{height:8px;border-radius:4px;background:var(--panel2);overflow:hidden;min-width:120px}
+.pbar i{display:block;height:100%;background:var(--s-exec_prazo)}
+.prods{font-size:13px;color:var(--muted);margin-top:2px}
+.tag{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);margin-left:6px;color:var(--muted)}
+@media (max-width:640px){
+  .brand h1{font-size:24px}
+  .ctl input[type=range]{width:110px}
+  .kpi .val{font-size:34px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <div class="title-row">
+      <a class="brand" href="./index.html" style="text-decoration:none;color:inherit" title="Página inicial">
+        <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="var(--brand)"/><path d="M8 30 C14 22, 26 22, 32 30 M8 24 C14 16, 26 16, 32 24 M8 18 C14 10, 26 10, 32 18" fill="none" stroke="var(--brand-ink)" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <div>
+          <h1>Painel de aplicações</h1>
+          <p id="subtitle">Fazenda Reata, safra soja 26/27</p>
+          <p id="dataLine" class="dline"><span class="sdot"></span><span id="dataTxt">Sem dados carregados</span></p>
+        </div>
+      </a>
+      <div class="controls">
+        <label class="ctl">Data de referência<input type="date" id="refDate"></label>
+        <label class="ctl">Tolerância: <span id="tolOut">±2 dias</span><input type="range" id="tol" min="0" max="7" step="1" value="2"></label>
+        <div class="ctl">Modalidade
+          <div class="seg" role="group" aria-label="Modalidade" id="modoSeg">
+            <button type="button" data-v="todas" aria-pressed="true">Todas</button>
+            <button type="button" data-v="T" aria-pressed="false">Terrestre</button>
+            <button type="button" data-v="A" aria-pressed="false">Aérea</button>
+          </div>
+        </div>
+        <label class="ctl">Operação<select id="opSel"></select></label>
+        <a class="btn primary" href="./lancar.html" style="text-decoration:none">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Lançar
+        </a>
+        <button type="button" class="btn" id="btnSync" title="Buscar a versão mais recente da planilha no Drive">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>
+          Atualizar
+        </button>
+        <label class="btn" for="file" style="cursor:pointer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
+          Carregar planilha
+        </label>
+        <input type="file" id="file" accept=".xlsx,.xlsm" hidden>
+        <button type="button" class="icon-btn" id="themeBtn" aria-label="Alternar tema claro/escuro">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        </button>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Visões">
+      <button role="tab" data-tab="geral" aria-selected="true">Visão geral</button>
+      <button role="tab" data-tab="crono" aria-selected="false">Cronograma por talhão</button>
+      <button role="tab" data-tab="mapa" aria-selected="false">Talhões</button>
+      <button role="tab" data-tab="tabela" aria-selected="false">Tabela</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="card" id="emptyState" style="margin-top:16px" hidden>
+    <h2>Nenhum dado carregado</h2>
+    <p class="sub" id="emptyMsg" style="font-size:14px;max-width:640px">Assim que o endereço do script do Google estiver configurado, o painel busca a planilha sozinho. Enquanto isso, use Carregar planilha para abrir o arquivo Base_Aplicacoes no seu computador.</p>
+  </div>
+  <div class="filters" id="filters"></div>
+
+  <section class="view on" id="v-geral">
+    <div class="kpis" id="kpis"></div>
+    <div class="grid g-5-7">
+      <div class="card">
+        <div class="card-head"><div><h2>Situação das aplicações</h2><p class="sub">Clique numa situação para filtrar todo o painel.</p></div></div>
+        <div class="donut-wrap">
+          <div class="chart-box" style="height:220px"><canvas id="chDonut" aria-label="Gráfico de situação das aplicações"></canvas></div>
+          <div class="legend" id="donutLegend"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h2>Avanço por operação</h2><p class="sub">Quantidade de talhões por situação. Clique numa barra para filtrar a operação.</p></div></div>
+        <div class="chart-box"><canvas id="chOps" aria-label="Avanço por operação"></canvas></div>
+      </div>
+    </div>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card">
+        <div class="card-head"><div><h2>Curva de execução</h2><p class="sub">Hectares programados × executados, acumulados no tempo.</p></div></div>
+        <div class="chart-box tall"><canvas id="chCurve" aria-label="Curva de execução"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div><h2>Carga dos próximos 30 dias</h2><p class="sub">Área a aplicar por dia, incluindo o que já venceu e segue pendente.</p></div>
+          <label class="cap">Capacidade (ha/dia)<input type="number" id="cap" min="0" step="50" placeholder="ex.: 500"></label>
+        </div>
+        <div class="chart-box tall" style="height:310px"><canvas id="chLoad" aria-label="Carga diária"></canvas></div>
+        <div class="cap-msg" id="capMsg"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-head"><div><h2>Prioridades</h2><p class="sub">Pendentes atrasadas, na janela e dos próximos 7 dias. Clique para abrir o talhão.</p></div></div>
+      <div class="prio" id="prio"></div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-head"><div><h2>Consumo de produtos</h2><p class="sub">Quantidade programada × aplicada, pela dose de cada lote e pela área dos talhões. Respeita os filtros.</p></div></div>
+      <div id="prod"></div>
+    </div>
+  </section>
+
+  <section class="view" id="v-crono">
+    <div class="card">
+      <div class="card-head">
+        <div><h2>Cronograma por talhão</h2><p class="sub">Programado contra executado, ancorado na data de plantio. Passe o mouse nos marcadores para ver detalhes.</p></div>
+        <div class="gantt-tools">
+          <div class="seg" role="group" aria-label="Período" id="zoomSeg">
+            <button type="button" data-v="15" aria-pressed="false">15 dias</button>
+            <button type="button" data-v="30" aria-pressed="true">30 dias</button>
+            <button type="button" data-v="60" aria-pressed="false">60 dias</button>
+            <button type="button" data-v="all" aria-pressed="false">Safra</button>
+          </div>
+          <label class="ctl" style="flex-direction:row;align-items:center;gap:8px">Ordenar
+            <select id="gSort"><option value="crit">Criticidade</option><option value="nome">Talhão</option><option value="plantio">Plantio</option><option value="area">Área</option></select>
+          </label>
+          <label class="check"><input type="checkbox" id="gAll">Mostrar talhões sem programação</label>
+        </div>
+      </div>
+      <div class="gantt-scroll"><div class="gantt" id="gantt"></div></div>
+      <div class="g-legend" id="gLegend"></div>
+    </div>
+  </section>
+
+  <section class="view" id="v-mapa">
+    <div class="card">
+      <div class="card-head">
+        <div><h2>Talhões por área</h2><p class="sub">Cada bloco é um talhão, proporcional à área. Clique para ver o histórico.</p></div>
+        <div class="tm-tools">
+          <div class="seg" role="group" aria-label="Colorir por" id="tmSeg">
+            <button type="button" data-v="sit" aria-pressed="true">Situação crítica</button>
+            <button type="button" data-v="dap" aria-pressed="false">Dias após plantio</button>
+            <button type="button" data-v="exec" aria-pressed="false">% executado</button>
+          </div>
+        </div>
+      </div>
+      <div id="tmBox"></div>
+      <div class="scale" id="tmScale"></div>
+    </div>
+  </section>
+
+  <section class="view" id="v-tabela">
+    <div class="card">
+      <div class="tbl-tools">
+        <div><h2 style="margin:0;font-size:17px">Aplicações</h2><p class="sub" id="tblCount" style="margin:3px 0 0;font-size:13px;color:var(--muted)"></p></div>
+        <input type="search" class="search" id="q" placeholder="Buscar talhão ou operação" aria-label="Buscar talhão ou operação">
+      </div>
+      <div class="tbl-scroll"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+    </div>
+  </section>
+
+  <p class="src" id="srcInfo"></p>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-labelledby="drTitle">
+  <div class="dr-head">
+    <div><h3 id="drTitle"></h3><p class="muted" id="drSub" style="margin:6px 0 0;font-size:14px"></p></div>
+    <button type="button" class="icon-btn" id="drClose" aria-label="Fechar detalhes">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div class="dr-body" id="drBody"></div>
+</aside>
+<div class="tip" id="tip" role="tooltip"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ============ CONFIGURAÇÃO ============
+   Cole entre as aspas o endereço do Apps Script (termina em /exec). */
+const DATA_URL = "https://script.google.com/macros/s/AKfycbx4fbyyhG2CS_K3PUpDqFdbTg_wi_T9qus78qG7rJrVUDsNQgvDPdoRxBxA6g_qgVNv1Q/exec";
+/* ===================================== */
+const SNAPSHOT = null;
+const OPS_DEFAULT = ["Dessecação Pré-Plantio","Pré-Emergente","Aplicação de MIB","1º Pós-Emergente","2º Pós-Emergente","1º Fungicida","2º Fungicida","3º Fungicida","4º Fungicida","5º Fungicida"];
+const LS_KEY = "painelAplic.base.v2";
+const CHECK_EVERY = 10 * 60 * 1000;
+
+const STATUS = {
+  atrasada:{t:"Atrasada",ord:0}, janela:{t:"Na janela",ord:1}, prox7:{t:"Próximos 7 dias",ord:2}, programada:{t:"Programada",ord:3},
+  exec_atraso:{t:"Executada com atraso",ord:4}, adiantada:{t:"Executada adiantada",ord:5}, exec_prazo:{t:"Executada no prazo",ord:6}
+};
+const ORDEM = ["atrasada","janela","prox7","programada","exec_atraso","adiantada","exec_prazo"];
+const EXEC = ["exec_prazo","adiantada","exec_atraso"];
+const DIAS = ["dom","seg","ter","qua","qui","sex","sáb"];
+
+const S = {
+  db: null, src: "", modified: null, custom: false,
+  ref: null, tol: 2, modo: "todas", op: -1, status: "todas",
+  tab: "geral", zoom: "30", gSort: "crit", gAll: false, tm: "sit", q: "", sort: {k:"crit", d:1}, cap: 0
+};
+const charts = {};
+const $ = (id) => document.getElementById(id);
+
+/* ---------- utilidades ---------- */
+const dn = (s) => Date.UTC(+s.slice(0,4), +s.slice(5,7)-1, +s.slice(8,10)) / 864e5;
+const iso = (n) => new Date(n*864e5).toISOString().slice(0,10);
+const fd = (s) => s ? s.slice(8,10) + "/" + s.slice(5,7) : "—";
+const fdn = (n) => fd(iso(n));
+const wd = (n) => DIAS[new Date(n*864e5).getUTCDay()];
+const ha = (v, dec=2) => (+v||0).toLocaleString("pt-BR", {minimumFractionDigits:dec, maximumFractionDigits:dec});
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const col = (k) => css("--s-" + k);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const lsGet = (k) => { try { return localStorage.getItem(k); } catch(e) { return null; } };
+const lsSet = (k, v) => { try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch(e) {} };
+const modoNome = (m) => m === "A" ? "Aérea" : "Terrestre";
+const fmtDT = (s) => { const d = new Date(s); return isNaN(d) ? "—" : d.toLocaleDateString("pt-BR", {day:"2-digit", month:"2-digit"}) + " às " + d.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}); };
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("on"),2800); }
+function dataStatus(kind, txt){ const l=$("dataLine"); l.className="dline "+(kind||""); $("dataTxt").textContent=txt; }
+
+/* ---------- leitura da planilha base ---------- */
+const norm = (s) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+function toIso(v){
+  if (v == null || v === "") return null;
+  if (v instanceof Date) return isNaN(v) ? null : v.toISOString().slice(0,10);
+  if (typeof v === "number" && v > 30000 && v < 80000) return new Date(Math.round((v - 25569) * 864e5)).toISOString().slice(0,10);
+  if (typeof v === "string") { let m = v.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if (m) return `${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`;
+    m = v.trim().match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) return m[0]; }
+  return null;
+}
+const toNum = (v) => { if (typeof v === "number") return v; if (v == null || v === "") return null; const n = parseFloat(String(v).replace(/\./g,"").replace(",", ".")); return isFinite(n) ? n : null; };
+function findSheet(wb, name){ const k = wb.SheetNames.find(n => norm(n) === norm(name)); return k ? wb.Sheets[k] : null; }
+function table(wb, name, cols, required){
+  const ws = findSheet(wb, name);
+  if (!ws) { if (required) throw new Error(`Não encontrei a aba “${name}” na planilha.`); return []; }
+  const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
+  const head = (rows[0] || []).map(norm);
+  const idx = {};
+  for (const [key, label] of Object.entries(cols)) {
+    const i = head.findIndex(h => h.startsWith(norm(label)));
+    if (i < 0 && required) throw new Error(`A aba “${name}” não tem a coluna “${label}”.`);
+    idx[key] = i;
+  }
+  return rows.slice(1).map(r => { const o = {}; for (const k in idx) o[k] = idx[k] >= 0 ? r[idx[k]] : null; return o; });
+}
+function parseBase(wb){
+  const lst = table(wb, "Listas", {op:"Operação"}, false).map(r => r.op).filter(Boolean).map(s => String(s).trim());
+  const ops = lst.length ? lst : OPS_DEFAULT.slice();
+  const talhoes = table(wb, "Talhões", {t:"Talhão", faz:"Fazenda", area:"Área", cult:"Cultura", vari:"Variedade", plantio:"Data de plantio", germ:"Data de emergência", ativo:"Ativo"}, true)
+    .filter(r => r.t && norm(r.ativo) !== "nao")
+    .map(r => ({t:String(r.t).trim(), faz:r.faz ? String(r.faz) : "", area:toNum(r.area) || 0, cult:r.cult ? String(r.cult) : "", vari:r.vari ? String(r.vari) : "", plantio:toIso(r.plantio), germ:toIso(r.germ)}));
+  if (!talhoes.length) throw new Error("A aba Talhões está vazia.");
+  const units = {};
+  table(wb, "Produtos", {p:"Produto", un:"Unidade", cl:"Classe"}, false).forEach(r => { if (r.p) units[String(r.p).trim()] = {un: r.un ? String(r.un) : "", cl: r.cl ? String(r.cl) : ""}; });
+  const progs = table(wb, "Programação", {id:"ID", t:"Talhão", op:"Operação", modo:"Modalidade", prog:"Data programada", rec:"Receita", lote:"Lote", obs:"Observação"}, true)
+    .filter(r => r.id && r.t && r.op)
+    .map(r => ({id:String(r.id).trim(), t:String(r.t).trim(), op:String(r.op).trim(), modo: norm(r.modo).startsWith("a") ? "A" : "T", prog:toIso(r.prog), rec:r.rec ? String(r.rec) : "", lote:r.lote ? String(r.lote).trim() : "", obs:r.obs ? String(r.obs) : ""}))
+    .filter(p => !norm(p.obs).includes("cancelad"));
+  const lotes = {};
+  table(wb, "Produtos programados", {lote:"Lote", p:"Produto", dose:"Dose", obs:"Observação"}, false).forEach(r => {
+    if (!r.lote || !r.p) return; const d = toNum(r.dose); if (d == null) return;
+    const p = String(r.p).trim(); (lotes[String(r.lote).trim()] ||= []).push({p, dose:d, un:(units[p] || {}).un || "", cl:(units[p] || {}).cl || ""});
+  });
+  const execs = {};
+  table(wb, "Execuções", {id:"ID programação", d:"Data executada", area:"Área aplicada", modo:"Modalidade", os:"Nº OS", maq:"Máquina", oper:"Operador", obs:"Observação"}, true).forEach(r => {
+    if (!r.id) return; const d = toIso(r.d); if (!d) return;
+    (execs[String(r.id).trim()] ||= []).push({d, area:toNum(r.area), os:r.os != null ? String(r.os) : "", maq:r.maq ? String(r.maq) : "", oper:r.oper ? String(r.oper) : ""});
+  });
+  progs.forEach(p => { if (!ops.includes(p.op)) ops.push(p.op); });
+  return {ops, talhoes, progs, lotes, execs};
+}
+
+/* ---------- modelo ---------- */
+function build(){
+  const db = S.db, ref = dn(S.ref), tol = S.tol;
+  const talhoes = db.talhoes.map(t => ({...t, items: []}));
+  const tmap = Object.fromEntries(talhoes.map(t => [t.t, t]));
+  const items = [];
+  db.progs.forEach(p => {
+    let tl = tmap[p.t];
+    if (!tl) { tl = {t:p.t, area:0, cult:"", vari:"", plantio:null, germ:null, items:[], orphan:true}; tmap[p.t] = tl; talhoes.push(tl); }
+    const area = tl.area;
+    const ex = (db.execs[p.id] || []).slice().sort((a,b) => a.d.localeCompare(b.d));
+    const exArea = ex.reduce((s, e) => s + (e.area == null ? area : e.area), 0);
+    const done = ex.length && (area <= 0 || exArea >= area * 0.98);
+    const exec = done ? ex[ex.length-1].d : null;
+    const it = {id:p.id, t:p.t, area, tl, k:db.ops.indexOf(p.op), op:p.op, prog:p.prog, exec, modo:p.modo, lote:p.lote, rec:p.rec, obs:p.obs,
+      execs:ex, exArea:Math.min(exArea, area || exArea), parcial: !done && ex.length ? (area ? exArea/area : 0) : 0,
+      prods: db.lotes[p.lote] || [], os: [...new Set(ex.map(e => e.os).filter(Boolean))].join(", ")};
+    const pd = p.prog ? dn(p.prog) : (exec ? dn(exec) : ref);
+    it.pd = pd;
+    if (exec) {
+      const d = p.prog ? dn(exec) - pd : 0;
+      it.s = d < -tol ? "adiantada" : d > tol ? "exec_atraso" : "exec_prazo";
+      it.dev = d; it.devTxt = !p.prog ? "sem data programada" : d === 0 ? "no dia" : (d > 0 ? "+" : "−") + Math.abs(d) + " d";
+    } else {
+      const g = ref - pd;
+      it.s = g > tol ? "atrasada" : g >= 0 ? "janela" : -g <= 7 ? "prox7" : "programada";
+      it.dev = g; it.devTxt = !p.prog ? "sem data programada" : g > 0 ? "vencida há " + g + " d" : g === 0 ? "vence hoje" : "em " + (-g) + " d";
+      if (it.parcial) it.devTxt += ` · parcial ${Math.round(it.parcial*100)}%`;
+    }
+    it.dap = tl.plantio ? ref - dn(tl.plantio) : null;
+    tl.items.push(it); items.push(it);
+  });
+  return {talhoes, items, ref};
+}
+const passModo = (i) => S.modo === "todas" || i.modo === S.modo;
+const passOp = (i) => S.op < 0 || i.k === S.op;
+const passSt = (i) => S.status === "todas" || (S.status === "executadas" ? EXEC.includes(i.s) : i.s === S.status);
+const sumHa = (a) => a.reduce((s, i) => s + i.area, 0);
+function worst(items){
+  const pend = items.filter((i) => !EXEC.includes(i.s));
+  const pool = pend.length ? pend : items;
+  if (!pool.length) return "none";
+  return pool.slice().sort((a,b) => STATUS[a.s].ord - STATUS[b.s].ord)[0].s;
+}
+const prodTxt = (i) => i.prods.length ? i.prods.map(p => `${p.p} ${ha(p.dose, p.dose % 1 ? 2 : 0)} ${p.un}`.trim()).join(" · ") : "";
+
+/* ---------- filtros ---------- */
+function renderFilters(){
+  const f = $("filters"), parts = [];
+  if (S.status !== "todas") parts.push(["status", "Situação: " + (S.status === "executadas" ? "Executadas" : STATUS[S.status].t), S.status === "executadas" ? col("exec_prazo") : col(S.status)]);
+  if (S.op >= 0) parts.push(["op", "Operação: " + S.db.ops[S.op], null]);
+  if (S.modo !== "todas") parts.push(["modo", "Modalidade: " + modoNome(S.modo), null]);
+  if (!parts.length) { f.innerHTML = '<span class="muted">Sem filtros. Clique em indicadores, gráficos ou use os controles acima para filtrar.</span>'; return; }
+  f.innerHTML = parts.map(([k, t, c]) => `<span class="chip">${c ? `<span class="dot" style="background:${c}"></span>` : ""}${esc(t)}<button type="button" data-clear="${k}" aria-label="Remover filtro ${esc(t)}">×</button></span>`).join("") +
+    (parts.length > 1 ? '<button type="button" class="btn" data-clear="all" style="height:32px">Limpar tudo</button>' : "");
+}
+function setFilter(k, v){
+  if (k === "status") S.status = (S.status === v ? "todas" : v);
+  if (k === "op") S.op = (S.op === v ? -1 : v);
+  if (k === "modo") S.modo = v;
+  syncControls(); render();
+}
+function syncControls(){
+  $("opSel").value = String(S.op);
+  [...$("modoSeg").children].forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === S.modo)));
+}
+
+/* ---------- visão geral ---------- */
+function renderKPIs(M){
+  const base = M.items.filter((i) => passModo(i) && passOp(i));
+  const n = base.length || 1;
+  const grp = [
+    {k:"todas", lab:"Programadas", c:"var(--ink)", arr:base, foot:(a)=>ha(sumHa(a),0)+" ha em "+new Set(a.map(i=>i.t)).size+" talhões"},
+    {k:"executadas", lab:"Executadas", c:col("exec_prazo"), arr:base.filter(i=>EXEC.includes(i.s)), foot:(a)=>ha(sumHa(a),0)+" ha aplicados"},
+    {k:"exec_atraso", lab:"Executadas com atraso", c:col("exec_atraso"), arr:base.filter(i=>i.s==="exec_atraso"), foot:(a)=>a.length?"atraso médio de "+ha(a.reduce((s,i)=>s+i.dev,0)/a.length,1)+" d":"nenhuma fora da tolerância"},
+    {k:"atrasada", lab:"Atrasadas pendentes", c:col("atrasada"), arr:base.filter(i=>i.s==="atrasada"), foot:(a)=>ha(sumHa(a),0)+" ha com janela fechada"},
+    {k:"janela", lab:"Na janela agora", c:col("janela"), arr:base.filter(i=>i.s==="janela"), foot:(a)=>ha(sumHa(a),0)+" ha para executar"},
+    {k:"prox7", lab:"Próximos 7 dias", c:col("prox7"), arr:base.filter(i=>i.s==="prox7"), foot:(a)=>ha(sumHa(a),0)+" ha programados"}
+  ];
+  $("kpis").innerHTML = grp.map((g) => {
+    const pct = g.k === "todas" ? 100 : Math.round(g.arr.length / n * 100);
+    return `<button type="button" class="kpi" data-st="${g.k}" aria-pressed="${S.status===g.k}" style="--k:${g.c}">
+      <span class="lab"><span class="dot" style="background:${g.c}"></span>${g.lab}</span>
+      <span class="val">${g.arr.length}${g.k!=="todas"?`<small>${pct}%</small>`:""}</span>
+      <span class="bar"><i style="width:${pct}%"></i></span>
+      <span class="foot">${g.foot(g.arr)}</span></button>`;
+  }).join("");
+}
+function mk(id, cfg){ if (charts[id]) charts[id].destroy(); charts[id] = new Chart($(id), cfg); }
+function chartBase(){
+  Chart.defaults.font.family = "'Barlow', system-ui, sans-serif";
+  Chart.defaults.font.size = 12.5;
+  Chart.defaults.color = css("--muted");
+  Chart.defaults.borderColor = css("--line");
+}
+function renderDonut(M){
+  const base = M.items.filter((i) => passModo(i) && passOp(i));
+  const cnt = ORDEM.map((k) => base.filter((i) => i.s === k));
+  const centerText = {id:"center", afterDraw(c){ const {ctx, chartArea:a} = c; const x=(a.left+a.right)/2, y=(a.top+a.bottom)/2;
+    ctx.save(); ctx.textAlign="center"; ctx.fillStyle=css("--ink"); ctx.font="600 34px 'Barlow Condensed', sans-serif"; ctx.fillText(base.length, x, y+6);
+    ctx.font="12.5px 'Barlow', sans-serif"; ctx.fillStyle=css("--muted"); ctx.fillText("aplicações", x, y+24); ctx.restore(); }};
+  mk("chDonut", {type:"doughnut", plugins:[centerText],
+    data:{labels:ORDEM.map(k=>STATUS[k].t), datasets:[{data:cnt.map(a=>a.length), backgroundColor:ORDEM.map(col), borderColor:css("--panel"), borderWidth:2, hoverOffset:6}]},
+    options:{maintainAspectRatio:false, cutout:"68%", plugins:{legend:{display:false}, tooltip:{callbacks:{label:(c)=>` ${c.label}: ${c.raw} (${ha(sumHa(cnt[c.dataIndex]))} ha)`}}},
+      onClick:(e, el)=>{ if(el.length) setFilter("status", ORDEM[el[0].index]); }}});
+  $("donutLegend").innerHTML = ORDEM.map((k, i) => `<button type="button" data-st="${k}" aria-pressed="${S.status===k}">
+    <span class="dot" style="background:${col(k)}"></span><span>${STATUS[k].t}</span><span class="n">${cnt[i].length}</span><span class="h">${ha(sumHa(cnt[i]),0)} ha</span></button>`).join("");
+}
+function renderOps(M){
+  const base = M.items.filter((i) => passModo(i) && passSt(i));
+  const ops = S.db.ops;
+  const ds = ORDEM.slice().reverse().map((k) => ({label:STATUS[k].t, data:ops.map((_, j) => base.filter(i => i.k===j && i.s===k).length),
+    backgroundColor:col(k), borderColor:css("--panel"), borderWidth:1, borderRadius:3, barThickness:18}));
+  mk("chOps", {type:"bar", data:{labels:ops.map((o,j)=> (S.op===j?"▸ ":"") + o), datasets:ds},
+    options:{indexAxis:"y", maintainAspectRatio:false, scales:{x:{stacked:true, ticks:{precision:0}, title:{display:true,text:"talhões"}}, y:{stacked:true, grid:{display:false}}},
+      plugins:{legend:{display:false}, tooltip:{mode:"index", filter:(c)=>c.raw>0}},
+      onClick:(e, el, ch)=>{ const p = ch.scales.y.getValueForPixel(e.y); if (p!=null && p>=0 && p<ops.length) setFilter("op", Math.round(p)); },
+      onHover:(e)=>{ e.native.target.style.cursor = "pointer"; }}});
+}
+function todayPlugin(idx){ return {id:"today", afterDatasetsDraw(c){ if(idx<0) return; const x=c.scales.x.getPixelForValue(idx); const {ctx, chartArea:a}=c;
+  ctx.save(); ctx.strokeStyle=css("--brand"); ctx.lineWidth=2; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(x,a.top); ctx.lineTo(x,a.bottom); ctx.stroke();
+  ctx.setLineDash([]); ctx.fillStyle=css("--brand"); ctx.font="600 12px 'Barlow', sans-serif"; ctx.textAlign="center"; ctx.fillText("hoje", x, a.top-4); ctx.restore(); }}; }
+function renderCurve(M){
+  const base = M.items.filter((i) => passModo(i) && passOp(i) && passSt(i));
+  if (!base.length) { mk("chCurve", {type:"line", data:{labels:[], datasets:[]}, options:{maintainAspectRatio:false}}); return; }
+  const ev = base.flatMap(i => i.execs.map(e => ({d:dn(e.d), a:e.area == null ? i.area : Math.min(e.area, i.area || e.area)})));
+  const ds = base.map(i => i.pd).concat(ev.map(e => e.d));
+  const a = Math.min(...ds, M.ref) - 2, b = Math.max(...ds, M.ref) + 3;
+  const labels = [], plan = [], ex = [];
+  let cp = 0, ce = 0;
+  for (let d = a; d <= b; d++) {
+    cp += sumHa(base.filter(i => i.prog && dn(i.prog) === d));
+    ce += ev.filter(e => e.d === d).reduce((s, e) => s + e.a, 0);
+    labels.push(fdn(d)); plan.push(+cp.toFixed(2)); ex.push(d <= M.ref ? +ce.toFixed(2) : null);
+  }
+  mk("chCurve", {type:"line", plugins:[todayPlugin(M.ref - a)],
+    data:{labels, datasets:[
+      {label:"Programado acumulado", data:plan, stepped:true, borderColor:css("--muted"), borderDash:[6,4], borderWidth:2, pointRadius:0, fill:false},
+      {label:"Executado acumulado", data:ex, stepped:true, borderColor:col("exec_prazo"), backgroundColor:col("exec_prazo")+"33", borderWidth:2.5, pointRadius:0, fill:true}]},
+    options:{maintainAspectRatio:false, interaction:{mode:"index", intersect:false}, layout:{padding:{top:14}},
+      scales:{y:{beginAtZero:true, title:{display:true,text:"ha"}, ticks:{callback:(v)=>ha(v,0)}}, x:{grid:{display:false}, ticks:{maxRotation:0, autoSkipPadding:14}}},
+      plugins:{legend:{position:"bottom", labels:{boxWidth:14, usePointStyle:true}}, tooltip:{callbacks:{label:(c)=>` ${c.dataset.label}: ${c.raw==null?"—":ha(c.raw)} ha`, afterBody:(it)=>{ const p=it[0]?.raw, e=it[1]?.raw; return (p&&e!=null)?`Diferença: ${ha(p-e)} ha`:""; }}}}}});
+}
+function renderLoad(M){
+  const base = M.items.filter((i) => passModo(i) && passOp(i) && passSt(i) && !i.exec);
+  const rest = (i) => Math.max(0, i.area - (i.parcial ? i.exArea : 0));
+  const labels = [], T = [], A = [], V = [];
+  const venc = base.filter(i => i.pd < M.ref);
+  const sumR = (a) => a.reduce((s, i) => s + rest(i), 0);
+  for (let d = M.ref; d < M.ref + 30; d++) {
+    labels.push(fdn(d) + " " + wd(d));
+    const day = base.filter(i => i.pd === d);
+    T.push(+sumR(day.filter(i=>i.modo==="T")).toFixed(2));
+    A.push(+sumR(day.filter(i=>i.modo==="A")).toFixed(2));
+    V.push(d === M.ref ? +sumR(venc).toFixed(2) : 0);
+  }
+  const ds = [
+    {label:"Vencido pendente", data:V, backgroundColor:col("atrasada"), stack:"s", borderRadius:3},
+    {label:"Terrestre", data:T, backgroundColor:col("prox7"), stack:"s", borderRadius:3},
+    {label:"Aérea", data:A, backgroundColor:col("adiantada"), stack:"s", borderRadius:3}];
+  if (S.cap > 0) ds.push({type:"line", label:"Capacidade", data:labels.map(()=>S.cap), borderColor:css("--ink"), borderDash:[5,4], borderWidth:1.5, pointRadius:0});
+  mk("chLoad", {type:"bar", data:{labels, datasets:ds},
+    options:{maintainAspectRatio:false, scales:{x:{stacked:true, grid:{display:false}, ticks:{maxRotation:0, autoSkipPadding:10, callback:function(v){ return this.getLabelForValue(v).split(" ")[0]; }}}, y:{stacked:true, beginAtZero:true, title:{display:true,text:"ha"}}},
+      plugins:{legend:{position:"bottom", labels:{boxWidth:14, usePointStyle:true}}, tooltip:{mode:"index", filter:(c)=>c.raw>0, callbacks:{
+        label:(c)=>` ${c.dataset.label}: ${ha(c.raw)} ha`,
+        afterBody:(it)=>{ const d=M.ref+it[0].dataIndex; const day=base.filter(i=>i.pd===d); const all=day.concat(it[0].dataIndex===0 ? venc : []);
+          return all.length ? "\n" + all.slice(0,8).map(i=>`${i.t}: ${i.op}`).join("\n") + (all.length>8?`\n+${all.length-8} outros`:"") : ""; }}}}}});
+  const msg = $("capMsg");
+  if (S.cap > 0) {
+    const tot = T.map((v, i) => v + A[i] + V[i]);
+    const over = tot.map((v,i)=>[v,i]).filter(([v]) => v > S.cap);
+    msg.innerHTML = over.length ? `<span style="color:${col("atrasada")};font-weight:600">${over.length} ${over.length===1?"dia":"dias"} acima da capacidade</span> <span class="muted">(${over.slice(0,6).map(([v,i])=>labels[i].split(" ")[0]+": "+ha(v,0)+" ha").join(", ")}${over.length>6?"…":""})</span>` : `<span class="muted">Nenhum dia acima de ${ha(S.cap,0)} ha.</span>`;
+  } else msg.innerHTML = '<span class="muted">Informe a capacidade diária da frota para ver os gargalos.</span>';
+}
+function pill(s){ return `<span class="pill" style="--c:${col(s)}">${STATUS[s].t}</span>`; }
+function renderPrio(M){
+  const arr = M.items.filter(i => passModo(i) && passOp(i) && passSt(i) && ["atrasada","janela","prox7"].includes(i.s))
+    .sort((a,b) => STATUS[a.s].ord - STATUS[b.s].ord || a.pd - b.pd || b.area - a.area);
+  $("prio").innerHTML = arr.length ? arr.slice(0, 12).map(i => `<button type="button" data-t="${esc(i.t)}">
+      <span class="t">${esc(i.t)}</span><span><span>${esc(i.op)}</span> <span class="muted" style="font-size:13px">· ${modoNome(i.modo)} · programada ${fd(i.prog)} · ${i.devTxt}</span>${i.prods.length?`<span class="prods" style="display:block">${esc(prodTxt(i))}</span>`:""}</span>
+      <span class="ha">${ha(i.area)} ha</span>${pill(i.s)}</button>`).join("") + (arr.length > 12 ? `<p class="muted" style="font-size:13px;margin:10px 4px 0">+${arr.length-12} na aba Tabela.</p>` : "")
+    : '<div class="empty">Nada pendente com os filtros atuais.</div>';
+}
+function renderProd(M){
+  const base = M.items.filter(i => passModo(i) && passOp(i) && passSt(i));
+  const g = {};
+  base.forEach(i => i.prods.forEach(p => {
+    const k = p.p + "|" + p.un; const o = (g[k] ||= {p:p.p, un:p.un, cl:p.cl, prog:0, apl:0, lotes:new Set()});
+    o.prog += p.dose * i.area; o.apl += p.dose * (i.exec ? i.area : i.exArea); o.lotes.add(i.lote);
+  }));
+  const arr = Object.values(g).sort((a, b) => b.prog - a.prog);
+  if (!arr.length) { $("prod").innerHTML = `<div class="empty">Nenhum produto lançado para as aplicações filtradas. Lance produto e dose por lote na aba <b>Produtos programados</b> da planilha.</div>`; return; }
+  const q = (v, un) => ha(v, v >= 100 ? 0 : 1) + " " + String(un || "").replace(/\/ha$/, "");
+  $("prod").innerHTML = `<div class="tbl-scroll" style="margin-top:0"><table class="ptbl"><thead><tr><th style="padding:10px">Produto</th><th style="padding:10px">Classe</th><th class="r" style="padding:10px">Programado</th><th class="r" style="padding:10px">Aplicado</th><th class="r" style="padding:10px">A aplicar</th><th style="padding:10px">Execução</th></tr></thead><tbody>` +
+    arr.map(o => { const pct = o.prog ? Math.min(100, o.apl / o.prog * 100) : 0;
+      return `<tr style="cursor:default"><td><b>${esc(o.p)}</b><span class="tag">${o.lotes.size} ${o.lotes.size===1?"lote":"lotes"}</span></td><td>${esc(o.cl) || "—"}</td><td class="r">${q(o.prog, o.un)}</td><td class="r">${q(o.apl, o.un)}</td><td class="r">${q(Math.max(0, o.prog - o.apl), o.un)}</td>
+        <td><div style="display:flex;align-items:center;gap:8px"><div class="pbar"><i style="width:${pct.toFixed(1)}%"></i></div><span class="muted" style="font-size:12.5px">${Math.round(pct)}%</span></div></td></tr>`; }).join("") + `</tbody></table></div>`;
+}
+
+/* ---------- cronograma ---------- */
+function renderGantt(M){
+  let rows = M.talhoes.map(tl => ({tl, its: tl.items.filter(i => passModo(i) && passOp(i) && passSt(i))}));
+  const filtering = S.status !== "todas" || S.op >= 0 || S.modo !== "todas";
+  rows = rows.filter(r => r.its.length || (S.gAll && !filtering));
+  const allD = M.items.flatMap(i => [i.pd, i.exec ? dn(i.exec) : null]).concat(M.talhoes.flatMap(t => [t.plantio ? dn(t.plantio) : null])).filter(v => v != null);
+  let a, b;
+  if (S.zoom === "15") { a = M.ref - 7; b = M.ref + 8; }
+  else if (S.zoom === "60") { a = M.ref - 20; b = M.ref + 40; }
+  else if (S.zoom === "all" && allD.length) { a = Math.min(...allD, M.ref) - 3; b = Math.max(...allD, M.ref) + 4; }
+  else { a = M.ref - 10; b = M.ref + 20; }
+  const span = b - a;
+  const x = (d) => ((d - a) / span * 100);
+  const inR = (d) => d >= a && d <= b;
+  function worstOr(r){ const w = worst(r.its); return w === "none" ? "programada" : w; }
+  const sorters = {
+    crit: (p, q) => STATUS[worstOr(p)].ord - STATUS[worstOr(q)].ord || p.tl.t.localeCompare(q.tl.t, "pt", {numeric:true}),
+    nome: (p, q) => p.tl.t.localeCompare(q.tl.t, "pt", {numeric:true}),
+    plantio: (p, q) => (p.tl.plantio || "9999").localeCompare(q.tl.plantio || "9999"),
+    area: (p, q) => q.tl.area - p.tl.area
+  };
+  rows.sort(sorters[S.gSort]);
+  const step = span <= 20 ? 1 : span <= 40 ? 2 : 7;
+  let ticks = "";
+  for (let d = a; d <= b; d++) {
+    const mon = new Date(d*864e5).getUTCDay() === 1;
+    if (step === 7 ? mon : (d - a) % step === 0) ticks += `<div class="tick ${mon?"wk":""}" style="left:${x(d)}%">${fdn(d)}<br>${wd(d)}</div>`;
+  }
+  const grid = []; for (let d = a; d <= b; d++) if (new Date(d*864e5).getUTCDay() === 1) grid.push(`<div class="gl" style="left:${x(d)}%"></div>`);
+  const todayX = x(M.ref);
+  let html = `<div class="g-row head"><div class="g-label" style="cursor:default;background:var(--panel2)"><b>Talhão</b><span>${rows.length} ${rows.length===1?"talhão":"talhões"}</span></div>
+    <div class="g-head-track">${ticks}${inR(M.ref)?`<div class="today-tag" style="left:${todayX}%">hoje ${fdn(M.ref)}</div>`:""}</div></div>`;
+  if (!rows.length) html += `<div class="empty">Nenhum talhão com os filtros atuais.</div>`;
+  rows.forEach(({tl, its}) => {
+    const w = worst(its);
+    let tr = grid.join("");
+    if (tl.plantio && inR(dn(tl.plantio))) tr += `<div class="mk seed" style="left:${x(dn(tl.plantio))}%" data-tip="${esc(`<b>${esc(tl.t)}</b> · plantio em ${fd(tl.plantio)}`)}"></div>`;
+    if (tl.germ && inR(dn(tl.germ))) tr += `<div class="mk germ" style="left:${x(dn(tl.germ))}%" data-tip="${esc(`<b>${esc(tl.t)}</b> · emergência em ${fd(tl.germ)}`)}"></div>`;
+    its.forEach(i => {
+      const c = col(i.s);
+      const tip = esc(`<b>${esc(i.t)} · ${esc(i.op)}</b><br>${modoNome(i.modo)} · ${ha(i.area)} ha${i.lote?` · lote ${esc(i.lote)}`:""}<br>Programada: ${fd(i.prog)}<br>Executada: ${fd(i.exec)}${i.os?` · OS ${esc(i.os)}`:""}<br>${i.devTxt}${i.dap!=null?` · ${i.dap} DAP`:""}${i.prods.length?`<br>${esc(prodTxt(i))}`:""}<br>${STATUS[i.s].t}`);
+      if (i.prog) {
+        const p = dn(i.prog), w0 = Math.max(a, p - S.tol), w1 = Math.min(b, p + S.tol);
+        if (w1 >= w0) tr += `<div class="win" style="--c:${c};left:${x(w0)}%;width:calc(${x(w1)-x(w0)}% + 1px)"></div>`;
+      }
+      if (i.exec && i.prog) {
+        const p = dn(i.prog), e = dn(i.exec), l = Math.max(a, Math.min(p, e)), r = Math.min(b, Math.max(p, e));
+        if (r > l) tr += `<div class="lnk" style="--c:${c};left:${x(l)}%;width:${x(r)-x(l)}%"></div>`;
+      }
+      if (!i.exec && i.prog && dn(i.prog) < M.ref) {
+        const l = Math.max(a, dn(i.prog)), r = Math.min(b, M.ref);
+        if (r > l) tr += `<div class="lnk" style="--c:${c};left:${x(l)}%;width:${x(r)-x(l)}%;opacity:.55"></div>`;
+      }
+      i.execs.forEach(e => { if (!i.exec && inR(dn(e.d))) tr += `<div class="mk exec" style="--c:${c};left:${x(dn(e.d))}%;opacity:.6" data-tip="${tip}"></div>`; });
+      if (i.prog && inR(dn(i.prog))) tr += `<div class="mk prog" style="--c:${c};left:${x(dn(i.prog))}%" data-tip="${tip}"></div>`;
+      if (i.exec && inR(dn(i.exec))) tr += `<div class="mk exec" style="--c:${c};left:${x(dn(i.exec))}%" data-tip="${tip}"></div>`;
+    });
+    if (inR(M.ref)) tr += `<div class="today" style="left:${todayX}%"></div>`;
+    html += `<div class="g-row"><button type="button" class="g-label" data-t="${esc(tl.t)}" style="--c:${w==="none"?col("none"):col(w)}"><b>${esc(tl.t)}</b><span>${ha(tl.area)} ha${tl.plantio?` · ${M.ref-dn(tl.plantio)} DAP`:""}</span></button><div class="g-track">${tr}</div></div>`;
+  });
+  $("gantt").innerHTML = html;
+  $("gLegend").innerHTML = `<span><span class="lg"><span class="mk prog" style="--c:var(--muted)"></span></span>Data programada</span>
+    <span><span class="lg"><span class="mk exec" style="--c:var(--muted)"></span></span>Data executada</span>
+    <span><span class="lg" style="width:34px"><span class="win" style="--c:var(--muted);left:0;width:34px"></span></span>Janela (±${S.tol} d)</span>
+    <span><span class="lg"><span class="mk seed"></span></span>Plantio</span>
+    <span><span class="lg"><span class="mk germ"></span></span>Emergência</span>` +
+    ORDEM.map(k => `<span><span class="dot" style="background:${col(k)}"></span>${STATUS[k].t}</span>`).join("");
+}
+
+/* ---------- talhões (treemap) ---------- */
+function squarify(nodes, rect){
+  const out = [], total = nodes.reduce((s, n) => s + n.v, 0);
+  if (!total) return out;
+  const sc = rect.w * rect.h / total;
+  const list = nodes.map(n => ({...n, a: n.v * sc}));
+  let r = {...rect}, row = [];
+  const worstR = (row, side) => { const s = row.reduce((t, n) => t + n.a, 0), mx = Math.max(...row.map(n=>n.a)), mn = Math.min(...row.map(n=>n.a)); return Math.max(side*side*mx/(s*s), (s*s)/(side*side*mn)); };
+  const place = (row) => { const s = row.reduce((t, n) => t + n.a, 0);
+    if (r.w >= r.h) { const cw = s / r.h; let y = r.y; row.forEach(n => { const h = n.a / cw; out.push({...n, x:r.x, y, w:cw, h}); y += h; }); r.x += cw; r.w -= cw; }
+    else { const rh = s / r.w; let x = r.x; row.forEach(n => { const w = n.a / rh; out.push({...n, x, y:r.y, w, h:rh}); x += w; }); r.y += rh; r.h -= rh; } };
+  list.forEach(n => { const side = Math.min(r.w, r.h); if (!row.length || worstR(row.concat(n), side) <= worstR(row, side)) row.push(n); else { place(row); row = [n]; } });
+  if (row.length) place(row);
+  return out;
+}
+function lerp(c1, c2, t){ const h=(c)=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)); const p=h(c1), q=h(c2); return "#"+p.map((v,i)=>Math.round(v+(q[i]-v)*t).toString(16).padStart(2,"0")).join(""); }
+function renderTreemap(M){
+  const box = $("tmBox"), W = Math.max(320, box.clientWidth || 900), H = Math.round(Math.min(640, Math.max(420, W * 0.52)));
+  const nodes = M.talhoes.filter(t => t.area > 0).map(tl => ({v: tl.area, tl, its: tl.items.filter(i => passModo(i) && passOp(i) && passSt(i))})).sort((p, q) => q.v - p.v);
+  const rects = squarify(nodes, {x:0, y:0, w:W, h:H});
+  const dark = css("--bg").toLowerCase() === "#111814";
+  const maxDap = Math.max(1, ...M.talhoes.map(t => t.plantio ? M.ref - dn(t.plantio) : 0));
+  const fill = (n) => {
+    if (S.tm === "dap") { if (!n.tl.plantio) return col("none"); const t = Math.min(1, Math.max(0, (M.ref - dn(n.tl.plantio)) / maxDap)); return dark ? lerp("#2b4a3a", "#9fe0bb", t) : lerp("#cfe6d6", "#1d5a3d", t); }
+    if (S.tm === "exec") { if (!n.its.length) return col("none"); const t = n.its.filter(i => EXEC.includes(i.s)).length / n.its.length; return dark ? lerp("#3a2f22", "#4f8fd0", t) : lerp("#f3dcc4", "#1e4e79", t); }
+    const w = worst(n.its); return w === "none" ? col("none") : col(w);
+  };
+  const lum = (hex) => { if (!hex.startsWith("#")) return 1; const [r,g,b] = [1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255); return 0.2126*r+0.7152*g+0.0722*b; };
+  let svg = `<svg class="tm" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Mapa de talhões por área">`;
+  rects.forEach(rc => {
+    const f = fill(rc), tc = lum(f) > 0.55 ? "#17221C" : "#FFFFFF";
+    const w = worst(rc.its);
+    const tip = esc(`<b>${esc(rc.tl.t)}</b> · ${ha(rc.tl.area)} ha<br>${rc.tl.plantio ? `Plantio ${fd(rc.tl.plantio)} · ${M.ref - dn(rc.tl.plantio)} DAP` : "Plantio não lançado"}<br>${rc.its.length ? `${rc.its.filter(i=>EXEC.includes(i.s)).length}/${rc.its.length} aplicações executadas<br>Situação: ${STATUS[w]?.t || "—"}` : "Sem aplicação programada"}`);
+    svg += `<g><rect x="${rc.x.toFixed(1)}" y="${rc.y.toFixed(1)}" width="${Math.max(0, rc.w).toFixed(1)}" height="${Math.max(0, rc.h).toFixed(1)}" fill="${f}" data-t="${esc(rc.tl.t)}" data-tip="${tip}" tabindex="0" role="button" aria-label="${esc(rc.tl.t)}"></rect>`;
+    if (rc.w > 54 && rc.h > 30) svg += `<text x="${(rc.x + 8).toFixed(1)}" y="${(rc.y + 20).toFixed(1)}" fill="${tc}" font-size="${rc.w > 110 && rc.h > 50 ? 15 : 12.5}" font-weight="600">${esc(rc.tl.t)}</text>`;
+    if (rc.w > 80 && rc.h > 50) svg += `<text x="${(rc.x + 8).toFixed(1)}" y="${(rc.y + 38).toFixed(1)}" fill="${tc}" font-size="12" opacity=".85">${ha(rc.tl.area,0)} ha</text>`;
+    svg += `</g>`;
+  });
+  box.innerHTML = svg + "</svg>";
+  const sc = $("tmScale");
+  if (S.tm === "dap") sc.innerHTML = `<span>0 DAP</span><span class="grad" style="background:linear-gradient(90deg,${dark?"#2b4a3a,#9fe0bb":"#cfe6d6,#1d5a3d"})"></span><span>${maxDap} DAP</span><span style="margin-left:12px"><span class="dot" style="background:${col("none")}"></span> plantio não lançado</span>`;
+  else if (S.tm === "exec") sc.innerHTML = `<span>0% executado</span><span class="grad" style="background:linear-gradient(90deg,${dark?"#3a2f22,#4f8fd0":"#f3dcc4,#1e4e79"})"></span><span>100%</span><span style="margin-left:12px"><span class="dot" style="background:${col("none")}"></span> sem programação</span>`;
+  else sc.innerHTML = ORDEM.map(k => `<span style="display:inline-flex;align-items:center;gap:6px"><span class="dot" style="background:${col(k)}"></span>${STATUS[k].t}</span>`).join("") + `<span style="display:inline-flex;align-items:center;gap:6px"><span class="dot" style="background:${col("none")}"></span>Sem programação</span>`;
+}
+
+/* ---------- tabela ---------- */
+const COLS = [
+  {k:"t", l:"Talhão"}, {k:"area", l:"Área (ha)", r:1}, {k:"op", l:"Operação"}, {k:"lote", l:"Lote"}, {k:"modo", l:"Modalidade"},
+  {k:"dap", l:"DAP", r:1}, {k:"prog", l:"Programada"}, {k:"exec", l:"Executada"}, {k:"dev", l:"Desvio"}, {k:"os", l:"OS Protector"}, {k:"crit", l:"Situação"}
+];
+function renderTable(M){
+  const q = norm(S.q);
+  let arr = M.items.filter(i => passModo(i) && passOp(i) && passSt(i) && (!q || norm(i.t).includes(q) || norm(i.op).includes(q) || norm(i.lote).includes(q) || norm(prodTxt(i)).includes(q) || norm(i.os).includes(q)));
+  const val = (i, k) => k === "crit" ? STATUS[i.s].ord * 1e5 + i.pd : k === "prog" ? (i.prog || "9999") : k === "exec" ? (i.exec || "9999") : k === "dap" ? (i.dap ?? -1e9) : (i[k] ?? "");
+  arr.sort((a, b) => { const x = val(a, S.sort.k), y = val(b, S.sort.k); return (typeof x === "string" ? String(x).localeCompare(String(y), "pt", {numeric:true}) : x - y) * S.sort.d; });
+  $("thead").innerHTML = "<tr>" + COLS.map(c => `<th class="${c.r?"r":""}" aria-sort="${S.sort.k===c.k?(S.sort.d>0?"ascending":"descending"):"none"}"><button type="button" data-sort="${c.k}">${c.l}${S.sort.k===c.k?(S.sort.d>0?" ▲":" ▼"):""}</button></th>`).join("") + "</tr>";
+  $("tbody").innerHTML = arr.length ? arr.map(i => `<tr data-t="${esc(i.t)}" tabindex="0">
+    <td><b>${esc(i.t)}</b></td><td class="r">${ha(i.area)}</td><td>${esc(i.op)}${i.prods.length?`<div class="prods">${esc(prodTxt(i))}</div>`:""}</td><td>${esc(i.lote) || "—"}</td><td>${modoNome(i.modo)}</td>
+    <td class="r">${i.dap ?? "—"}</td><td>${fd(i.prog)}</td><td>${fd(i.exec)}</td><td>${i.devTxt}</td><td>${esc(i.os) || "—"}</td><td>${pill(i.s)}</td></tr>`).join("")
+    : `<tr><td colspan="${COLS.length}" class="empty">Nenhuma aplicação com os filtros atuais.</td></tr>`;
+  $("tblCount").textContent = `${arr.length} aplicações · ${ha(sumHa(arr))} ha`;
+}
+
+/* ---------- gaveta do talhão ---------- */
+function openDrawer(t){
+  const M = build(), tl = M.talhoes.find(x => x.t === t); if (!tl) return;
+  $("drTitle").textContent = tl.t;
+  $("drSub").textContent = [tl.cult, tl.vari].filter(Boolean).join(" · ") || "Cultura e variedade não informadas";
+  const ex = tl.items.filter(i => EXEC.includes(i.s)).length;
+  const rowsFor = (k, o) => { const its = tl.items.filter(x => x.k === k);
+    if (!its.length) return `<div class="oprow"><span class="nm muted">${esc(o)}</span><span class="muted" style="font-size:13px">sem programação</span></div>`;
+    return its.map(i => `<div class="oprow"><span class="nm">${esc(o)}${i.lote?`<span class="tag">${esc(i.lote)}</span>`:""}</span>${pill(i.s)}
+      <span class="dt">${modoNome(i.modo)} · programada ${fd(i.prog)} · executada ${fd(i.exec)} · ${i.devTxt}</span>
+      ${i.prods.length?`<span class="dt" style="color:var(--ink)">${i.prods.map(p => `${esc(p.p)} <b>${ha(p.dose, p.dose % 1 ? 2 : 0)} ${esc(p.un)}</b>`).join(" · ")}</span>`:""}
+      ${i.execs.length?`<span class="dt">${i.execs.map(e => `${fd(e.d)}: ${ha(e.area == null ? i.area : e.area)} ha${e.os?` · OS ${esc(e.os)}`:""}${e.maq?` · ${esc(e.maq)}`:""}${e.oper?` · ${esc(e.oper)}`:""}`).join("<br>")}</span>`:""}
+      ${i.obs?`<span class="dt">Obs.: ${esc(i.obs)}</span>`:""}</div>`).join(""); };
+  $("drBody").innerHTML = `<div class="facts">
+      <div class="fact"><span>Área</span><b>${ha(tl.area)} ha</b></div>
+      <div class="fact"><span>Aplicações executadas</span><b>${ex} de ${tl.items.length}</b></div>
+      <div class="fact"><span>Plantio</span><b>${tl.plantio ? fd(tl.plantio) + " · " + (M.ref - dn(tl.plantio)) + " DAP" : "—"}</b></div>
+      <div class="fact"><span>Emergência</span><b>${tl.germ ? fd(tl.germ) + " · " + (M.ref - dn(tl.germ)) + " DAE" : "—"}</b></div>
+    </div>
+    ${tl.orphan ? `<div class="fact" style="color:${col("atrasada")}">Este talhão aparece na Programação mas não está na aba Talhões. Cadastre-o para ter área e datas.</div>` : ""}
+    <div><h4 style="margin:0 0 4px;font-size:15px">Operações</h4><div class="oplist">${S.db.ops.map((o, k) => rowsFor(k, o)).join("")}</div></div>`;
+  $("drawer").classList.add("on"); $("scrim").classList.add("on"); $("drawer").setAttribute("aria-hidden", "false");
+  $("drClose").focus();
+}
+function closeDrawer(){ $("drawer").classList.remove("on"); $("scrim").classList.remove("on"); $("drawer").setAttribute("aria-hidden", "true"); }
+
+/* ---------- render geral ---------- */
+function render(){
+  const has = !!(S.db && S.db.talhoes.length);
+  $("emptyState").hidden = has;
+  document.querySelectorAll("section.view").forEach(s => s.style.visibility = has ? "" : "hidden");
+  $("filters").style.display = has ? "" : "none";
+  if (!has) return;
+  const M = build();
+  renderFilters();
+  if (S.tab === "geral") { chartBase(); renderKPIs(M); renderDonut(M); renderOps(M); renderCurve(M); renderLoad(M); renderPrio(M); renderProd(M); }
+  if (S.tab === "crono") renderGantt(M);
+  if (S.tab === "mapa") renderTreemap(M);
+  if (S.tab === "tabela") renderTable(M);
+  const nProd = Object.keys(S.db.lotes).length;
+  $("srcInfo").textContent = `Fonte: ${S.src || "planilha"} · ${M.talhoes.length} talhões · ${ha(M.talhoes.reduce((s,t)=>s+t.area,0))} ha cadastrados · ${M.items.length} programações · ${nProd} lotes com produtos · status com tolerância de ±${S.tol} dias sobre a data programada.`;
+}
+function setDb(db, src, modified, custom){
+  S.db = db; S.src = src; S.modified = modified || null; S.custom = !!custom;
+  if (S.op >= db.ops.length) S.op = -1;
+  fillOpSel(); syncControls();
+  lsSet(LS_KEY, JSON.stringify({db, src, modified: S.modified, custom: S.custom, saved: new Date().toISOString()}));
+  render();
+}
+function readBuffer(buf){
+  if (typeof XLSX === "undefined") throw new Error("o leitor de planilhas não carregou; verifique a conexão e recarregue a página");
+  return parseBase(XLSX.read(buf, {type:"array"}));
+}
+
+/* ---------- atualização pelo Drive (Apps Script) ---------- */
+const webOn = () => /^https:\/\/script\.google(usercontent)?\.com\//.test(DATA_URL);
+let busy = false;
+async function getJson(url, ms){
+  const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), ms || 90000);
+  try {
+    const r = await fetch(url, {cache:"no-store", redirect:"follow", signal:ctl.signal});
+    if (!r.ok) throw new Error("o Google respondeu com erro " + r.status);
+    const txt = await r.text();
+    try { return JSON.parse(txt); } catch(e) { throw new Error(/<html/i.test(txt) ? 'o Google devolveu uma página em vez dos dados (verifique se o acesso está como "Qualquer pessoa")' : "resposta inválida do script"); }
+  } catch (e) { if (e.name === "AbortError") throw new Error("o Google demorou mais de " + Math.round((ms||90000)/1000) + " s para responder"); throw e; }
+  finally { clearTimeout(to); }
+}
+async function webRefresh(manual){
+  if (!webOn()) { if (manual) toast("O endereço do script ainda não foi configurado no painel."); return; }
+  if (busy) return; busy = true; $("btnSync").classList.add("spin");
+  try {
+    if (!S.db) dataStatus("busy", "Buscando a planilha no Drive…"); else if (manual) dataStatus("busy", "Verificando a planilha…");
+    const meta = await getJson(DATA_URL + (DATA_URL.includes("?") ? "&" : "?") + "meta=1", 45000);
+    if (!meta.ok) throw new Error(meta.error || "o script não encontrou a planilha");
+    if (S.db && !S.custom && S.modified === meta.modified) { dataStatus("ok", `Dados em dia: planilha salva em ${fmtDT(meta.modified)}`); if (manual) toast("Nenhuma alteração desde a última leitura."); return; }
+    const t0 = Date.now(); const tick = setInterval(() => dataStatus("busy", `Baixando a versão salva em ${fmtDT(meta.modified)}… ${Math.round((Date.now()-t0)/1000)} s`), 1000);
+    let j; try { j = await getJson(DATA_URL, 120000); } finally { clearInterval(tick); }
+    if (!j.ok || !j.b64) throw new Error(j.error || "o script não devolveu o arquivo");
+    const bin = atob(j.b64), buf = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    setDb(readBuffer(buf), j.name || meta.name, j.modified || meta.modified, false);
+    dataStatus("ok", `Dados em dia: planilha salva em ${fmtDT(S.modified)}`);
+    if (manual) toast("Painel atualizado com a planilha do Drive.");
+  } catch (e) {
+    const msg = e && e.message ? e.message : String(e);
+    dataStatus("err", (S.db ? `Não consegui atualizar (${msg}). Mostrando os dados salvos em ${S.modified ? fmtDT(S.modified) : "cache"}.` : `Não consegui buscar a planilha: ${msg}.`));
+    if (!S.db) $("emptyMsg").textContent = `Não consegui buscar a planilha no Drive: ${msg}. Você pode usar Carregar planilha enquanto isso.`;
+  } finally { busy = false; $("btnSync").classList.remove("spin"); }
+}
+
+/* ---------- eventos ---------- */
+function fillOpSel(){ const ops = S.db ? S.db.ops : OPS_DEFAULT; $("opSel").innerHTML = `<option value="-1">Todas</option>` + ops.map((o, k) => `<option value="${k}">${esc(o)}</option>`).join(""); }
+function bind(){
+  $("refDate").addEventListener("change", (e) => { if (e.target.value) { S.ref = e.target.value; render(); } });
+  $("tol").addEventListener("input", (e) => { S.tol = +e.target.value; $("tolOut").textContent = "±" + S.tol + (S.tol === 1 ? " dia" : " dias"); render(); });
+  $("modoSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setFilter("modo", b.dataset.v); });
+  $("opSel").addEventListener("change", (e) => { S.op = +e.target.value; render(); });
+  $("cap").addEventListener("input", (e) => { S.cap = Math.max(0, +e.target.value || 0); lsSet("painelAplic.cap", String(S.cap)); if (S.tab === "geral" && S.db) { chartBase(); renderLoad(build()); } });
+  $("btnSync").addEventListener("click", () => { if (S.custom && webOn()) S.custom = false; webRefresh(true); });
+  document.querySelector(".tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (!b) return;
+    S.tab = b.dataset.tab; document.querySelectorAll(".tabs [data-tab]").forEach(x => x.setAttribute("aria-selected", String(x === b)));
+    document.querySelectorAll("section.view").forEach(s => s.classList.toggle("on", s.id === "v-" + S.tab)); render(); });
+  $("zoomSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.zoom = b.dataset.v; [...$("zoomSeg").children].forEach(x => x.setAttribute("aria-pressed", String(x === b))); render(); });
+  $("tmSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.tm = b.dataset.v; [...$("tmSeg").children].forEach(x => x.setAttribute("aria-pressed", String(x === b))); render(); });
+  $("gSort").addEventListener("change", (e) => { S.gSort = e.target.value; render(); });
+  $("gAll").addEventListener("change", (e) => { S.gAll = e.target.checked; render(); });
+  $("q").addEventListener("input", (e) => { S.q = e.target.value; render(); });
+  document.addEventListener("click", (e) => {
+    const st = e.target.closest("[data-st]"); if (st) { if (st.dataset.st === "todas") { S.status = "todas"; render(); } else setFilter("status", st.dataset.st); return; }
+    const cl = e.target.closest("[data-clear]"); if (cl) { const k = cl.dataset.clear; if (k==="status"||k==="all") S.status="todas"; if (k==="op"||k==="all") S.op=-1; if (k==="modo"||k==="all") S.modo="todas"; syncControls(); render(); return; }
+    const so = e.target.closest("[data-sort]"); if (so) { const k = so.dataset.sort; S.sort = {k, d: S.sort.k === k ? -S.sort.d : 1}; render(); return; }
+    const t = e.target.closest("[data-t]"); if (t && !e.target.closest(".drawer")) openDrawer(t.dataset.t);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeDrawer();
+    if ((e.key === "Enter" || e.key === " ") && e.target.matches("tr[data-t], rect[data-t]")) { e.preventDefault(); openDrawer(e.target.dataset.t); }
+  });
+  $("scrim").addEventListener("click", closeDrawer);
+  $("drClose").addEventListener("click", closeDrawer);
+  const tip = $("tip");
+  document.addEventListener("mousemove", (e) => {
+    const el = e.target.closest && e.target.closest("[data-tip]");
+    if (!el) { tip.classList.remove("on"); return; }
+    tip.innerHTML = el.getAttribute("data-tip"); tip.classList.add("on");
+    const r = tip.getBoundingClientRect(); let x = e.clientX + 14, y = e.clientY + 14;
+    if (x + r.width > innerWidth - 8) x = e.clientX - r.width - 14; if (y + r.height > innerHeight - 8) y = e.clientY - r.height - 14;
+    tip.style.left = x + "px"; tip.style.top = y + "px";
+  });
+  $("themeBtn").addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const nx = cur === "dark" ? "light" : "dark"; document.documentElement.setAttribute("data-theme", nx); lsSet("painelAplic.theme", nx); render();
+  });
+  $("file").addEventListener("change", async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      setDb(readBuffer(await f.arrayBuffer()), f.name, new Date(f.lastModified).toISOString(), true);
+      dataStatus("ok", `Planilha carregada do computador: ${f.name}` + (webOn() ? " (use Atualizar para voltar ao Drive)" : ""));
+      toast(`Planilha carregada: ${S.db.talhoes.length} talhões, ${S.db.progs.length} programações`);
+    } catch (err) { toast("Não foi possível ler a planilha: " + (err.message || err)); }
+    e.target.value = "";
+  });
+  let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { if (S.tab === "mapa") render(); }, 150); });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) webRefresh(false); });
+}
+
+/* ---------- início ---------- */
+(function init(){
+  const th = lsGet("painelAplic.theme"); if (th) document.documentElement.setAttribute("data-theme", th);
+  const cap = +lsGet("painelAplic.cap"); if (cap > 0) { S.cap = cap; $("cap").value = cap; }
+  const now = new Date(); S.ref = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).toISOString().slice(0,10);
+  $("refDate").value = S.ref;
+  bind();
+  const saved = lsGet(LS_KEY);
+  let loaded = false;
+  if (saved) { try { const o = JSON.parse(saved); if (o && o.db && o.db.talhoes) { S.db = o.db; S.src = o.src; S.modified = o.modified; S.custom = !!o.custom; loaded = true;
+    dataStatus("ok", S.custom ? `Planilha carregada do computador: ${S.src}` : `Dados salvos: planilha de ${fmtDT(S.modified)}`); } } catch(e) {} }
+  if (!loaded && SNAPSHOT) { S.db = SNAPSHOT.db; S.src = SNAPSHOT.src; S.modified = SNAPSHOT.modified; dataStatus("", `Dados de exemplo de ${fmtDT(S.modified)}. Use Carregar planilha ou configure o Drive.`); }
+  fillOpSel(); syncControls();
+  if (typeof Chart === "undefined") document.querySelector("#v-geral").insertAdjacentHTML("afterbegin", '<div class="card" style="margin-bottom:16px">Os gráficos não carregaram. Verifique a conexão e recarregue a página.</div>');
+  render();
+  if (webOn()) { webRefresh(false); setInterval(() => webRefresh(false), CHECK_EVERY); }
+  else if (!S.db) dataStatus("", "Sem dados carregados");
+})();
+</script>
+</body>
+</html>
