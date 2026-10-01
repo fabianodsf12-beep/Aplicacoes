@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#21513B">
+<title>Lançamentos – Aplicações Reata</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600&display=swap">
+<style>
+:root{--bg:#EDF0EB;--panel:#FFFFFF;--panel2:#F6F8F5;--ink:#17221C;--muted:#4F5C55;--line:#C9D1C7;--line2:#E3E8E1;--brand:#21513B;--brand-ink:#FFFFFF;--brand-soft:#E3EEE7;--warn-bg:#FDF2CF;--warn:#6B4A04;--bad-bg:#FDE7D8;--bad:#8A2D07;--ok:#1E6B45;--focus:#1E6FB8;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111814;--panel:#18211D;--panel2:#1F2A25;--ink:#E5ECE7;--muted:#A3B0A8;--line:#36433C;--line2:#2A3530;--brand:#2F7553;--brand-ink:#FFFFFF;--brand-soft:#21362B;--warn-bg:#3A3015;--warn:#F0C65A;--bad-bg:#3B2117;--bad:#F39A6B;--ok:#7CC6A0;--focus:#7DB8EE}}
+:root[data-theme="dark"]{--bg:#111814;--panel:#18211D;--panel2:#1F2A25;--ink:#E5ECE7;--muted:#A3B0A8;--line:#36433C;--line2:#2A3530;--brand:#2F7553;--brand-ink:#FFFFFF;--brand-soft:#21362B;--warn-bg:#3A3015;--warn:#F0C65A;--bad-bg:#3B2117;--bad:#F39A6B;--ok:#7CC6A0;--focus:#7DB8EE}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Barlow','Segoe UI',system-ui,sans-serif;font-size:16px;line-height:1.4}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app{max-width:640px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+header.top{background:var(--brand);color:#fff;padding:14px 16px 18px;position:sticky;top:0;z-index:10}
+.top-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.back{display:inline-flex;align-items:center;gap:4px;color:#fff;text-decoration:none;font-size:15px;min-height:44px;border:0;background:transparent;padding:0;cursor:pointer}
+.top h1{margin:6px 0 0;font-family:'Barlow Condensed','Barlow',sans-serif;font-weight:600;font-size:28px;line-height:1.05}
+.top p{margin:4px 0 0;font-size:14px;color:#D5E6DC}
+.top a.link{color:#fff;font-size:14px;display:inline-flex;align-items:center;gap:6px;min-height:44px;text-decoration:none;border:1px solid rgba(255,255,255,.35);border-radius:10px;padding:0 12px}
+.net{display:flex;align-items:center;gap:6px;font-size:13px;color:#D5E6DC;margin-top:6px}
+.net i{width:8px;height:8px;border-radius:50%;background:#9fd7b5}
+.net.err i{background:#F4A26B}.net.busy i{background:#F0C65A}
+main{padding:16px;display:flex;flex-direction:column;gap:14px;flex-grow:1}
+.card{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.card h2{margin:0;font-size:17px;font-weight:600}
+.hint{font-size:13.5px;color:var(--muted);margin:0}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500}
+.inp{height:48px;padding:0 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);font-size:16px;width:100%;min-width:0}
+textarea.inp{height:auto;padding:12px 14px;resize:vertical}
+select.inp{appearance:auto}
+.row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{flex:1;height:46px;border:0;background:var(--panel);font-size:15px;font-weight:500;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 4px 4px 12px;border-radius:999px;background:var(--brand-soft);color:var(--ink);font-size:14px;font-weight:600}
+.chip span{font-weight:400;color:var(--muted)}
+.chip button{width:34px;height:34px;border:0;border-radius:50%;background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.grp{display:flex;flex-wrap:wrap;gap:6px}
+.grp button{min-width:48px;height:42px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel);font-size:14px;font-weight:500;cursor:pointer}
+.grp button[aria-pressed="true"]{background:var(--brand-soft);border-color:var(--brand)}
+.list{display:flex;flex-direction:column;max-height:340px;overflow-y:auto;border:1px solid var(--line2);border-radius:10px}
+.list label{display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid var(--line2);min-height:48px;cursor:pointer}
+.list label:last-child{border-bottom:0}
+.list input{width:22px;height:22px;accent-color:var(--brand);flex-shrink:0}
+.list b{flex-grow:1;font-weight:600}
+.list small{color:var(--muted);font-size:14px}
+.empty{padding:18px 12px;color:var(--muted);text-align:center;font-size:14px}
+.prod{display:grid;grid-template-columns:minmax(0,1fr) 92px 44px;gap:8px;align-items:end;padding:12px;border:1px solid var(--line2);border-radius:12px;background:var(--panel2)}
+.prod .full{grid-column:1/-1}
+.prod .tot{grid-column:1/-1;display:flex;justify-content:space-between;font-size:14px;color:var(--muted)}
+.prod .tot b{color:var(--ink)}
+.icon{width:44px;height:48px;border:1px solid var(--line);border-radius:10px;background:var(--panel);display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.ghost{height:48px;border:1px dashed var(--brand);border-radius:10px;background:transparent;color:var(--brand);font-weight:600;font-size:15px;cursor:pointer}
+[data-theme="dark"] .ghost{color:var(--ok);border-color:var(--ok)}
+.pend{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid var(--line);border-radius:12px;cursor:pointer;background:var(--panel)}
+.pend:has(input:checked){border:2px solid var(--brand);background:var(--brand-soft);padding:13px}
+.pend input{width:22px;height:22px;margin:2px 0 0;accent-color:var(--brand);flex-shrink:0}
+.pend .l1{display:flex;justify-content:space-between;gap:8px;align-items:center;font-weight:600}
+.pend .l2{font-size:13.5px;color:var(--muted);margin-top:3px}
+.pill{padding:3px 10px;border-radius:999px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.pill.w{background:var(--warn-bg);color:var(--warn)}.pill.b{background:var(--bad-bg);color:var(--bad)}.pill.n{background:var(--panel2);color:var(--muted);border:1px solid var(--line2)}
+.check{display:flex;align-items:center;gap:10px;min-height:44px;font-size:15px;cursor:pointer}
+.check input{width:22px;height:22px;accent-color:var(--brand)}
+.foot{position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--line2);padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;z-index:5}
+.foot span{font-size:13.5px;color:var(--muted)}
+.save{height:54px;border:0;border-radius:12px;background:var(--brand);color:var(--brand-ink);font-size:17px;font-weight:600;cursor:pointer}
+.save:disabled{opacity:.55;cursor:default}
+.act{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:16px;text-decoration:none;color:var(--ink);min-height:80px;cursor:pointer;text-align:left;width:100%}
+.act .n{width:46px;height:46px;border-radius:12px;background:var(--brand-soft);display:inline-flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:600;flex-shrink:0;color:var(--ink)}
+.act .tx{display:flex;flex-direction:column;gap:2px;flex-grow:1}
+.act .t{font-size:17px;font-weight:600}.act .s{font-size:14px;color:var(--muted)}
+.act .badge{font-size:13px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--warn-bg);color:var(--warn);white-space:nowrap}
+.rec{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line2)}
+.rec:last-child{border-bottom:0}
+.rec b{display:block}.rec small{color:var(--muted);font-size:13.5px}
+.msg{padding:12px 14px;border-radius:10px;font-size:14.5px}
+.msg.err{background:var(--bad-bg);color:var(--bad)}.msg.ok{background:var(--brand-soft);color:var(--ink)}
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-size:15px;opacity:0;transition:all .25s;z-index:50;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <div class="top-row">
+    <button type="button" class="back" id="btnBack" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Lançamentos</button>
+    <span id="brandMini" style="font-size:14px;color:#D5E6DC">Fazenda Reata, soja 26/27</span>
+    <a class="link" href="./index.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Painel</a>
+  </div>
+  <h1 id="ttl">Lançamentos</h1>
+  <p id="sub">Programação, execução e plantio</p>
+  <div class="net" id="net"><i></i><span id="netTxt">Carregando listas…</span></div>
+</header>
+
+<!-- CONFIG -->
+<section id="s-config" hidden>
+  <main>
+    <div class="card">
+      <h2>Antes de começar</h2>
+      <p class="hint">Seu nome vai em "Lançado por" na planilha. O código de acesso é o combinado com a equipe. Fica salvo neste aparelho.</p>
+      <label class="f">Seu nome<input class="inp" id="cfgNome" autocomplete="name" placeholder="Ex.: Fabiano"></label>
+      <label class="f">Código de acesso<input class="inp" id="cfgCod" type="password" autocomplete="off"></label>
+      <div id="cfgMsg"></div>
+      <button type="button" class="save" id="cfgSave">Salvar e continuar</button>
+    </div>
+  </main>
+</section>
+
+<!-- INÍCIO -->
+<section id="s-home" hidden>
+  <main>
+    <button type="button" class="act" data-go="programar"><span class="n">1</span><span class="tx"><span class="t">Programar aplicação</span><span class="s">Talhões, operação, data e produtos</span></span></button>
+    <button type="button" class="act" data-go="executar"><span class="n">2</span><span class="tx"><span class="t">Registrar execução</span><span class="s">Data, área aplicada e nº da OS do Protector</span></span><span class="badge" id="bPend" hidden></span></button>
+    <button type="button" class="act" data-go="talhoes"><span class="n">3</span><span class="tx"><span class="t">Talhões e plantio</span><span class="s">Lançar plantio em vários ou cadastrar talhão</span></span><span class="badge" id="bPlant" hidden></span></button>
+    <div class="card" style="gap:4px">
+      <h2 style="margin-bottom:6px">Últimos lançamentos</h2>
+      <div id="recentes"><div class="empty">Carregando…</div></div>
+    </div>
+    <button type="button" class="back" id="btnCfg" style="color:var(--muted);align-self:center;font-size:14px">Trocar nome ou código de acesso</button>
+  </main>
+</section>
+
+<!-- PROGRAMAR -->
+<section id="s-programar" hidden>
+  <main>
+    <div class="card">
+      <h2>O quê e quando</h2>
+      <label class="f">Operação<select class="inp" id="pOp"></select></label>
+      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Modalidade<div class="seg" id="pModo"><button type="button" data-v="T" aria-pressed="true">Terrestre</button><button type="button" data-v="A" aria-pressed="false">Aérea</button></div></div>
+      <label class="f">Data programada<input class="inp" type="date" id="pData"></label>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h2>Talhões</h2><span class="hint" id="pSel">nenhum marcado</span></div>
+      <div class="chips" id="pChips"></div>
+      <label class="f">Buscar talhão<input class="inp" type="search" id="pBusca" placeholder="Digite RT, BT, SA…"></label>
+      <div><p class="hint" style="margin-bottom:8px">Marcar ou desmarcar um grupo inteiro</p><div class="grp" id="pGrp"></div></div>
+      <div class="list" id="pList"></div>
+      <label class="check"><input type="checkbox" id="pRep">Permitir reaplicação (mostrar talhões que já têm esta operação)</label>
+    </div>
+    <div class="card">
+      <h2>Produtos</h2>
+      <label class="f">Receita (preenche os produtos)<select class="inp" id="pRec"></select></label>
+      <div id="pProds" style="display:flex;flex-direction:column;gap:10px"></div>
+      <button type="button" class="ghost" id="pAdd">Adicionar produto</button>
+      <p class="hint">O total é a dose vezes a área dos talhões marcados.</p>
+      <datalist id="dlProd"></datalist>
+    </div>
+    <div class="card"><label class="f">Observação<textarea class="inp" id="pObs" rows="3" placeholder="Opcional"></textarea></label></div>
+    <div id="pMsg"></div>
+  </main>
+  <div class="foot"><span id="pResumo">Marque os talhões</span><button type="button" class="save" id="pSave">Salvar programação</button></div>
+</section>
+
+<!-- EXECUTAR -->
+<section id="s-executar" hidden>
+  <main>
+    <div class="card">
+      <h2>Talhão</h2>
+      <label class="f">Talhão com aplicação pendente<select class="inp" id="eTal"></select></label>
+      <div id="ePend" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+    <div class="card" id="eCard">
+      <h2>Execução</h2>
+      <div class="row2">
+        <label class="f">Data executada<input class="inp" type="date" id="eData"></label>
+        <label class="f">Área aplicada (ha)<input class="inp" id="eArea" inputmode="decimal"></label>
+      </div>
+      <p class="hint" id="eParc"></p>
+      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Modalidade<div class="seg" id="eModo"><button type="button" data-v="T" aria-pressed="true">Terrestre</button><button type="button" data-v="A" aria-pressed="false">Aérea</button></div></div>
+      <label class="f">Nº da OS no Protector<input class="inp" id="eOS" inputmode="numeric" placeholder="Opcional"></label>
+      <label class="f">Máquina ou aeronave<input class="inp" id="eMaq" list="dlMaq" placeholder="Opcional"></label>
+      <label class="f">Operador<input class="inp" id="eOper" list="dlOper" placeholder="Opcional"></label>
+      <datalist id="dlMaq"></datalist><datalist id="dlOper"></datalist>
+    </div>
+    <div class="card" id="eLoteCard" hidden>
+      <div><h2>Mesma OS em outros talhões do lote</h2><p class="hint" id="eLoteHint" style="margin-top:4px"></p></div>
+      <div class="list" id="eLote"></div>
+    </div>
+    <div class="card"><label class="f">Observação<textarea class="inp" id="eObs" rows="3" placeholder="Opcional: vento, reaplicação, problema na máquina…"></textarea></label></div>
+    <div id="eMsg"></div>
+  </main>
+  <div class="foot"><span id="eResumo">Escolha a aplicação</span><button type="button" class="save" id="eSave">Salvar execução</button></div>
+</section>
+
+<!-- TALHÕES -->
+<section id="s-talhoes" hidden>
+  <main>
+    <div class="card">
+      <div><h2>Lançar plantio em vários talhões</h2><p class="hint" style="margin-top:4px">Preencha só o que for lançar. Campos vazios não apagam o que já existe.</p></div>
+      <div class="row2">
+        <label class="f">Data de plantio<input class="inp" type="date" id="tPlant"></label>
+        <label class="f">Data de emergência<input class="inp" type="date" id="tGerm"></label>
+      </div>
+      <label class="f">Variedade<input class="inp" id="tVar" placeholder="Opcional"></label>
+      <label class="f">Buscar talhão<input class="inp" type="search" id="tBusca" placeholder="Digite RT, BT, SA…"></label>
+      <label class="check"><input type="checkbox" id="tTodos">Mostrar também talhões que já têm plantio (para corrigir)</label>
+      <div class="list" id="tList"></div>
+      <div id="tMsg"></div>
+      <button type="button" class="save" id="tSave">Salvar plantio</button>
+    </div>
+    <div class="card">
+      <h2>Cadastrar talhão novo</h2>
+      <div class="row2">
+        <label class="f">Talhão<input class="inp" id="nT" placeholder="Ex.: RT-53" autocapitalize="characters"></label>
+        <label class="f">Área (ha)<input class="inp" id="nA" inputmode="decimal" placeholder="0,00"></label>
+      </div>
+      <div class="row2">
+        <label class="f">Cultura<input class="inp" id="nC" value="Soja"></label>
+        <label class="f">Variedade<input class="inp" id="nV" placeholder="Opcional"></label>
+      </div>
+      <div id="nMsg"></div>
+      <button type="button" class="save" id="nSave" style="background:var(--panel);color:var(--brand);border:1.5px solid var(--brand)">Cadastrar talhão</button>
+    </div>
+  </main>
+</section>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ============ CONFIGURAÇÃO ============
+   Cole entre as aspas o endereço do Apps Script (termina em /exec). */
+const DATA_URL = "https://script.google.com/macros/s/AKfycbx4fbyyhG2CS_K3PUpDqFdbTg_wi_T9qus78qG7rJrVUDsNQgvDPdoRxBxA6g_qgVNv1Q/exec";
+/* ===================================== */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = (s) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+const ha = (v, d=2) => (+v||0).toLocaleString("pt-BR", {minimumFractionDigits:d, maximumFractionDigits:d});
+const num = (s) => { if (typeof s === "number") return s; const t = String(s ?? "").trim(); if (!t) return null; const n = parseFloat(t.includes(",") ? t.replace(/\./g,"").replace(",",".") : t); return isFinite(n) ? n : null; };
+const fd = (s) => s ? s.slice(8,10) + "/" + s.slice(5,7) : "—";
+const lsGet = (k) => { try { return localStorage.getItem(k); } catch(e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch(e) {} };
+const hojeIso = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
+const dn = (s) => Date.UTC(+s.slice(0,4), +s.slice(5,7)-1, +s.slice(8,10)) / 864e5;
+const tcmp = (a, b) => a.localeCompare(b, "pt", {numeric:true});
+const X = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("on"); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove("on"),3200); }
+function net(kind, txt){ $("net").className = "net " + (kind||""); $("netTxt").textContent = txt; }
+function msg(el, kind, txt){ $(el).innerHTML = txt ? `<div class="msg ${kind}">${esc(txt)}</div>` : ""; }
+
+let L = null;               // listas vindas da planilha
+let cfg = {};
+try { cfg = JSON.parse(lsGet("lancar.cfg") || "{}"); } catch(e) {}
+const webOn = () => /^https:\/\/script\.google(usercontent)?\.com\//.test(DATA_URL);
+
+/* ---------- comunicação ---------- */
+async function getListas(){
+  if (!webOn()) { net("err", "Endereço do script não configurado"); return; }
+  net("busy", "Atualizando listas…");
+  try {
+    const r = await fetch(DATA_URL + "?acao=listas", {cache:"no-store", redirect:"follow"});
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || "erro no script");
+    L = j; lsSet("lancar.listas", JSON.stringify(j));
+    net("", "Listas atualizadas às " + new Date().toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}));
+    refreshAll();
+  } catch (e) {
+    net("err", navigator.onLine === false ? "Sem internet. Mostrando as últimas listas salvas." : "Não consegui atualizar as listas (" + (e.message || e) + ")");
+  }
+}
+async function enviar(payload){
+  if (!webOn()) throw new Error("O endereço do script ainda não foi configurado.");
+  if (navigator.onLine === false) throw new Error("Sem internet. O lançamento não foi enviado; tente de novo quando tiver sinal.");
+  const body = JSON.stringify(Object.assign({codigo: cfg.cod, usuario: cfg.nome}, payload));
+  let r;
+  try { r = await fetch(DATA_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body, redirect:"follow"}); }
+  catch (e) { throw new Error("Falha de conexão. O lançamento pode não ter sido gravado; confira em Últimos lançamentos antes de enviar de novo."); }
+  let j; try { j = await r.json(); } catch(e) { throw new Error("Resposta inválida do script."); }
+  if (!j.ok) throw new Error(j.error || "Erro ao gravar.");
+  return j;
+}
+
+/* ---------- navegação ---------- */
+const TITULOS = {home:["Lançamentos","Programação, execução e plantio"], programar:["Programar aplicação","Uma programação para vários talhões de uma vez"],
+  executar:["Registrar execução","Liga a aplicação feita à programação e à OS"], talhoes:["Talhões e plantio","Datas de plantio e cadastro"], config:["Lançamentos","Configuração deste aparelho"]};
+function show(tela){
+  if (!cfg.nome || !cfg.cod) tela = "config";
+  document.querySelectorAll("section[id^=s-]").forEach(s => s.hidden = s.id !== "s-" + tela);
+  $("btnBack").hidden = tela === "home" || (tela === "config" && !(cfg.nome && cfg.cod));
+  $("brandMini").hidden = !$("btnBack").hidden;
+  $("ttl").textContent = TITULOS[tela][0]; $("sub").textContent = TITULOS[tela][1];
+  window.scrollTo(0, 0);
+  if (tela === "config") { $("cfgNome").value = cfg.nome || ""; $("cfgCod").value = cfg.cod || ""; }
+  refreshAll();
+}
+function route(){ show((location.hash || "#home").slice(1) || "home"); }
+window.addEventListener("hashchange", route);
+document.addEventListener("click", (e) => { const g = e.target.closest("[data-go]"); if (g) location.hash = g.dataset.go; });
+$("btnBack").addEventListener("click", () => { location.hash = "home"; });
+$("btnCfg").addEventListener("click", () => { location.hash = "config"; });
+$("cfgSave").addEventListener("click", () => {
+  const nome = $("cfgNome").value.trim(), cod = $("cfgCod").value.trim();
+  if (!nome || !cod) { msg("cfgMsg", "err", "Preencha o nome e o código de acesso."); return; }
+  cfg = {nome, cod}; lsSet("lancar.cfg", JSON.stringify(cfg)); msg("cfgMsg", "", ""); location.hash = "home"; route();
+});
+
+function refreshAll(){ if (!L) return; renderHome(); renderProg(); renderExec(); renderTal(); }
+const talArea = () => Object.fromEntries((L ? L.talhoes : []).map(t => [t.t, t.area]));
+const pendentes = () => L.progs.filter(p => !p.done);
+function statusTxt(p){
+  if (!p.prog) return ["sem data", "n"];
+  const g = dn(hojeIso()) - dn(p.prog);
+  return g > 0 ? ["vencida há " + g + " d", "b"] : g === 0 ? ["vence hoje", "w"] : ["em " + (-g) + " d", "n"];
+}
+
+/* ---------- início ---------- */
+function renderHome(){
+  const np = new Set(pendentes().map(p => p.t)).size;
+  $("bPend").hidden = !np; $("bPend").textContent = np + (np === 1 ? " talhão" : " talhões");
+  const sp = L.talhoes.filter(t => t.ativo && !t.plantio).length;
+  $("bPlant").hidden = !sp; $("bPlant").textContent = sp + " sem plantio";
+  const P = Object.fromEntries(L.progs.map(p => [p.id, p]));
+  const grupos = [];
+  L.recentes.forEach(r => {
+    const k = r.tipo === "prog" ? "p" + r.lote : "e" + r.q;
+    let g = grupos.find(x => x.k === k);
+    if (!g) { g = {k, r, itens: []}; grupos.push(g); }
+    g.itens.push(r);
+  });
+  $("recentes").innerHTML = grupos.length ? grupos.slice(0, 8).map(g => {
+    const q = new Date(g.r.q), quando = q.toLocaleDateString("pt-BR", {day:"2-digit", month:"2-digit"}) + " " + q.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"});
+    if (g.r.tipo === "prog") return `<div class="rec"><span><b>Programação ${esc(g.r.lote)}</b><small>${esc(g.r.op)}: ${g.itens.map(i => esc(i.t)).join(", ")}</small></span><small style="text-align:right">${quando}<br>${esc(g.r.quem)}</small></div>`;
+    const ts = g.itens.map(i => (P[i.id] || {}).t || i.id), op = (P[g.r.id] || {}).op || "";
+    return `<div class="rec"><span><b>Execução ${ts.map(esc).join(", ")}</b><small>${esc(op)}, aplicada em ${fd(g.r.data)}</small></span><small style="text-align:right">${quando}<br>${esc(g.r.quem)}</small></div>`;
+  }).join("") : '<div class="empty">Nenhum lançamento feito pelo formulário ainda.</div>';
+}
+
+/* ---------- programar ---------- */
+const P = {sel: new Set(), modo: "T", prods: [], busca: ""};
+function grupoDe(t){ const m = t.match(/^([A-Za-zÀ-ú]+)[-\s]?\d/); return m ? m[1].toUpperCase() : "Outros"; }
+function disponiveis(){
+  const op = $("pOp").value, rep = $("pRep").checked;
+  const ja = new Set(L.progs.filter(p => p.op === op).map(p => p.t));
+  return L.talhoes.filter(t => t.ativo && (rep || !ja.has(t.t))).sort((a, b) => tcmp(a.t, b.t));
+}
+function renderProg(){
+  if (!L) return;
+  if (!$("pOp").options.length) {
+    $("pOp").innerHTML = L.ops.map(o => `<option>${esc(o)}</option>`).join("");
+    $("pData").value = hojeIso();
+  }
+  $("dlProd").innerHTML = L.produtos.map(p => `<option value="${esc(p.p)}">${esc(p.cl)}${p.un ? " · " + esc(p.un) : ""}</option>`).join("");
+  const recs = L.receitas.slice().sort((a, b) => (b.op === $("pOp").value) - (a.op === $("pOp").value) || tcmp(a.nome, b.nome));
+  const cur = $("pRec").value;
+  $("pRec").innerHTML = `<option value="">Sem receita</option>` + recs.map(r => `<option value="${esc(r.nome)}">${esc(r.nome)}${r.op ? " (" + esc(r.op) + ")" : ""}</option>`).join("");
+  $("pRec").value = recs.some(r => r.nome === cur) ? cur : "";
+  const disp = disponiveis(), dispSet = new Set(disp.map(t => t.t));
+  [...P.sel].forEach(t => { if (!dispSet.has(t)) P.sel.delete(t); });
+  const q = norm(P.busca);
+  const vis = disp.filter(t => !q || norm(t.t).includes(q));
+  const grp = [...new Set(disp.map(t => grupoDe(t.t)))].sort(tcmp);
+  $("pGrp").innerHTML = grp.map(g => { const ts = disp.filter(t => grupoDe(t.t) === g); const all = ts.every(t => P.sel.has(t.t));
+    return `<button type="button" data-g="${esc(g)}" aria-pressed="${all}">${esc(g)} <span style="color:var(--muted);font-weight:400">${ts.length}</span></button>`; }).join("");
+  $("pList").innerHTML = vis.length ? vis.map(t => `<label><input type="checkbox" data-t="${esc(t.t)}" ${P.sel.has(t.t) ? "checked" : ""}><b>${esc(t.t)}</b><small>${ha(t.area)} ha${t.plantio ? " · plantio " + fd(t.plantio) : ""}</small></label>`).join("")
+    : `<div class="empty">${disp.length ? "Nenhum talhão com esse nome." : "Todos os talhões ativos já têm esta operação programada."}</div>`;
+  const A = talArea(), sel = [...P.sel].sort(tcmp);
+  $("pChips").innerHTML = sel.map(t => `<span class="chip">${esc(t)} <span>${ha(A[t])} ha</span><button type="button" data-rm="${esc(t)}" aria-label="Remover ${esc(t)}">${X}</button></span>`).join("");
+  const area = sel.reduce((s, t) => s + (A[t] || 0), 0);
+  $("pSel").textContent = sel.length ? `${sel.length} marcados · ${ha(area)} ha` : "nenhum marcado";
+  renderProds(area);
+  const np = P.prods.filter(x => x.p.trim()).length;
+  $("pResumo").textContent = sel.length ? `${sel.length} ${sel.length === 1 ? "talhão" : "talhões"} · ${ha(area)} ha · ${np} ${np === 1 ? "produto" : "produtos"}` : "Marque os talhões";
+}
+function unidade(p){ const x = L.produtos.find(y => y.p === p); return x ? x.un : ""; }
+function renderProds(area){
+  if (!P.prods.length) P.prods.push({p:"", dose:""});
+  const foco = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset : null;
+  const fk = foco && foco.pi != null ? foco.pi + ":" + foco.k : null;
+  $("pProds").innerHTML = P.prods.map((x, i) => { const un = unidade(x.p), d = num(x.dose), ok = !x.p || L.produtos.some(y => y.p === x.p);
+    return `<div class="prod">
+      <label class="f full">Produto<input class="inp" list="dlProd" data-pi="${i}" data-k="p" value="${esc(x.p)}" placeholder="Digite parte do nome" autocomplete="off"></label>
+      <label class="f">Dose${un ? " (" + esc(un) + ")" : ""}<input class="inp" inputmode="decimal" data-pi="${i}" data-k="dose" value="${esc(x.dose)}" placeholder="0,0"></label>
+      <span></span>
+      <button type="button" class="icon" data-prm="${i}" aria-label="Remover produto">${X}</button>
+      <div class="tot">${ok ? (x.p ? "" : "Escolha um produto da lista") : '<span style="color:var(--bad)">Produto não cadastrado</span>'}<span>Total: <b>${d && area ? ha(d * area, 1) + " " + esc(un.replace(/\/ha$/, "")) : "—"}</b></span></div></div>`; }).join("");
+  if (fk) { const [i, k] = fk.split(":"); const el = $("pProds").querySelector(`[data-pi="${i}"][data-k="${k}"]`); if (el) { el.focus(); const v = el.value; try { el.setSelectionRange(v.length, v.length); } catch(e) {} } }
+}
+$("pOp").addEventListener("change", renderProg);
+$("pRep").addEventListener("change", renderProg);
+$("pModo").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; P.modo = b.dataset.v; [...$("pModo").children].forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
+$("pBusca").addEventListener("input", (e) => { P.busca = e.target.value; renderProg(); });
+$("pList").addEventListener("change", (e) => { const t = e.target.dataset.t; if (!t) return; e.target.checked ? P.sel.add(t) : P.sel.delete(t); renderProg(); });
+$("pGrp").addEventListener("click", (e) => { const b = e.target.closest("[data-g]"); if (!b) return; const ts = disponiveis().filter(t => grupoDe(t.t) === b.dataset.g); const all = ts.every(t => P.sel.has(t.t)); ts.forEach(t => all ? P.sel.delete(t.t) : P.sel.add(t.t)); renderProg(); });
+$("pChips").addEventListener("click", (e) => { const b = e.target.closest("[data-rm]"); if (b) { P.sel.delete(b.dataset.rm); renderProg(); } });
+$("pRec").addEventListener("change", (e) => { const r = L.receitas.find(x => x.nome === e.target.value); if (r) { P.prods = r.itens.map(i => ({p:i.p, dose:String(i.dose).replace(".", ",")})); if (r.op && L.ops.includes(r.op)) $("pOp").value = r.op; } renderProg(); });
+$("pAdd").addEventListener("click", () => { P.prods.push({p:"", dose:""}); renderProg(); const els = $("pProds").querySelectorAll('[data-k="p"]'); els[els.length-1].focus(); });
+$("pProds").addEventListener("input", (e) => { const d = e.target.dataset; if (d.pi == null) return; P.prods[+d.pi][d.k] = e.target.value; clearTimeout(P.t); P.t = setTimeout(renderProg, d.k === "p" ? 400 : 150); });
+$("pProds").addEventListener("change", (e) => { if (e.target.dataset.pi != null) renderProg(); });
+$("pProds").addEventListener("click", (e) => { const b = e.target.closest("[data-prm]"); if (b) { P.prods.splice(+b.dataset.prm, 1); renderProg(); } });
+$("pSave").addEventListener("click", async () => {
+  msg("pMsg", "", "");
+  const talhoes = [...P.sel], prods = P.prods.filter(x => x.p.trim());
+  const erro = !talhoes.length ? "Marque pelo menos um talhão." : !$("pData").value ? "Informe a data programada."
+    : prods.find(x => !L.produtos.some(y => y.p === x.p.trim())) ? "Há produto que não está cadastrado. Escolha da lista."
+    : prods.find(x => !(num(x.dose) > 0)) ? "Informe a dose de todos os produtos." : "";
+  if (erro) { msg("pMsg", "err", erro); return; }
+  if (!prods.length && !confirm("Salvar a programação sem produtos? Dá para lançar os produtos depois na planilha.")) return;
+  const b = $("pSave"); b.disabled = true; b.textContent = "Salvando…";
+  try {
+    const j = await enviar({acao:"programar", op:$("pOp").value, modo:P.modo, data:$("pData").value, talhoes, receita:$("pRec").value,
+      produtos: prods.map(x => ({p:x.p.trim(), dose:num(x.dose)})), obs:$("pObs").value, permitirRepetida:$("pRep").checked});
+    toast(j.msg); P.sel.clear(); P.prods = []; $("pObs").value = ""; $("pRec").value = ""; $("pRep").checked = false;
+    await getListas(); location.hash = "home";
+  } catch (e) { msg("pMsg", "err", e.message || String(e)); }
+  finally { b.disabled = false; b.textContent = "Salvar programação"; }
+});
+
+/* ---------- executar ---------- */
+const E = {id: null, modo: "T", extras: new Set()};
+const restante = (p) => Math.max(0, +(p.area - p.exArea).toFixed(2));
+function renderExec(){
+  if (!L) return;
+  const pend = pendentes();
+  const tals = [...new Set(pend.map(p => p.t))].sort(tcmp);
+  const cur = $("eTal").value;
+  $("eTal").innerHTML = tals.length ? `<option value="">Escolha o talhão</option>` + tals.map(t => { const n = pend.filter(p => p.t === t).length; return `<option value="${esc(t)}">${esc(t)} (${n} ${n === 1 ? "pendente" : "pendentes"})</option>`; }).join("")
+    : `<option value="">Nenhuma aplicação pendente</option>`;
+  $("eTal").value = tals.includes(cur) ? cur : "";
+  const t = $("eTal").value;
+  const ps = pend.filter(p => p.t === t).sort((a, b) => (a.prog || "").localeCompare(b.prog || ""));
+  if (!ps.some(p => p.id === E.id)) { E.id = ps.length === 1 ? ps[0].id : null; E.extras.clear(); if (E.id) aplicarProg(); }
+  $("ePend").innerHTML = !t ? `<p class="hint">Aparecem só os talhões com aplicação programada e ainda não executada.</p>` : ps.map(p => { const [st, k] = statusTxt(p);
+    return `<label class="pend"><input type="radio" name="eProg" value="${esc(p.id)}" ${p.id === E.id ? "checked" : ""}><span style="flex-grow:1"><span class="l1"><span>${esc(p.op)}</span><span class="pill ${k}">${st}</span></span>
+      <span class="l2 " style="display:block">${esc(p.id)} · lote ${esc(p.lote) || "—"} · ${p.modo === "A" ? "aérea" : "terrestre"} · programada ${fd(p.prog)}${p.exArea > 0 ? ` · já aplicado ${ha(p.exArea)} de ${ha(p.area)} ha` : ""}</span></span></label>`; }).join("");
+  const sel = L.progs.find(p => p.id === E.id);
+  $("eCard").style.opacity = sel ? "" : ".55";
+  const outros = sel && sel.lote ? pend.filter(p => p.lote === sel.lote && p.id !== sel.id).sort((a, b) => tcmp(a.t, b.t)) : [];
+  $("eLoteCard").hidden = !outros.length;
+  [...E.extras].forEach(id => { if (!outros.some(p => p.id === id)) E.extras.delete(id); });
+  $("eLoteHint").textContent = sel ? `Marque os talhões do lote ${sel.lote} aplicados no mesmo dia, com a mesma OS. Cada um recebe a área que falta aplicar.` : "";
+  $("eLote").innerHTML = outros.map(p => `<label><input type="checkbox" data-x="${esc(p.id)}" ${E.extras.has(p.id) ? "checked" : ""}><b>${esc(p.t)}</b><small>${ha(restante(p))} ha</small></label>`).join("");
+  const a = num($("eArea").value);
+  $("eParc").textContent = sel && a != null && a < restante(sel) - 0.01 ? `Aplicação parcial: ${Math.round(a / sel.area * 100)}% do talhão. O restante continua pendente.` : "";
+  const extraHa = outros.filter(p => E.extras.has(p.id)).reduce((s, p) => s + restante(p), 0);
+  const n = (sel ? 1 : 0) + E.extras.size;
+  $("eResumo").textContent = sel ? `${n} ${n === 1 ? "talhão" : "talhões"} · ${ha((a || 0) + extraHa)} ha` : "Escolha a aplicação";
+  const hist = JSON.parse(lsGet("lancar.hist") || '{"maq":[],"oper":[]}');
+  $("dlMaq").innerHTML = hist.maq.map(v => `<option value="${esc(v)}">`).join(""); $("dlOper").innerHTML = hist.oper.map(v => `<option value="${esc(v)}">`).join("");
+}
+function aplicarProg(){
+  const p = L.progs.find(x => x.id === E.id); if (!p) return;
+  $("eArea").value = String(restante(p)).replace(".", ",");
+  E.modo = p.modo; [...$("eModo").children].forEach(x => x.setAttribute("aria-pressed", String(x.dataset.v === E.modo)));
+  if (!$("eData").value) $("eData").value = hojeIso();
+}
+$("eTal").addEventListener("change", () => { E.id = null; E.extras.clear(); renderExec(); });
+$("ePend").addEventListener("change", (e) => { if (e.target.name === "eProg") { E.id = e.target.value; E.extras.clear(); aplicarProg(); renderExec(); } });
+$("eArea").addEventListener("input", renderExec);
+$("eLote").addEventListener("change", (e) => { const id = e.target.dataset.x; if (!id) return; e.target.checked ? E.extras.add(id) : E.extras.delete(id); renderExec(); });
+$("eModo").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; E.modo = b.dataset.v; [...$("eModo").children].forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
+$("eSave").addEventListener("click", async () => {
+  msg("eMsg", "", "");
+  const sel = L && L.progs.find(p => p.id === E.id), a = num($("eArea").value);
+  const erro = !sel ? "Escolha o talhão e a aplicação executada." : !$("eData").value ? "Informe a data executada." : !(a > 0) ? "Informe a área aplicada." : a > sel.area * 1.05 ? `A área aplicada é maior que a do talhão (${ha(sel.area)} ha).` : "";
+  if (erro) { msg("eMsg", "err", erro); return; }
+  const itens = [{id: sel.id, area: a}].concat(L.progs.filter(p => E.extras.has(p.id)).map(p => ({id: p.id, area: restante(p)})));
+  const b = $("eSave"); b.disabled = true; b.textContent = "Salvando…";
+  try {
+    const j = await enviar({acao:"executar", data:$("eData").value, modo:E.modo, os:$("eOS").value, maq:$("eMaq").value, oper:$("eOper").value, obs:$("eObs").value, itens});
+    const hist = JSON.parse(lsGet("lancar.hist") || '{"maq":[],"oper":[]}');
+    [["maq", $("eMaq").value], ["oper", $("eOper").value]].forEach(([k, v]) => { v = v.trim(); if (v) hist[k] = [v].concat(hist[k].filter(x => x !== v)).slice(0, 15); });
+    lsSet("lancar.hist", JSON.stringify(hist));
+    toast(j.msg); E.id = null; E.extras.clear(); ["eOS", "eObs", "eArea"].forEach(id => $(id).value = ""); $("eTal").value = "";
+    await getListas(); location.hash = "home";
+  } catch (e) { msg("eMsg", "err", e.message || String(e)); }
+  finally { b.disabled = false; b.textContent = "Salvar execução"; }
+});
+
+/* ---------- talhões ---------- */
+const T = {sel: new Set(), busca: ""};
+function renderTal(){
+  if (!L) return;
+  const todos = $("tTodos").checked, q = norm(T.busca);
+  const lista = L.talhoes.filter(t => t.ativo && (todos || !t.plantio) && (!q || norm(t.t).includes(q))).sort((a, b) => tcmp(a.t, b.t));
+  $("tList").innerHTML = lista.length ? lista.map(t => `<label><input type="checkbox" data-t="${esc(t.t)}" ${T.sel.has(t.t) ? "checked" : ""}><b>${esc(t.t)}</b><small>${ha(t.area)} ha${t.plantio ? " · plantio " + fd(t.plantio) : ""}${t.germ ? " · emerg. " + fd(t.germ) : ""}</small></label>`).join("")
+    : `<div class="empty">${q ? "Nenhum talhão com esse nome." : "Todos os talhões ativos já têm plantio lançado."}</div>`;
+  const n = T.sel.size; $("tSave").textContent = n ? `Salvar plantio (${n} ${n === 1 ? "talhão" : "talhões"})` : "Salvar plantio";
+}
+$("tTodos").addEventListener("change", renderTal);
+$("tBusca").addEventListener("input", (e) => { T.busca = e.target.value; renderTal(); });
+$("tList").addEventListener("change", (e) => { const t = e.target.dataset.t; if (!t) return; e.target.checked ? T.sel.add(t) : T.sel.delete(t); renderTal(); });
+$("tSave").addEventListener("click", async () => {
+  msg("tMsg", "", "");
+  if (!T.sel.size) { msg("tMsg", "err", "Marque pelo menos um talhão."); return; }
+  if (!$("tPlant").value && !$("tGerm").value && !$("tVar").value.trim()) { msg("tMsg", "err", "Preencha a data de plantio, a de emergência ou a variedade."); return; }
+  const b = $("tSave"); b.disabled = true; b.textContent = "Salvando…";
+  try {
+    const j = await enviar({acao:"plantio", talhoes:[...T.sel], plantio:$("tPlant").value, germ:$("tGerm").value, variedade:$("tVar").value});
+    toast(j.msg); T.sel.clear(); ["tPlant", "tGerm", "tVar"].forEach(id => $(id).value = ""); await getListas(); renderTal();
+  } catch (e) { msg("tMsg", "err", e.message || String(e)); }
+  finally { b.disabled = false; renderTal(); }
+});
+$("nSave").addEventListener("click", async () => {
+  msg("nMsg", "", "");
+  const t = $("nT").value.trim(), a = num($("nA").value);
+  if (!t || !(a > 0)) { msg("nMsg", "err", "Informe o nome e a área do talhão."); return; }
+  if (L && L.talhoes.some(x => norm(x.t) === norm(t))) { msg("nMsg", "err", `O talhão ${t.toUpperCase()} já existe.`); return; }
+  const b = $("nSave"); b.disabled = true;
+  try { const j = await enviar({acao:"talhao", t, area:a, cult:$("nC").value, vari:$("nV").value}); toast(j.msg); ["nT", "nA", "nV"].forEach(id => $(id).value = ""); await getListas(); }
+  catch (e) { msg("nMsg", "err", e.message || String(e)); }
+  finally { b.disabled = false; }
+});
+
+/* ---------- início ---------- */
+(function init(){
+  try { const c = JSON.parse(lsGet("lancar.listas") || "null"); if (c && c.ok) { L = c; net("", "Últimas listas salvas"); } } catch(e) {}
+  route();
+  getListas();
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) getListas(); });
+  addEventListener("online", getListas);
+})();
+</script>
+</body>
+</html>
