@@ -8,6 +8,10 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root{
   --bg:#EDF0EB;--panel:#FFFFFF;--panel2:#F5F7F3;--ink:#17221C;--muted:#53605A;--line:#D9E0D7;--brand:#21513B;--brand-ink:#FFFFFF;--focus:#1E6FB8;
@@ -190,6 +194,10 @@ tbody tr:hover td{background:var(--panel2)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:all .25s;z-index:70;pointer-events:none}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .src{font-size:12.5px;color:var(--muted);margin-top:28px}
+.leaflet-tooltip.tlbl{background:transparent;border:0;box-shadow:none;color:#fff;font:600 12px 'Barlow',sans-serif;text-shadow:0 0 3px #000,0 0 2px #000;padding:0}
+.leaflet-tooltip.tlbl::before{display:none}
+.leaflet-container{font-family:'Barlow',sans-serif}
+#perCustom[hidden]{display:none!important}
 .dline{display:flex;align-items:center;gap:6px;margin:4px 0 0;font-size:12.5px;color:var(--muted)}
 .sdot{width:8px;height:8px;border-radius:50%;background:var(--s-programada);flex-shrink:0}
 .dline.ok .sdot{background:#3a9b6a}.dline.busy .sdot{background:var(--s-janela)}.dline.err .sdot{background:var(--s-atrasada)}
@@ -232,6 +240,15 @@ tbody tr:hover td{background:var(--panel2)}
           </div>
         </div>
         <label class="ctl">Operação<select id="opSel"></select></label>
+        <div class="ctl">Período
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <select id="perSel" style="height:40px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel)">
+              <option value="tudo">Toda a safra</option><option value="7d">Últimos 7 dias</option><option value="sem">Esta semana</option><option value="semp">Semana passada</option>
+              <option value="mes">Este mês</option><option value="mesp">Mês passado</option><option value="pers">Escolher datas…</option>
+            </select>
+            <span id="perCustom" hidden style="display:inline-flex;gap:6px;align-items:center"><input type="date" id="perA" aria-label="Início do período" style="height:40px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel)"><span class="muted">a</span><input type="date" id="perB" aria-label="Fim do período" style="height:40px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel)"></span>
+          </div>
+        </div>
         <a class="btn primary" href="./lancar.html" style="text-decoration:none">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
           Lançar
@@ -239,6 +256,10 @@ tbody tr:hover td{background:var(--panel2)}
         <button type="button" class="btn" id="btnSync" title="Buscar a versão mais recente da planilha no Drive">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>
           Atualizar
+        </button>
+        <button type="button" class="btn" id="btnPdf" title="Baixar o relatório do painel em PDF, com os filtros e o período atuais">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+          Baixar PDF
         </button>
         <label class="btn" for="file" style="cursor:pointer">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
@@ -253,6 +274,7 @@ tbody tr:hover td{background:var(--panel2)}
     <nav class="tabs" role="tablist" aria-label="Visões">
       <button role="tab" data-tab="geral" aria-selected="true">Visão geral</button>
       <button role="tab" data-tab="crono" aria-selected="false">Cronograma por talhão</button>
+      <button role="tab" data-tab="geo" aria-selected="false">Mapa</button>
       <button role="tab" data-tab="mapa" aria-selected="false">Talhões</button>
       <button role="tab" data-tab="tabela" aria-selected="false">Tabela</button>
     </nav>
@@ -277,7 +299,7 @@ tbody tr:hover td{background:var(--panel2)}
         </div>
       </div>
       <div class="card">
-        <div class="card-head"><div><h2>Avanço por operação</h2><p class="sub">Quantidade de talhões por situação. Clique numa barra para filtrar a operação.</p></div></div>
+        <div class="card-head"><div><h2>Avanço por operação</h2><p class="sub">Área (ha) por situação: aplicada no prazo, com atraso e o que falta. Clique numa barra para filtrar a operação.</p></div></div>
         <div class="chart-box"><canvas id="chOps" aria-label="Avanço por operação"></canvas></div>
       </div>
     </div>
@@ -293,6 +315,18 @@ tbody tr:hover td{background:var(--panel2)}
         </div>
         <div class="chart-box tall" style="height:310px"><canvas id="chLoad" aria-label="Carga diária"></canvas></div>
         <div class="cap-msg" id="capMsg"></div>
+      </div>
+    </div>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card">
+        <div class="card-head"><div><h2>Ritmo semanal</h2><p class="sub">Hectares aplicados por semana × programados para a semana.</p></div></div>
+        <div class="chart-box tall" style="height:310px"><canvas id="chRitmo" aria-label="Ritmo semanal de aplicação"></canvas></div>
+        <div class="cap-msg" id="ritmoMsg"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h2>Aplicação × chuva</h2><p class="sub">Hectares aplicados por dia e chuva registrada (mm). Vários pluviômetros no mesmo dia viram média.</p></div></div>
+        <div class="chart-box tall" style="height:310px"><canvas id="chChuva" aria-label="Aplicação e pluviometria"></canvas></div>
+        <div class="cap-msg" id="chuvaMsg"></div>
       </div>
     </div>
     <div class="card" style="margin-top:16px">
@@ -324,6 +358,25 @@ tbody tr:hover td{background:var(--panel2)}
       </div>
       <div class="gantt-scroll"><div class="gantt" id="gantt"></div></div>
       <div class="g-legend" id="gLegend"></div>
+    </div>
+  </section>
+
+  <section class="view" id="v-geo">
+    <div class="card">
+      <div class="card-head">
+        <div><h2>Mapa dos talhões</h2><p class="sub">Contornos sobre imagem de satélite, coloridos pela situação. Os filtros e o período valem aqui também. Clique num talhão para ver os detalhes.</p></div>
+        <div class="tm-tools">
+          <div class="seg" role="group" aria-label="Colorir mapa por" id="geoSeg">
+            <button type="button" data-v="sit" aria-pressed="true">Situação crítica</button>
+            <button type="button" data-v="dap" aria-pressed="false">Dias após plantio</button>
+            <button type="button" data-v="exec" aria-pressed="false">% executado</button>
+          </div>
+          <label class="check"><input type="checkbox" id="geoLbl" checked>Nomes</label>
+        </div>
+      </div>
+      <div id="geoMap" style="height:min(70vh,640px);min-height:380px;border-radius:10px;overflow:hidden;background:var(--panel2)"></div>
+      <div class="scale" id="geoScale"></div>
+      <p class="sub" id="geoMsg" style="margin-top:8px"></p>
     </div>
   </section>
 
@@ -373,9 +426,10 @@ tbody tr:hover td{background:var(--panel2)}
 <script>
 /* ============ CONFIGURAÇÃO ============
    Cole entre as aspas o endereço do Apps Script (termina em /exec). */
-const DATA_URL = "https://script.google.com/macros/s/AKfycbx4fbyyhG2CS_K3PUpDqFdbTg_wi_T9qus78qG7rJrVUDsNQgvDPdoRxBxA6g_qgVNv1Q/exec";
+const DATA_URL = "https://script.google.com/macros/s/AKfycbwxeuEaQ6gyYzEo3yWbs4SPVj529WUWqdp04ObgWcei8J8z4SiuciiEiXBFNg7-R2FrKg/exec";
 /* ===================================== */
 const SNAPSHOT = null;
+const MAPA_SNAPSHOT = null;
 const OPS_DEFAULT = ["Dessecação Pré-Plantio","Pré-Emergente","Aplicação de MIB","1º Pós-Emergente","2º Pós-Emergente","1º Fungicida","2º Fungicida","3º Fungicida","4º Fungicida","5º Fungicida"];
 const LS_KEY = "painelAplic.base.v2";
 const CHECK_EVERY = 10 * 60 * 1000;
@@ -391,7 +445,8 @@ const DIAS = ["dom","seg","ter","qua","qui","sex","sáb"];
 const S = {
   db: null, src: "", modified: null, custom: false,
   ref: null, tol: 2, modo: "todas", op: -1, status: "todas",
-  tab: "geral", zoom: "30", gSort: "crit", gAll: false, tm: "sit", q: "", sort: {k:"crit", d:1}, cap: 0
+  tab: "geral", zoom: "30", gSort: "crit", gAll: false, tm: "sit", q: "", sort: {k:"crit", d:1}, cap: 0,
+  per: "tudo", perA: "", perB: "", geo: "sit", geoLbl: true, mapa: null
 };
 const charts = {};
 const $ = (id) => document.getElementById(id);
@@ -462,12 +517,31 @@ function parseBase(wb){
     (execs[String(r.id).trim()] ||= []).push({d, area:toNum(r.area), os:r.os != null ? String(r.os) : "", maq:r.maq ? String(r.maq) : "", oper:r.oper ? String(r.oper) : ""});
   });
   progs.forEach(p => { if (!ops.includes(p.op)) ops.push(p.op); });
-  return {ops, talhoes, progs, lotes, execs};
+  const chuvas = table(wb, "Pluviometria", {d:"Data", mm:"Chuva", loc:"Pluviômetro"}, false)
+    .map(r => ({d:toIso(r.d), mm:toNum(r.mm), loc:r.loc ? String(r.loc) : ""})).filter(c => c.d && c.mm != null);
+  return {ops, talhoes, progs, lotes, execs, chuvas};
 }
 
 /* ---------- modelo ---------- */
+function periodo(ref){
+  const dow = (n) => (new Date(n*864e5).getUTCDay() + 6) % 7;   // 0 = segunda
+  const d = new Date(ref*864e5), y = d.getUTCFullYear(), m = d.getUTCMonth();
+  const mes = (yy, mm) => [Date.UTC(yy, mm, 1)/864e5, Date.UTC(yy, mm+1, 0)/864e5];
+  switch (S.per) {
+    case "7d": return [ref - 6, ref];
+    case "sem": { const a = ref - dow(ref); return [a, a + 6]; }
+    case "semp": { const a = ref - dow(ref) - 7; return [a, a + 6]; }
+    case "mes": return mes(y, m);
+    case "mesp": return mes(y, m - 1);
+    case "pers": { if (!S.perA || !S.perB) return null; const a = dn(S.perA), b = dn(S.perB); return a <= b ? [a, b] : [b, a]; }
+    default: return null;
+  }
+}
+function perLabel(P){ if (!P) return "Toda a safra"; const n = {"7d":"Últimos 7 dias","sem":"Esta semana","semp":"Semana passada","mes":"Este mês","mesp":"Mês passado","pers":"Período"}[S.per]; return `${n}: ${fdn(P[0])}/${iso(P[0]).slice(0,4)} a ${fdn(P[1])}/${iso(P[1]).slice(0,4)}`; }
+let PER = null;
 function build(){
   const db = S.db, ref = dn(S.ref), tol = S.tol;
+  PER = periodo(ref);
   const talhoes = db.talhoes.map(t => ({...t, items: []}));
   const tmap = Object.fromEntries(talhoes.map(t => [t.t, t]));
   const items = [];
@@ -495,11 +569,12 @@ function build(){
       if (it.parcial) it.devTxt += ` · parcial ${Math.round(it.parcial*100)}%`;
     }
     it.dap = tl.plantio ? ref - dn(tl.plantio) : null;
+    it.inPer = !PER || (p.prog && dn(p.prog) >= PER[0] && dn(p.prog) <= PER[1]) || ex.some(e => dn(e.d) >= PER[0] && dn(e.d) <= PER[1]);
     tl.items.push(it); items.push(it);
   });
-  return {talhoes, items, ref};
+  return {talhoes, items, ref, per: PER};
 }
-const passModo = (i) => S.modo === "todas" || i.modo === S.modo;
+const passModo = (i) => (S.modo === "todas" || i.modo === S.modo) && i.inPer !== false;
 const passOp = (i) => S.op < 0 || i.k === S.op;
 const passSt = (i) => S.status === "todas" || (S.status === "executadas" ? EXEC.includes(i.s) : i.s === S.status);
 const sumHa = (a) => a.reduce((s, i) => s + i.area, 0);
@@ -517,6 +592,7 @@ function renderFilters(){
   if (S.status !== "todas") parts.push(["status", "Situação: " + (S.status === "executadas" ? "Executadas" : STATUS[S.status].t), S.status === "executadas" ? col("exec_prazo") : col(S.status)]);
   if (S.op >= 0) parts.push(["op", "Operação: " + S.db.ops[S.op], null]);
   if (S.modo !== "todas") parts.push(["modo", "Modalidade: " + modoNome(S.modo), null]);
+  if (PER) parts.push(["per", perLabel(PER), null]);
   if (!parts.length) { f.innerHTML = '<span class="muted">Sem filtros. Clique em indicadores, gráficos ou use os controles acima para filtrar.</span>'; return; }
   f.innerHTML = parts.map(([k, t, c]) => `<span class="chip">${c ? `<span class="dot" style="background:${c}"></span>` : ""}${esc(t)}<button type="button" data-clear="${k}" aria-label="Remover filtro ${esc(t)}">×</button></span>`).join("") +
     (parts.length > 1 ? '<button type="button" class="btn" data-clear="all" style="height:32px">Limpar tudo</button>' : "");
@@ -576,11 +652,11 @@ function renderDonut(M){
 function renderOps(M){
   const base = M.items.filter((i) => passModo(i) && passSt(i));
   const ops = S.db.ops;
-  const ds = ORDEM.slice().reverse().map((k) => ({label:STATUS[k].t, data:ops.map((_, j) => base.filter(i => i.k===j && i.s===k).length),
+  const ds = ORDEM.slice().reverse().map((k) => ({label:STATUS[k].t, data:ops.map((_, j) => +sumHa(base.filter(i => i.k===j && i.s===k)).toFixed(2)),
     backgroundColor:col(k), borderColor:css("--panel"), borderWidth:1, borderRadius:3, barThickness:18}));
   mk("chOps", {type:"bar", data:{labels:ops.map((o,j)=> (S.op===j?"▸ ":"") + o), datasets:ds},
-    options:{indexAxis:"y", maintainAspectRatio:false, scales:{x:{stacked:true, ticks:{precision:0}, title:{display:true,text:"talhões"}}, y:{stacked:true, grid:{display:false}}},
-      plugins:{legend:{display:false}, tooltip:{mode:"index", filter:(c)=>c.raw>0}},
+    options:{indexAxis:"y", maintainAspectRatio:false, scales:{x:{stacked:true, ticks:{callback:(v)=>ha(v,0)}, title:{display:true,text:"ha"}}, y:{stacked:true, grid:{display:false}}},
+      plugins:{legend:{display:false}, tooltip:{mode:"index", filter:(c)=>c.raw>0, callbacks:{label:(c)=>` ${c.dataset.label}: ${ha(c.raw)} ha`, footer:(it)=>{ const j = it[0].dataIndex, tot = base.filter(i => i.k===j); const ap = tot.filter(i => EXEC.includes(i.s)); return tot.length ? `Aplicado: ${ha(sumHa(ap))} de ${ha(sumHa(tot))} ha` : ""; }}}},
       onClick:(e, el, ch)=>{ const p = ch.scales.y.getValueForPixel(e.y); if (p!=null && p>=0 && p<ops.length) setFilter("op", Math.round(p)); },
       onHover:(e)=>{ e.native.target.style.cursor = "pointer"; }}});
 }
@@ -592,7 +668,8 @@ function renderCurve(M){
   if (!base.length) { mk("chCurve", {type:"line", data:{labels:[], datasets:[]}, options:{maintainAspectRatio:false}}); return; }
   const ev = base.flatMap(i => i.execs.map(e => ({d:dn(e.d), a:e.area == null ? i.area : Math.min(e.area, i.area || e.area)})));
   const ds = base.map(i => i.pd).concat(ev.map(e => e.d));
-  const a = Math.min(...ds, M.ref) - 2, b = Math.max(...ds, M.ref) + 3;
+  let a = Math.min(...ds, M.ref) - 2, b = Math.max(...ds, M.ref) + 3;
+  if (M.per) { a = M.per[0]; b = M.per[1]; }
   const labels = [], plan = [], ex = [];
   let cp = 0, ce = 0;
   for (let d = a; d <= b; d++) {
@@ -648,20 +725,213 @@ function renderPrio(M){
       <span class="ha">${ha(i.area)} ha</span>${pill(i.s)}</button>`).join("") + (arr.length > 12 ? `<p class="muted" style="font-size:13px;margin:10px 4px 0">+${arr.length-12} na aba Tabela.</p>` : "")
     : '<div class="empty">Nada pendente com os filtros atuais.</div>';
 }
-function renderProd(M){
+function consumo(M){
   const base = M.items.filter(i => passModo(i) && passOp(i) && passSt(i));
   const g = {};
   base.forEach(i => i.prods.forEach(p => {
     const k = p.p + "|" + p.un; const o = (g[k] ||= {p:p.p, un:p.un, cl:p.cl, prog:0, apl:0, lotes:new Set()});
     o.prog += p.dose * i.area; o.apl += p.dose * (i.exec ? i.area : i.exArea); o.lotes.add(i.lote);
   }));
-  const arr = Object.values(g).sort((a, b) => b.prog - a.prog);
+  return Object.values(g).sort((a, b) => b.prog - a.prog);
+}
+function renderProd(M){
+  const arr = consumo(M);
   if (!arr.length) { $("prod").innerHTML = `<div class="empty">Nenhum produto lançado para as aplicações filtradas. Lance produto e dose por lote na aba <b>Produtos programados</b> da planilha.</div>`; return; }
   const q = (v, un) => ha(v, v >= 100 ? 0 : 1) + " " + String(un || "").replace(/\/ha$/, "");
   $("prod").innerHTML = `<div class="tbl-scroll" style="margin-top:0"><table class="ptbl"><thead><tr><th style="padding:10px">Produto</th><th style="padding:10px">Classe</th><th class="r" style="padding:10px">Programado</th><th class="r" style="padding:10px">Aplicado</th><th class="r" style="padding:10px">A aplicar</th><th style="padding:10px">Execução</th></tr></thead><tbody>` +
     arr.map(o => { const pct = o.prog ? Math.min(100, o.apl / o.prog * 100) : 0;
       return `<tr style="cursor:default"><td><b>${esc(o.p)}</b><span class="tag">${o.lotes.size} ${o.lotes.size===1?"lote":"lotes"}</span></td><td>${esc(o.cl) || "—"}</td><td class="r">${q(o.prog, o.un)}</td><td class="r">${q(o.apl, o.un)}</td><td class="r">${q(Math.max(0, o.prog - o.apl), o.un)}</td>
         <td><div style="display:flex;align-items:center;gap:8px"><div class="pbar"><i style="width:${pct.toFixed(1)}%"></i></div><span class="muted" style="font-size:12.5px">${Math.round(pct)}%</span></div></td></tr>`; }).join("") + `</tbody></table></div>`;
+}
+
+/* ---------- ritmo semanal ---------- */
+const segunda = (n) => n - (new Date(n*864e5).getUTCDay() + 6) % 7;
+function renderRitmo(M){
+  const base = M.items.filter(i => passModo(i) && passOp(i) && passSt(i));
+  const ev = base.flatMap(i => i.execs.map(e => ({d:dn(e.d), a:e.area == null ? i.area : Math.min(e.area, i.area || e.area)})));
+  const all = base.map(i => i.pd).concat(ev.map(e => e.d));
+  if (!all.length) { mk("chRitmo", {type:"bar", data:{labels:[], datasets:[]}, options:{maintainAspectRatio:false}}); $("ritmoMsg").innerHTML = ""; return; }
+  let a = M.per ? M.per[0] : Math.min(...all), b = M.per ? M.per[1] : Math.max(...all, M.ref);
+  a = segunda(a); b = segunda(b);
+  const labels = [], ap = [], pr = [];
+  for (let w = a; w <= b; w += 7) {
+    labels.push(fdn(w));
+    ap.push(+ev.filter(e => e.d >= w && e.d < w + 7).reduce((s, e) => s + e.a, 0).toFixed(2));
+    pr.push(+sumHa(base.filter(i => i.prog && dn(i.prog) >= w && dn(i.prog) < w + 7)).toFixed(2));
+  }
+  const curW = segunda(M.ref), idxCur = labels.indexOf(fdn(curW));
+  mk("chRitmo", {type:"bar", data:{labels, datasets:[
+      {label:"Aplicado", data:ap, backgroundColor:labels.map((_, i) => i === idxCur ? col("prox7") : col("exec_prazo")), borderRadius:4, order:2},
+      {type:"line", label:"Programado", data:pr, borderColor:css("--muted"), borderDash:[5,4], borderWidth:2, pointRadius:3, pointBackgroundColor:css("--muted"), order:1}]},
+    options:{maintainAspectRatio:false, interaction:{mode:"index", intersect:false},
+      scales:{y:{beginAtZero:true, title:{display:true,text:"ha"}, ticks:{callback:(v)=>ha(v,0)}}, x:{grid:{display:false}, title:{display:true,text:"semana iniciada em"}}},
+      plugins:{legend:{position:"bottom", labels:{boxWidth:14, usePointStyle:true}}, tooltip:{callbacks:{title:(it)=>`Semana de ${it[0].label}${it[0].dataIndex === idxCur ? " (atual)" : ""}`, label:(c)=>` ${c.dataset.label}: ${ha(c.raw)} ha`}}}}});
+  const com = ap.filter(v => v > 0);
+  $("ritmoMsg").innerHTML = com.length ? `<span class="muted">Média de <b style="color:var(--ink)">${ha(com.reduce((s,v)=>s+v,0)/com.length,0)} ha/semana</b> nas ${com.length} semanas com aplicação${idxCur >= 0 ? ` · semana atual: <b style="color:var(--ink)">${ha(ap[idxCur],0)} ha</b> até agora` : ""}.</span>` : '<span class="muted">Nenhuma aplicação executada no período.</span>';
+}
+
+/* ---------- aplicação × chuva ---------- */
+function chuvaPorDia(){
+  const g = {};
+  (S.db.chuvas || []).forEach(c => { const k = dn(c.d); (g[k] ||= []).push(c.mm); });
+  const o = {}; for (const k in g) o[k] = g[k].reduce((s, v) => s + v, 0) / g[k].length;
+  return o;
+}
+function renderChuva(M){
+  const base = M.items.filter(i => passModo(i) && passOp(i) && passSt(i));
+  const ev = base.flatMap(i => i.execs.map(e => ({d:dn(e.d), a:e.area == null ? i.area : Math.min(e.area, i.area || e.area)})));
+  const rain = chuvaPorDia();
+  const a = M.per ? M.per[0] : M.ref - 29, b = M.per ? M.per[1] : M.ref;
+  const labels = [], ap = [], mm = [];
+  for (let d = a; d <= b; d++) {
+    labels.push(fdn(d) + " " + wd(d));
+    ap.push(+ev.filter(e => e.d === d).reduce((s, e) => s + e.a, 0).toFixed(2));
+    mm.push(rain[d] != null ? +rain[d].toFixed(1) : null);
+  }
+  mk("chChuva", {type:"bar", data:{labels, datasets:[
+      {label:"Aplicado (ha)", data:ap, backgroundColor:col("exec_prazo"), borderRadius:3, yAxisID:"y"},
+      {label:"Chuva (mm)", data:mm, backgroundColor:"#5BB7E8", borderRadius:3, yAxisID:"y2"}]},
+    options:{maintainAspectRatio:false, interaction:{mode:"index", intersect:false},
+      scales:{y:{beginAtZero:true, position:"left", title:{display:true,text:"ha"}, ticks:{callback:(v)=>ha(v,0)}},
+        y2:{beginAtZero:true, position:"right", grid:{drawOnChartArea:false}, title:{display:true,text:"mm"}},
+        x:{grid:{display:false}, ticks:{maxRotation:0, autoSkipPadding:10, callback:function(v){ return this.getLabelForValue(v).split(" ")[0]; }}}},
+      plugins:{legend:{position:"bottom", labels:{boxWidth:14, usePointStyle:true}}, tooltip:{callbacks:{label:(c)=>c.raw == null ? ` ${c.dataset.label}: sem registro` : ` ${c.dataset.label.replace(/ \(.*\)/,"")}: ${c.datasetIndex ? ha(c.raw,1) + " mm" : ha(c.raw) + " ha"}`}}}}});
+  const totMm = mm.reduce((s, v) => s + (v || 0), 0), dias = mm.filter(v => v > 0).length, temReg = mm.some(v => v != null);
+  const apChuva = ap.reduce((s, v, i) => s + (mm[i] >= 5 ? v : 0), 0);
+  $("chuvaMsg").innerHTML = !(S.db.chuvas || []).length ? '<span class="muted">Nenhuma chuva lançada ainda. Use Lançamentos → Chuva.</span>'
+    : `<span class="muted">${temReg ? `Chuva no período: <b style="color:var(--ink)">${ha(totMm,1)} mm</b> em ${dias} ${dias===1?"dia":"dias"}` : "Sem chuva registrada no período"} · aplicado: <b style="color:var(--ink)">${ha(ap.reduce((s,v)=>s+v,0),0)} ha</b>${apChuva ? ` · ${ha(apChuva,0)} ha em dias com 5 mm ou mais` : ""}.</span>`;
+}
+
+/* ---------- mapa ---------- */
+let GEO = {map:null, layer:null, carregando:false};
+function corTalhao(tl, its, modo, M){
+  const dark = css("--bg").toLowerCase() === "#111814";
+  if (!tl) return col("none");
+  if (modo === "dap") { if (!tl.plantio) return col("none"); const mx = Math.max(1, ...M.talhoes.map(t => t.plantio ? M.ref - dn(t.plantio) : 0)); const t = Math.min(1, Math.max(0, (M.ref - dn(tl.plantio)) / mx)); return dark ? lerp("#2b4a3a", "#9fe0bb", t) : lerp("#cfe6d6", "#1d5a3d", t); }
+  if (modo === "exec") { if (!its.length) return col("none"); const t = its.filter(i => EXEC.includes(i.s)).length / its.length; return dark ? lerp("#3a2f22", "#4f8fd0", t) : lerp("#f3dcc4", "#1e4e79", t); }
+  const w = worst(its); return w === "none" ? col("none") : col(w);
+}
+async function carregarMapa(){
+  if (S.mapa || GEO.carregando) return;
+  try { const c = JSON.parse(lsGet("painelAplic.mapa") || "null"); if (c && c.gj) S.mapa = c; } catch(e) {}
+  if (!S.mapa && MAPA_SNAPSHOT) S.mapa = {gj: MAPA_SNAPSHOT, modified: ""};
+  if (!webOn()) return;
+  GEO.carregando = true;
+  try {
+    const meta = await getJson(DATA_URL + "?acao=mapa&meta=1", 45000);
+    if (!meta.ok) throw new Error(meta.error);
+    if (!S.mapa || S.mapa.modified !== meta.modified) {
+      $("geoMsg").textContent = "Baixando o mapa dos talhões…";
+      const j = await getJson(DATA_URL + "?acao=mapa", 90000);
+      if (!j.ok) throw new Error(j.error);
+      S.mapa = {gj: JSON.parse(j.geojson), modified: j.modified};
+      lsSet("painelAplic.mapa", JSON.stringify(S.mapa));
+      if (GEO.layer) { GEO.layer.remove(); GEO.layer = null; }
+    }
+    $("geoMsg").textContent = "";
+  } catch (e) { $("geoMsg").textContent = (S.mapa ? "Mostrando o mapa salvo. " : "") + "Não consegui baixar o mapa: " + (e.message || e); }
+  finally { GEO.carregando = false; if (S.tab === "geo") render(); }
+}
+function renderGeo(M){
+  if (typeof L === "undefined") { $("geoMsg").textContent = "A biblioteca de mapas não carregou. Verifique a conexão e recarregue a página."; return; }
+  if (!S.mapa) { $("geoMsg").textContent = webOn() ? "Carregando o mapa…" : "O mapa aparece quando o painel estiver ligado ao Drive."; carregarMapa(); return; }
+  if (!GEO.map) {
+    GEO.map = L.map("geoMap", {zoomControl:true, attributionControl:true});
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {maxZoom:19, attribution:"Imagem © Esri"}).addTo(GEO.map);
+    carregarMapa();
+  }
+  const tmap = Object.fromEntries(M.talhoes.map(t => [t.t, t]));
+  const its = (t) => tmap[t] ? tmap[t].items.filter(i => passModo(i) && passOp(i) && passSt(i)) : [];
+  const estilo = (f) => { const t = f.properties.talhao; return {color:"#ffffff", weight:1.5, opacity:.9, fillColor:corTalhao(tmap[t], its(t), S.geo, M), fillOpacity:tmap[t] ? .62 : .25}; };
+  if (!GEO.layer) {
+    GEO.layer = L.geoJSON(S.mapa.gj, {style: estilo, onEachFeature: (f, lyr) => {
+      lyr.on("click", () => { if (tmap[f.properties.talhao] || build().talhoes.some(t => t.t === f.properties.talhao)) openDrawer(f.properties.talhao); });
+      lyr.on("mouseover", () => lyr.setStyle({weight:3})); lyr.on("mouseout", () => lyr.setStyle({weight:1.5}));
+    }}).addTo(GEO.map);
+    GEO.map.fitBounds(GEO.layer.getBounds(), {padding:[10,10]});
+  }
+  GEO.layer.eachLayer(l => {
+    const f = l.feature, t = f.properties.talhao, tl = tmap[t], ii = its(t);
+    l.setStyle(estilo(f));
+    l.unbindTooltip();
+    if (S.geoLbl) l.bindTooltip(esc(t), {permanent:true, direction:"center", className:"tlbl"});
+    else {
+      const w = worst(ii);
+      l.bindTooltip(`<b>${esc(t)}</b>${tl ? ` · ${ha(tl.area)} ha<br>${tl.plantio ? `${M.ref - dn(tl.plantio)} DAP` : "plantio não lançado"}<br>${ii.length ? `${ii.filter(i=>EXEC.includes(i.s)).length}/${ii.length} executadas · ${STATUS[w]?.t || ""}` : "sem aplicação no filtro"}` : "<br>não está na planilha"}`, {sticky:true});
+    }
+  });
+  setTimeout(() => GEO.map.invalidateSize(), 50);
+  const fora = S.mapa.gj.features.filter(f => !tmap[f.properties.talhao]).map(f => f.properties.talhao);
+  if (!GEO.carregando) $("geoMsg").textContent = fora.length ? `No mapa mas não na planilha: ${fora.join(", ")}.` : "";
+  const dark = css("--bg").toLowerCase() === "#111814";
+  const sc = $("geoScale");
+  if (S.geo === "dap") sc.innerHTML = `<span>0 DAP</span><span class="grad" style="background:linear-gradient(90deg,${dark?"#2b4a3a,#9fe0bb":"#cfe6d6,#1d5a3d"})"></span><span>mais dias</span><span style="margin-left:12px"><span class="dot" style="background:${col("none")}"></span> plantio não lançado</span>`;
+  else if (S.geo === "exec") sc.innerHTML = `<span>0% executado</span><span class="grad" style="background:linear-gradient(90deg,${dark?"#3a2f22,#4f8fd0":"#f3dcc4,#1e4e79"})"></span><span>100%</span>`;
+  else sc.innerHTML = ORDEM.map(k => `<span style="display:inline-flex;align-items:center;gap:6px"><span class="dot" style="background:${col(k)}"></span>${STATUS[k].t}</span>`).join("") + `<span style="display:inline-flex;align-items:center;gap:6px"><span class="dot" style="background:${col("none")}"></span>Sem aplicação no filtro</span>`;
+}
+
+/* ---------- relatório PDF ---------- */
+async function gerarPDF(){
+  if (!S.db) { toast("Carregue os dados antes de gerar o relatório."); return; }
+  if (!window.jspdf || !window.jspdf.jsPDF) { toast("O gerador de PDF não carregou. Verifique a conexão e recarregue a página."); return; }
+  const btn = $("btnPdf"); btn.disabled = true; btn.classList.add("spin");
+  const tab0 = S.tab, theme0 = document.documentElement.getAttribute("data-theme"), anim0 = Chart.defaults.animation;
+  try {
+    document.documentElement.setAttribute("data-theme", "light"); Chart.defaults.animation = false;
+    if (S.tab !== "geral") document.querySelector('.tabs [data-tab="geral"]').click(); else render();
+    await new Promise(r => setTimeout(r, 120));
+    const img = (id) => { try { return charts[id] ? charts[id].toBase64Image("image/png", 1) : null; } catch(e) { return null; } };
+    const imgs = {ops:img("chOps"), ritmo:img("chRitmo"), curve:img("chCurve"), chuva:img("chChuva"), donut:img("chDonut")};
+    const M = build();
+    const {jsPDF} = window.jspdf, doc = new jsPDF({orientation:"landscape", unit:"mm", format:"a4"});
+    const W = 297, H = 210, mg = 12, verde = [33,81,59];
+    const filtros = [S.op >= 0 ? "Operação: " + S.db.ops[S.op] : "", S.modo !== "todas" ? "Modalidade: " + modoNome(S.modo) : "", S.status !== "todas" ? "Situação: " + (S.status === "executadas" ? "Executadas" : STATUS[S.status].t) : ""].filter(Boolean).join(" · ") || "Sem filtros";
+    const cab = () => { doc.setFillColor(...verde); doc.rect(0, 0, W, 20, "F"); doc.setTextColor(255); doc.setFont("helvetica","bold"); doc.setFontSize(15); doc.text("Relatório de aplicações - Fazenda Reata, safra soja 26/27", mg, 9);
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.text(`${perLabel(M.per)}   ·   Referência ${fdn(M.ref)}/${iso(M.ref).slice(0,4)}   ·   Tolerância ±${S.tol} d   ·   ${filtros}`, mg, 15.5); doc.setTextColor(30); };
+    cab();
+    const base = M.items.filter(i => passModo(i) && passOp(i));
+    const exe = base.filter(i => EXEC.includes(i.s));
+    const k = [["Programadas", base.length, ha(sumHa(base),0) + " ha"], ["Executadas", exe.length, ha(sumHa(exe),0) + " ha aplicados"],
+      ["Com atraso", base.filter(i=>i.s==="exec_atraso").length, "executadas fora da tolerância"], ["Atrasadas pendentes", base.filter(i=>i.s==="atrasada").length, ha(sumHa(base.filter(i=>i.s==="atrasada")),0) + " ha"],
+      ["Na janela", base.filter(i=>i.s==="janela").length, ha(sumHa(base.filter(i=>i.s==="janela")),0) + " ha"], ["Próximos 7 dias", base.filter(i=>i.s==="prox7").length, ha(sumHa(base.filter(i=>i.s==="prox7")),0) + " ha"]];
+    const kw = (W - 2*mg - 5*4) / 6;
+    k.forEach((x, i) => { const x0 = mg + i*(kw + 4); doc.setDrawColor(210); doc.setFillColor(246,248,244); doc.roundedRect(x0, 25, kw, 21, 2, 2, "FD");
+      doc.setFontSize(8.5); doc.setTextColor(90); doc.text(x[0], x0 + 3, 30.5); doc.setFontSize(17); doc.setTextColor(25); doc.setFont("helvetica","bold"); doc.text(String(x[1]), x0 + 3, 39); doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(90); doc.text(doc.splitTextToSize(x[2], kw - 6)[0], x0 + 3, 43.5); });
+    const cw = (W - 2*mg - 8) / 2, ch = 70;
+    const graf = (titulo, im, x, y) => { doc.setFontSize(10.5); doc.setTextColor(25); doc.setFont("helvetica","bold"); doc.text(titulo, x, y); doc.setFont("helvetica","normal");
+      if (im) { const p = doc.getImageProperties(im); const r = Math.min(cw / p.width, (ch - 4) / p.height); doc.addImage(im, "PNG", x, y + 2, p.width * r, p.height * r); } else { doc.setFontSize(9); doc.setTextColor(120); doc.text("sem dados", x, y + 10); } };
+    graf("Avanço por operação (ha)", imgs.ops, mg, 55); graf("Ritmo semanal (ha)", imgs.ritmo, mg + cw + 8, 55);
+    graf("Curva de execução (ha acumulados)", imgs.curve, mg, 132); graf("Aplicação × chuva", imgs.chuva, mg + cw + 8, 132);
+    doc.addPage(); cab();
+    const rows = base.filter(passSt).sort((a, b) => STATUS[a.s].ord - STATUS[b.s].ord || a.pd - b.pd || a.t.localeCompare(b.t, "pt", {numeric:true}))
+      .map(i => [i.t, ha(i.area), i.op, i.lote || "-", modoNome(i.modo), fd(i.prog), fd(i.exec), i.devTxt, i.os || "-", STATUS[i.s].t]);
+    doc.setFontSize(11); doc.setFont("helvetica","bold"); doc.text(`Aplicações (${rows.length})`, mg, 28); doc.setFont("helvetica","normal");
+    doc.autoTable({startY:31, margin:{left:mg, right:mg, top:25}, head:[["Talhão","Área (ha)","Operação","Lote","Modalidade","Programada","Executada","Desvio","OS Protector","Situação"]], body:rows,
+      styles:{fontSize:8, cellPadding:1.6}, headStyles:{fillColor:verde, textColor:255}, alternateRowStyles:{fillColor:[246,248,244]}, columnStyles:{1:{halign:"right"}},
+      didParseCell:(d) => { if (d.section === "body" && d.column.index === 9) { const s = ORDEM.find(k => STATUS[k].t === d.cell.raw); const c = {atrasada:[194,65,12], janela:[160,110,4], exec_atraso:[154,90,28]}[s]; if (c) { d.cell.styles.textColor = c; d.cell.styles.fontStyle = "bold"; } } },
+      didDrawPage:(d) => { if (d.pageNumber > 1) cab(); }});
+    const cons = consumo(M);
+    if (cons.length) {
+      let y = doc.lastAutoTable.finalY + 10; if (y > H - 40) { doc.addPage(); cab(); y = 30; }
+      doc.setFontSize(11); doc.setFont("helvetica","bold"); doc.text("Consumo de produtos", mg, y); doc.setFont("helvetica","normal");
+      const un = (u) => String(u || "").replace(/\/ha$/, "");
+      doc.autoTable({startY:y + 3, margin:{left:mg, right:mg, top:25}, head:[["Produto","Classe","Programado","Aplicado","A aplicar","% aplicado"]],
+        body:cons.map(o => [o.p, o.cl || "-", ha(o.prog,1) + " " + un(o.un), ha(o.apl,1) + " " + un(o.un), ha(Math.max(0, o.prog - o.apl),1) + " " + un(o.un), Math.round(o.prog ? o.apl / o.prog * 100 : 0) + "%"]),
+        styles:{fontSize:8, cellPadding:1.6}, headStyles:{fillColor:verde, textColor:255}, alternateRowStyles:{fillColor:[246,248,244]}, columnStyles:{2:{halign:"right"},3:{halign:"right"},4:{halign:"right"},5:{halign:"right"}},
+        didDrawPage:() => cab()});
+    }
+    const n = doc.getNumberOfPages();
+    for (let i = 1; i <= n; i++) { doc.setPage(i); doc.setFontSize(7.5); doc.setTextColor(120);
+      doc.text(`Gerado em ${new Date().toLocaleString("pt-BR")} · Fonte: ${S.src || "planilha"}${S.modified ? " salva em " + fmtDT(S.modified) : ""}`, mg, H - 6); doc.text(`Página ${i} de ${n}`, W - mg, H - 6, {align:"right"}); }
+    doc.save(`Relatorio_Aplicacoes_Reata_${S.ref}${M.per ? "_" + iso(M.per[0]) + "_a_" + iso(M.per[1]) : ""}.pdf`);
+    toast("Relatório gerado.");
+  } catch (e) { toast("Não foi possível gerar o PDF: " + (e.message || e)); }
+  finally {
+    if (theme0) document.documentElement.setAttribute("data-theme", theme0); else document.documentElement.removeAttribute("data-theme");
+    Chart.defaults.animation = anim0;
+    if (tab0 !== "geral") document.querySelector(`.tabs [data-tab="${tab0}"]`).click(); else render();
+    btn.disabled = false; btn.classList.remove("spin");
+  }
 }
 
 /* ---------- cronograma ---------- */
@@ -831,7 +1101,8 @@ function render(){
   if (!has) return;
   const M = build();
   renderFilters();
-  if (S.tab === "geral") { chartBase(); renderKPIs(M); renderDonut(M); renderOps(M); renderCurve(M); renderLoad(M); renderPrio(M); renderProd(M); }
+  if (S.tab === "geral") { chartBase(); renderKPIs(M); renderDonut(M); renderOps(M); renderCurve(M); renderLoad(M); renderRitmo(M); renderChuva(M); renderPrio(M); renderProd(M); }
+  if (S.tab === "geo") renderGeo(M);
   if (S.tab === "crono") renderGantt(M);
   if (S.tab === "mapa") renderTreemap(M);
   if (S.tab === "tabela") renderTable(M);
@@ -893,6 +1164,13 @@ function bind(){
   $("modoSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setFilter("modo", b.dataset.v); });
   $("opSel").addEventListener("change", (e) => { S.op = +e.target.value; render(); });
   $("cap").addEventListener("input", (e) => { S.cap = Math.max(0, +e.target.value || 0); lsSet("painelAplic.cap", String(S.cap)); if (S.tab === "geral" && S.db) { chartBase(); renderLoad(build()); } });
+  $("perSel").addEventListener("change", (e) => { S.per = e.target.value; $("perCustom").hidden = S.per !== "pers";
+    if (S.per === "pers" && !S.perA) { const r = dn(S.ref); S.perA = iso(r - 6); S.perB = S.ref; $("perA").value = S.perA; $("perB").value = S.perB; } render(); });
+  $("perA").addEventListener("change", (e) => { S.perA = e.target.value; render(); });
+  $("perB").addEventListener("change", (e) => { S.perB = e.target.value; render(); });
+  $("btnPdf").addEventListener("click", gerarPDF);
+  $("geoSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.geo = b.dataset.v; [...$("geoSeg").children].forEach(x => x.setAttribute("aria-pressed", String(x === b))); render(); });
+  $("geoLbl").addEventListener("change", (e) => { S.geoLbl = e.target.checked; render(); });
   $("btnSync").addEventListener("click", () => { if (S.custom && webOn()) S.custom = false; webRefresh(true); });
   document.querySelector(".tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (!b) return;
     S.tab = b.dataset.tab; document.querySelectorAll(".tabs [data-tab]").forEach(x => x.setAttribute("aria-selected", String(x === b)));
@@ -904,7 +1182,7 @@ function bind(){
   $("q").addEventListener("input", (e) => { S.q = e.target.value; render(); });
   document.addEventListener("click", (e) => {
     const st = e.target.closest("[data-st]"); if (st) { if (st.dataset.st === "todas") { S.status = "todas"; render(); } else setFilter("status", st.dataset.st); return; }
-    const cl = e.target.closest("[data-clear]"); if (cl) { const k = cl.dataset.clear; if (k==="status"||k==="all") S.status="todas"; if (k==="op"||k==="all") S.op=-1; if (k==="modo"||k==="all") S.modo="todas"; syncControls(); render(); return; }
+    const cl = e.target.closest("[data-clear]"); if (cl) { const k = cl.dataset.clear; if (k==="status"||k==="all") S.status="todas"; if (k==="op"||k==="all") S.op=-1; if (k==="modo"||k==="all") S.modo="todas"; if (k==="per"||k==="all") { S.per="tudo"; $("perSel").value="tudo"; $("perCustom").hidden=true; } syncControls(); render(); return; }
     const so = e.target.closest("[data-sort]"); if (so) { const k = so.dataset.sort; S.sort = {k, d: S.sort.k === k ? -S.sort.d : 1}; render(); return; }
     const t = e.target.closest("[data-t]"); if (t && !e.target.closest(".drawer")) openDrawer(t.dataset.t);
   });

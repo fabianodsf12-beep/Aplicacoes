@@ -7,6 +7,8 @@
 <title>Lançamentos – Aplicações Reata</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 :root{--bg:#EDF0EB;--panel:#FFFFFF;--panel2:#F6F8F5;--ink:#17221C;--muted:#4F5C55;--line:#C9D1C7;--line2:#E3E8E1;--brand:#21513B;--brand-ink:#FFFFFF;--brand-soft:#E3EEE7;--warn-bg:#FDF2CF;--warn:#6B4A04;--bad-bg:#FDE7D8;--bad:#8A2D07;--ok:#1E6B45;--focus:#1E6FB8;
   box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -86,6 +88,17 @@ select.inp{appearance:auto}
 .toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-size:15px;opacity:0;transition:all .25s;z-index:50;pointer-events:none;max-width:90vw;text-align:center}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 [hidden]{display:none!important}
+.pwrap{position:relative}
+.sug{position:absolute;left:0;right:0;top:100%;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-top:4px;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.sug button{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line2);background:transparent;padding:12px 14px;min-height:46px;cursor:pointer;font-size:15px}
+.sug button:last-child{border-bottom:0}
+.sug button:hover,.sug button:focus{background:var(--panel2)}
+.sug small{color:var(--muted);font-size:13px;white-space:nowrap}
+.pmap{height:380px;border-radius:10px;overflow:hidden;border:1px solid var(--line2);background:var(--panel2)}
+.leaflet-tooltip.tlbl{background:transparent;border:0;box-shadow:none;color:#fff;font:600 12px 'Barlow',sans-serif;text-shadow:0 0 3px #000,0 0 2px #000;padding:0}
+.leaflet-tooltip.tlbl::before{display:none}
+.rain{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line2)}
+.rain:last-child{border-bottom:0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -106,10 +119,10 @@ select.inp{appearance:auto}
 <section id="s-config" hidden>
   <main>
     <div class="card">
-      <h2>Antes de começar</h2>
-      <p class="hint">Seu nome vai em "Lançado por" na planilha. O código de acesso é o combinado com a equipe. Fica salvo neste aparelho.</p>
-      <label class="f">Seu nome<input class="inp" id="cfgNome" autocomplete="name" placeholder="Ex.: Fabiano"></label>
-      <label class="f">Código de acesso<input class="inp" id="cfgCod" type="password" autocomplete="off"></label>
+      <h2>Entrar</h2>
+      <p class="hint">Entre com o usuário e a senha cadastrados para você. Ficam salvos neste aparelho até você trocar.</p>
+      <label class="f">Usuário<input class="inp" id="cfgNome" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Ex.: fabiano"></label>
+      <label class="f">Senha<input class="inp" id="cfgCod" type="password" autocomplete="current-password"></label>
       <div id="cfgMsg"></div>
       <button type="button" class="save" id="cfgSave">Salvar e continuar</button>
     </div>
@@ -121,12 +134,13 @@ select.inp{appearance:auto}
   <main>
     <button type="button" class="act" data-go="programar"><span class="n">1</span><span class="tx"><span class="t">Programar aplicação</span><span class="s">Talhões, operação, data e produtos</span></span></button>
     <button type="button" class="act" data-go="executar"><span class="n">2</span><span class="tx"><span class="t">Registrar execução</span><span class="s">Data, área aplicada e nº da OS do Protector</span></span><span class="badge" id="bPend" hidden></span></button>
-    <button type="button" class="act" data-go="talhoes"><span class="n">3</span><span class="tx"><span class="t">Talhões e plantio</span><span class="s">Lançar plantio em vários ou cadastrar talhão</span></span><span class="badge" id="bPlant" hidden></span></button>
+    <button type="button" class="act" data-go="chuva"><span class="n" style="font-size:20px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 16a5 5 0 1 1 1.5-9.8A6 6 0 0 1 20 9a4 4 0 0 1-1 7.9M8 19l-1 2M12 19l-1 2M16 19l-1 2"/></svg></span><span class="tx"><span class="t">Chuva</span><span class="s">Registrar a pluviometria do dia</span></span><span class="badge" id="bChuva" hidden></span></button>
+    <button type="button" class="act" data-go="talhoes"><span class="n">4</span><span class="tx"><span class="t">Talhões e plantio</span><span class="s">Lançar plantio em vários ou cadastrar talhão</span></span><span class="badge" id="bPlant" hidden></span></button>
     <div class="card" style="gap:4px">
       <h2 style="margin-bottom:6px">Últimos lançamentos</h2>
       <div id="recentes"><div class="empty">Carregando…</div></div>
     </div>
-    <button type="button" class="back" id="btnCfg" style="color:var(--muted);align-self:center;font-size:14px">Trocar nome ou código de acesso</button>
+    <button type="button" class="back" id="btnCfg" style="color:var(--muted);align-self:center;font-size:14px">Trocar usuário ou senha</button>
   </main>
 </section>
 
@@ -142,9 +156,13 @@ select.inp{appearance:auto}
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h2>Talhões</h2><span class="hint" id="pSel">nenhum marcado</span></div>
       <div class="chips" id="pChips"></div>
-      <label class="f">Buscar talhão<input class="inp" type="search" id="pBusca" placeholder="Digite RT, BT, SA…"></label>
-      <div><p class="hint" style="margin-bottom:8px">Marcar ou desmarcar um grupo inteiro</p><div class="grp" id="pGrp"></div></div>
-      <div class="list" id="pList"></div>
+      <div class="seg" id="pVista" role="group" aria-label="Escolher talhões por"><button type="button" data-v="lista" aria-pressed="true">Lista</button><button type="button" data-v="mapa" aria-pressed="false">Mapa</button></div>
+      <div id="pVLista" style="display:flex;flex-direction:column;gap:14px">
+        <label class="f">Buscar talhão<input class="inp" type="search" id="pBusca" placeholder="Digite RT, BT, SA…" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
+        <div><p class="hint" style="margin-bottom:8px">Marcar ou desmarcar um grupo inteiro</p><div class="grp" id="pGrp"></div></div>
+        <div class="list" id="pList"></div>
+      </div>
+      <div id="pVMapa" hidden><div class="pmap" id="pMap"></div><p class="hint" id="pMapMsg" style="margin-top:8px">Toque num talhão para marcar ou desmarcar. Verde: marcado. Cinza: já tem esta operação ou está inativo.</p></div>
       <label class="check"><input type="checkbox" id="pRep">Permitir reaplicação (mostrar talhões que já têm esta operação)</label>
     </div>
     <div class="card">
@@ -153,7 +171,7 @@ select.inp{appearance:auto}
       <div id="pProds" style="display:flex;flex-direction:column;gap:10px"></div>
       <button type="button" class="ghost" id="pAdd">Adicionar produto</button>
       <p class="hint">O total é a dose vezes a área dos talhões marcados.</p>
-      <datalist id="dlProd"></datalist>
+
     </div>
     <div class="card"><label class="f">Observação<textarea class="inp" id="pObs" rows="3" placeholder="Opcional"></textarea></label></div>
     <div id="pMsg"></div>
@@ -178,9 +196,7 @@ select.inp{appearance:auto}
       <p class="hint" id="eParc"></p>
       <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Modalidade<div class="seg" id="eModo"><button type="button" data-v="T" aria-pressed="true">Terrestre</button><button type="button" data-v="A" aria-pressed="false">Aérea</button></div></div>
       <label class="f">Nº da OS no Protector<input class="inp" id="eOS" inputmode="numeric" placeholder="Opcional"></label>
-      <label class="f">Máquina ou aeronave<input class="inp" id="eMaq" list="dlMaq" placeholder="Opcional"></label>
-      <label class="f">Operador<input class="inp" id="eOper" list="dlOper" placeholder="Opcional"></label>
-      <datalist id="dlMaq"></datalist><datalist id="dlOper"></datalist>
+
     </div>
     <div class="card" id="eLoteCard" hidden>
       <div><h2>Mesma OS em outros talhões do lote</h2><p class="hint" id="eLoteHint" style="margin-top:4px"></p></div>
@@ -190,6 +206,29 @@ select.inp{appearance:auto}
     <div id="eMsg"></div>
   </main>
   <div class="foot"><span id="eResumo">Escolha a aplicação</span><button type="button" class="save" id="eSave">Salvar execução</button></div>
+</section>
+
+<!-- CHUVA -->
+<section id="s-chuva" hidden>
+  <main>
+    <div class="card">
+      <h2>Registrar chuva</h2>
+      <div class="row2">
+        <label class="f">Data<input class="inp" type="date" id="cData"></label>
+        <label class="f">Chuva (mm)<input class="inp" id="cMm" inputmode="decimal" placeholder="0,0" autocomplete="off"></label>
+      </div>
+      <label class="f">Pluviômetro ou local<input class="inp" id="cLocal" list="dlPluv" placeholder="Ex.: Sede, Bloco F (opcional)" autocomplete="off"></label>
+      <datalist id="dlPluv"></datalist>
+      <label class="f">Observação<input class="inp" id="cObs" placeholder="Opcional: granizo, vento forte…"></label>
+      <p class="hint">Dia sem chuva também vale lançar como 0 mm. Lançar de novo a mesma data e o mesmo pluviômetro corrige o valor.</p>
+      <div id="cMsg"></div>
+      <button type="button" class="save" id="cSave">Salvar chuva</button>
+    </div>
+    <div class="card" style="gap:4px">
+      <h2 style="margin-bottom:6px">Últimos registros</h2>
+      <div id="cLista"><div class="empty">Carregando…</div></div>
+    </div>
+  </main>
 </section>
 
 <!-- TALHÕES -->
@@ -229,7 +268,7 @@ select.inp{appearance:auto}
 <script>
 /* ============ CONFIGURAÇÃO ============
    Cole entre as aspas o endereço do Apps Script (termina em /exec). */
-const DATA_URL = "https://script.google.com/macros/s/AKfycbx4fbyyhG2CS_K3PUpDqFdbTg_wi_T9qus78qG7rJrVUDsNQgvDPdoRxBxA6g_qgVNv1Q/exec";
+const DATA_URL = "https://script.google.com/macros/s/AKfycbwxeuEaQ6gyYzEo3yWbs4SPVj529WUWqdp04ObgWcei8J8z4SiuciiEiXBFNg7-R2FrKg/exec";
 /* ===================================== */
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -270,18 +309,18 @@ async function getListas(){
 async function enviar(payload){
   if (!webOn()) throw new Error("O endereço do script ainda não foi configurado.");
   if (navigator.onLine === false) throw new Error("Sem internet. O lançamento não foi enviado; tente de novo quando tiver sinal.");
-  const body = JSON.stringify(Object.assign({codigo: cfg.cod, usuario: cfg.nome}, payload));
+  const body = JSON.stringify(Object.assign({codigo: cfg.cod, login: cfg.nome}, payload));
   let r;
   try { r = await fetch(DATA_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body, redirect:"follow"}); }
   catch (e) { throw new Error("Falha de conexão. O lançamento pode não ter sido gravado; confira em Últimos lançamentos antes de enviar de novo."); }
   let j; try { j = await r.json(); } catch(e) { throw new Error("Resposta inválida do script."); }
-  if (!j.ok) throw new Error(j.error || "Erro ao gravar.");
+  if (!j.ok) { if (/usuário ou senha/i.test(j.error || "")) setTimeout(() => { location.hash = "config"; }, 2500); throw new Error(j.error || "Erro ao gravar."); }
   return j;
 }
 
 /* ---------- navegação ---------- */
 const TITULOS = {home:["Lançamentos","Programação, execução e plantio"], programar:["Programar aplicação","Uma programação para vários talhões de uma vez"],
-  executar:["Registrar execução","Liga a aplicação feita à programação e à OS"], talhoes:["Talhões e plantio","Datas de plantio e cadastro"], config:["Lançamentos","Configuração deste aparelho"]};
+  executar:["Registrar execução","Liga a aplicação feita à programação e à OS"], talhoes:["Talhões e plantio","Datas de plantio e cadastro"], chuva:["Chuva","Pluviometria diária"], config:["Lançamentos","Entrar neste aparelho"]};
 function show(tela){
   if (!cfg.nome || !cfg.cod) tela = "config";
   document.querySelectorAll("section[id^=s-]").forEach(s => s.hidden = s.id !== "s-" + tela);
@@ -299,11 +338,11 @@ $("btnBack").addEventListener("click", () => { location.hash = "home"; });
 $("btnCfg").addEventListener("click", () => { location.hash = "config"; });
 $("cfgSave").addEventListener("click", () => {
   const nome = $("cfgNome").value.trim(), cod = $("cfgCod").value.trim();
-  if (!nome || !cod) { msg("cfgMsg", "err", "Preencha o nome e o código de acesso."); return; }
+  if (!nome || !cod) { msg("cfgMsg", "err", "Preencha o usuário e a senha."); return; }
   cfg = {nome, cod}; lsSet("lancar.cfg", JSON.stringify(cfg)); msg("cfgMsg", "", ""); location.hash = "home"; route();
 });
 
-function refreshAll(){ if (!L) return; renderHome(); renderProg(); renderExec(); renderTal(); }
+function refreshAll(){ if (!L) return; renderHome(); renderProg(); renderExec(); renderTal(); renderChuva(); }
 const talArea = () => Object.fromEntries((L ? L.talhoes : []).map(t => [t.t, t.area]));
 const pendentes = () => L.progs.filter(p => !p.done);
 function statusTxt(p){
@@ -318,6 +357,8 @@ function renderHome(){
   $("bPend").hidden = !np; $("bPend").textContent = np + (np === 1 ? " talhão" : " talhões");
   const sp = L.talhoes.filter(t => t.ativo && !t.plantio).length;
   $("bPlant").hidden = !sp; $("bPlant").textContent = sp + " sem plantio";
+  const ch = (L.chuvas || []).filter(c => c.data === hojeIso());
+  $("bChuva").hidden = false; $("bChuva").textContent = ch.length ? "hoje: " + ha(ch.reduce((s, c) => s + c.mm, 0) / ch.length, 1) + " mm" : "sem registro hoje";
   const P = Object.fromEntries(L.progs.map(p => [p.id, p]));
   const grupos = [];
   L.recentes.forEach(r => {
@@ -335,72 +376,149 @@ function renderHome(){
 }
 
 /* ---------- programar ---------- */
-const P = {sel: new Set(), modo: "T", prods: [], busca: ""};
+const P = {sel: new Set(), modo: "T", prods: [], busca: "", vista: "lista", opRender: null};
 function grupoDe(t){ const m = t.match(/^([A-Za-zÀ-ú]+)[-\s]?\d/); return m ? m[1].toUpperCase() : "Outros"; }
+function jaProgramados(){ const op = $("pOp").value; return new Set(L.progs.filter(p => p.op === op).map(p => p.t)); }
 function disponiveis(){
-  const op = $("pOp").value, rep = $("pRep").checked;
-  const ja = new Set(L.progs.filter(p => p.op === op).map(p => p.t));
+  const rep = $("pRep").checked, ja = jaProgramados();
   return L.talhoes.filter(t => t.ativo && (rep || !ja.has(t.t))).sort((a, b) => tcmp(a.t, b.t));
 }
+function areaSel(){ const A = talArea(); return [...P.sel].reduce((s, t) => s + (A[t] || 0), 0); }
+/* Monta tudo (dados novos, troca de operação). Nunca é chamado enquanto a pessoa digita. */
 function renderProg(){
   if (!L) return;
-  if (!$("pOp").options.length) {
-    $("pOp").innerHTML = L.ops.map(o => `<option>${esc(o)}</option>`).join("");
-    $("pData").value = hojeIso();
-  }
-  $("dlProd").innerHTML = L.produtos.map(p => `<option value="${esc(p.p)}">${esc(p.cl)}${p.un ? " · " + esc(p.un) : ""}</option>`).join("");
+  if (!$("pOp").options.length) { $("pOp").innerHTML = L.ops.map(o => `<option>${esc(o)}</option>`).join(""); $("pData").value = hojeIso(); }
   const recs = L.receitas.slice().sort((a, b) => (b.op === $("pOp").value) - (a.op === $("pOp").value) || tcmp(a.nome, b.nome));
   const cur = $("pRec").value;
   $("pRec").innerHTML = `<option value="">Sem receita</option>` + recs.map(r => `<option value="${esc(r.nome)}">${esc(r.nome)}${r.op ? " (" + esc(r.op) + ")" : ""}</option>`).join("");
   $("pRec").value = recs.some(r => r.nome === cur) ? cur : "";
-  const disp = disponiveis(), dispSet = new Set(disp.map(t => t.t));
+  const dispSet = new Set(disponiveis().map(t => t.t));
   [...P.sel].forEach(t => { if (!dispSet.has(t)) P.sel.delete(t); });
-  const q = norm(P.busca);
+  renderTalList(); renderSel();
+  if (!$("pProds").children.length) renderProdsUI();
+  if (P.vista === "mapa") estiloMapaP();
+}
+function renderTalList(){
+  const disp = disponiveis(), q = norm(P.busca);
   const vis = disp.filter(t => !q || norm(t.t).includes(q));
+  $("pList").innerHTML = vis.length ? vis.map(t => `<label><input type="checkbox" data-t="${esc(t.t)}" ${P.sel.has(t.t) ? "checked" : ""}><b>${esc(t.t)}</b><small>${ha(t.area)} ha${t.plantio ? " · plantio " + fd(t.plantio) : ""}</small></label>`).join("")
+    : `<div class="empty">${disp.length ? "Nenhum talhão com esse nome." : "Todos os talhões ativos já têm esta operação programada."}</div>`;
+}
+/* Atualiza só o que depende da seleção: chips, grupos, contadores, totais e mapa. */
+function renderSel(){
+  const disp = disponiveis(), A = talArea(), sel = [...P.sel].sort(tcmp);
   const grp = [...new Set(disp.map(t => grupoDe(t.t)))].sort(tcmp);
   $("pGrp").innerHTML = grp.map(g => { const ts = disp.filter(t => grupoDe(t.t) === g); const all = ts.every(t => P.sel.has(t.t));
     return `<button type="button" data-g="${esc(g)}" aria-pressed="${all}">${esc(g)} <span style="color:var(--muted);font-weight:400">${ts.length}</span></button>`; }).join("");
-  $("pList").innerHTML = vis.length ? vis.map(t => `<label><input type="checkbox" data-t="${esc(t.t)}" ${P.sel.has(t.t) ? "checked" : ""}><b>${esc(t.t)}</b><small>${ha(t.area)} ha${t.plantio ? " · plantio " + fd(t.plantio) : ""}</small></label>`).join("")
-    : `<div class="empty">${disp.length ? "Nenhum talhão com esse nome." : "Todos os talhões ativos já têm esta operação programada."}</div>`;
-  const A = talArea(), sel = [...P.sel].sort(tcmp);
   $("pChips").innerHTML = sel.map(t => `<span class="chip">${esc(t)} <span>${ha(A[t])} ha</span><button type="button" data-rm="${esc(t)}" aria-label="Remover ${esc(t)}">${X}</button></span>`).join("");
-  const area = sel.reduce((s, t) => s + (A[t] || 0), 0);
+  const area = areaSel();
   $("pSel").textContent = sel.length ? `${sel.length} marcados · ${ha(area)} ha` : "nenhum marcado";
-  renderProds(area);
-  const np = P.prods.filter(x => x.p.trim()).length;
-  $("pResumo").textContent = sel.length ? `${sel.length} ${sel.length === 1 ? "talhão" : "talhões"} · ${ha(area)} ha · ${np} ${np === 1 ? "produto" : "produtos"}` : "Marque os talhões";
+  P.prods.forEach((_, i) => atualizarLinha(i));
+  resumoProg();
+  if (P.vista === "mapa") estiloMapaP();
 }
-function unidade(p){ const x = L.produtos.find(y => y.p === p); return x ? x.un : ""; }
-function renderProds(area){
+function resumoProg(){
+  const sel = P.sel.size, area = areaSel(), np = P.prods.filter(x => x.p.trim()).length;
+  $("pResumo").textContent = sel ? `${sel} ${sel === 1 ? "talhão" : "talhões"} · ${ha(area)} ha · ${np} ${np === 1 ? "produto" : "produtos"}` : "Marque os talhões";
+}
+function produto(nome){ return L.produtos.find(y => norm(y.p) === norm(nome)); }
+/* Monta as linhas de produto. Só é chamado ao adicionar, remover ou escolher receita. */
+function renderProdsUI(){
   if (!P.prods.length) P.prods.push({p:"", dose:""});
-  const foco = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset : null;
-  const fk = foco && foco.pi != null ? foco.pi + ":" + foco.k : null;
-  $("pProds").innerHTML = P.prods.map((x, i) => { const un = unidade(x.p), d = num(x.dose), ok = !x.p || L.produtos.some(y => y.p === x.p);
-    return `<div class="prod">
-      <label class="f full">Produto<input class="inp" list="dlProd" data-pi="${i}" data-k="p" value="${esc(x.p)}" placeholder="Digite parte do nome" autocomplete="off"></label>
-      <label class="f">Dose${un ? " (" + esc(un) + ")" : ""}<input class="inp" inputmode="decimal" data-pi="${i}" data-k="dose" value="${esc(x.dose)}" placeholder="0,0"></label>
+  $("pProds").innerHTML = P.prods.map((x, i) => `<div class="prod" data-row="${i}">
+      <div class="full pwrap"><label class="f">Produto<input class="inp" data-pi="${i}" data-k="p" value="${esc(x.p)}" placeholder="Digite parte do nome" autocomplete="off" autocapitalize="characters" spellcheck="false"></label><div class="sug" data-sug="${i}" hidden></div></div>
+      <label class="f"><span>Dose <span data-un="${i}"></span></span><input class="inp" inputmode="decimal" data-pi="${i}" data-k="dose" value="${esc(x.dose)}" placeholder="0,0" autocomplete="off"></label>
       <span></span>
       <button type="button" class="icon" data-prm="${i}" aria-label="Remover produto">${X}</button>
-      <div class="tot">${ok ? (x.p ? "" : "Escolha um produto da lista") : '<span style="color:var(--bad)">Produto não cadastrado</span>'}<span>Total: <b>${d && area ? ha(d * area, 1) + " " + esc(un.replace(/\/ha$/, "")) : "—"}</b></span></div></div>`; }).join("");
-  if (fk) { const [i, k] = fk.split(":"); const el = $("pProds").querySelector(`[data-pi="${i}"][data-k="${k}"]`); if (el) { el.focus(); const v = el.value; try { el.setSelectionRange(v.length, v.length); } catch(e) {} } }
+      <div class="tot"><span data-st="${i}"></span><span>Total: <b data-tot="${i}">—</b></span></div></div>`).join("");
+  P.prods.forEach((_, i) => atualizarLinha(i));
+  resumoProg();
 }
-$("pOp").addEventListener("change", renderProg);
-$("pRep").addEventListener("change", renderProg);
+function atualizarLinha(i){
+  const x = P.prods[i]; if (!x) return;
+  const pr = x.p.trim() ? produto(x.p) : null, un = pr ? pr.un : "", d = num(x.dose), area = areaSel();
+  const eUn = document.querySelector(`[data-un="${i}"]`), eTot = document.querySelector(`[data-tot="${i}"]`), eSt = document.querySelector(`[data-st="${i}"]`);
+  if (eUn) eUn.textContent = un ? "(" + un + ")" : "";
+  if (eTot) eTot.textContent = d && area && pr ? ha(d * area, 1) + " " + un.replace(/\/ha$/, "") : "—";
+  if (eSt) eSt.innerHTML = !x.p.trim() ? "Escolha um produto" : pr ? esc(pr.cl || "") : '<span style="color:var(--bad)">Produto não cadastrado</span>';
+}
+function sugestoes(i, q){
+  const box = document.querySelector(`[data-sug="${i}"]`); if (!box) return;
+  const nq = norm(q);
+  const lst = !nq ? [] : L.produtos.filter(p => norm(p.p).includes(nq)).sort((a, b) => (norm(b.p).startsWith(nq)) - (norm(a.p).startsWith(nq)) || tcmp(a.p, b.p)).slice(0, 8);
+  if (!lst.length || (lst.length === 1 && norm(lst[0].p) === nq)) { box.hidden = true; box.innerHTML = ""; return; }
+  box.innerHTML = lst.map(p => `<button type="button" data-pick="${i}" data-val="${esc(p.p)}"><span>${esc(p.p)}</span><small>${esc(p.cl)}${p.un ? " · " + esc(p.un) : ""}</small></button>`).join("");
+  box.hidden = false;
+}
+$("pOp").addEventListener("change", () => { renderProg(); });
+$("pRep").addEventListener("change", () => { renderProg(); });
 $("pModo").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; P.modo = b.dataset.v; [...$("pModo").children].forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
-$("pBusca").addEventListener("input", (e) => { P.busca = e.target.value; renderProg(); });
-$("pList").addEventListener("change", (e) => { const t = e.target.dataset.t; if (!t) return; e.target.checked ? P.sel.add(t) : P.sel.delete(t); renderProg(); });
-$("pGrp").addEventListener("click", (e) => { const b = e.target.closest("[data-g]"); if (!b) return; const ts = disponiveis().filter(t => grupoDe(t.t) === b.dataset.g); const all = ts.every(t => P.sel.has(t.t)); ts.forEach(t => all ? P.sel.delete(t.t) : P.sel.add(t.t)); renderProg(); });
-$("pChips").addEventListener("click", (e) => { const b = e.target.closest("[data-rm]"); if (b) { P.sel.delete(b.dataset.rm); renderProg(); } });
-$("pRec").addEventListener("change", (e) => { const r = L.receitas.find(x => x.nome === e.target.value); if (r) { P.prods = r.itens.map(i => ({p:i.p, dose:String(i.dose).replace(".", ",")})); if (r.op && L.ops.includes(r.op)) $("pOp").value = r.op; } renderProg(); });
-$("pAdd").addEventListener("click", () => { P.prods.push({p:"", dose:""}); renderProg(); const els = $("pProds").querySelectorAll('[data-k="p"]'); els[els.length-1].focus(); });
-$("pProds").addEventListener("input", (e) => { const d = e.target.dataset; if (d.pi == null) return; P.prods[+d.pi][d.k] = e.target.value; clearTimeout(P.t); P.t = setTimeout(renderProg, d.k === "p" ? 400 : 150); });
-$("pProds").addEventListener("change", (e) => { if (e.target.dataset.pi != null) renderProg(); });
-$("pProds").addEventListener("click", (e) => { const b = e.target.closest("[data-prm]"); if (b) { P.prods.splice(+b.dataset.prm, 1); renderProg(); } });
+$("pBusca").addEventListener("input", (e) => { P.busca = e.target.value; renderTalList(); });
+$("pList").addEventListener("change", (e) => { const t = e.target.dataset.t; if (!t) return; e.target.checked ? P.sel.add(t) : P.sel.delete(t); renderSel(); });
+$("pGrp").addEventListener("click", (e) => { const b = e.target.closest("[data-g]"); if (!b) return; const ts = disponiveis().filter(t => grupoDe(t.t) === b.dataset.g); const all = ts.every(t => P.sel.has(t.t)); ts.forEach(t => all ? P.sel.delete(t.t) : P.sel.add(t.t)); renderTalList(); renderSel(); });
+$("pChips").addEventListener("click", (e) => { const b = e.target.closest("[data-rm]"); if (b) { P.sel.delete(b.dataset.rm); renderTalList(); renderSel(); } });
+$("pRec").addEventListener("change", (e) => { const r = L.receitas.find(x => x.nome === e.target.value); if (r) { P.prods = r.itens.map(i => ({p:i.p, dose:String(i.dose).replace(".", ",")})); if (r.op && L.ops.includes(r.op) && $("pOp").value !== r.op) { $("pOp").value = r.op; renderProg(); } renderProdsUI(); } });
+$("pAdd").addEventListener("click", () => { P.prods.push({p:"", dose:""}); renderProdsUI(); const els = $("pProds").querySelectorAll('[data-k="p"]'); els[els.length-1].focus(); });
+$("pProds").addEventListener("input", (e) => { const d = e.target.dataset; if (d.pi == null) return; const i = +d.pi;
+  P.prods[i][d.k] = e.target.value; if (d.k === "p") sugestoes(i, e.target.value); atualizarLinha(i); resumoProg(); });
+$("pProds").addEventListener("focusin", (e) => { const d = e.target.dataset; if (d.k === "p" && e.target.value) sugestoes(+d.pi, e.target.value); });
+$("pProds").addEventListener("focusout", (e) => { const d = e.target.dataset; if (d.k !== "p") return; const i = +d.pi;
+  setTimeout(() => { const box = document.querySelector(`[data-sug="${i}"]`); if (box && !box.contains(document.activeElement)) box.hidden = true;
+    const pr = produto(P.prods[i].p); if (pr && P.prods[i].p !== pr.p) { P.prods[i].p = pr.p; e.target.value = pr.p; atualizarLinha(i); } }, 180); });
+$("pProds").addEventListener("mousedown", (e) => { if (e.target.closest("[data-pick]")) e.preventDefault(); });
+$("pProds").addEventListener("click", (e) => {
+  const pk = e.target.closest("[data-pick]");
+  if (pk) { const i = +pk.dataset.pick; P.prods[i].p = pk.dataset.val; const inp = document.querySelector(`[data-pi="${i}"][data-k="p"]`); inp.value = pk.dataset.val;
+    document.querySelector(`[data-sug="${i}"]`).hidden = true; atualizarLinha(i); resumoProg(); const dose = document.querySelector(`[data-pi="${i}"][data-k="dose"]`); if (dose && !dose.value) dose.focus(); return; }
+  const b = e.target.closest("[data-prm]"); if (b) { P.prods.splice(+b.dataset.prm, 1); renderProdsUI(); }
+});
+/* mapa para escolher talhões */
+const MP = {map:null, layer:null, gj:null};
+async function obterMapa(){
+  if (MP.gj) return MP.gj;
+  let c = null; try { c = JSON.parse(lsGet("lancar.mapa") || "null"); } catch(e) {}
+  try {
+    const m = await (await fetch(DATA_URL + "?acao=mapa&meta=1", {cache:"no-store", redirect:"follow"})).json();
+    if (m.ok && (!c || c.modified !== m.modified)) { const j = await (await fetch(DATA_URL + "?acao=mapa", {cache:"no-store", redirect:"follow"})).json();
+      if (j.ok) { c = {modified: j.modified, gj: JSON.parse(j.geojson)}; lsSet("lancar.mapa", JSON.stringify(c)); } }
+    else if (!m.ok && !c) throw new Error(m.error);
+  } catch (e) { if (!c) throw e; }
+  MP.gj = c.gj; return MP.gj;
+}
+async function mostrarMapaP(){
+  if (typeof window.L === "undefined" || !window.L.map) { $("pMapMsg").textContent = "O mapa não carregou. Verifique a internet ou use a lista."; return; }
+  if (!MP.map) {
+    MP.map = window.L.map("pMap", {zoomControl:true});
+    window.L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {maxZoom:19, attribution:"Imagem © Esri"}).addTo(MP.map);
+  }
+  setTimeout(() => MP.map.invalidateSize(), 60);
+  if (MP.layer) { estiloMapaP(); return; }
+  $("pMapMsg").textContent = "Carregando o mapa…";
+  try { await obterMapa(); } catch (e) { $("pMapMsg").textContent = "Não consegui carregar o mapa: " + (e.message || e) + ". Use a lista."; return; }
+  MP.layer = window.L.geoJSON(MP.gj, {onEachFeature: (f, lyr) => {
+    lyr.bindTooltip(esc(f.properties.talhao), {permanent:true, direction:"center", className:"tlbl"});
+    lyr.on("click", () => { const t = f.properties.talhao; if (!disponiveis().some(x => x.t === t)) { toast(`${t}: já tem esta operação programada ou está inativo.`); return; }
+      P.sel.has(t) ? P.sel.delete(t) : P.sel.add(t); renderTalList(); renderSel(); });
+  }}).addTo(MP.map);
+  MP.map.fitBounds(MP.layer.getBounds(), {padding:[8,8]});
+  $("pMapMsg").textContent = "Toque num talhão para marcar ou desmarcar. Verde: marcado. Cinza: já tem esta operação ou está inativo.";
+  estiloMapaP();
+}
+function estiloMapaP(){
+  if (!MP.layer) return;
+  const disp = new Set(disponiveis().map(t => t.t));
+  MP.layer.eachLayer(l => { const t = l.feature.properties.talhao, s = P.sel.has(t), d = disp.has(t);
+    l.setStyle({color: s ? "#9fe0bb" : "#ffffff", weight: s ? 3 : 1.4, fillColor: s ? "#2F7553" : d ? "#ffffff" : "#5c6660", fillOpacity: s ? .7 : d ? .12 : .55}); });
+}
+$("pVista").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; P.vista = b.dataset.v;
+  [...$("pVista").children].forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  $("pVLista").hidden = P.vista !== "lista"; $("pVMapa").hidden = P.vista !== "mapa"; if (P.vista === "mapa") mostrarMapaP(); });
 $("pSave").addEventListener("click", async () => {
   msg("pMsg", "", "");
   const talhoes = [...P.sel], prods = P.prods.filter(x => x.p.trim());
+  prods.forEach(x => { const pr = produto(x.p); if (pr) x.p = pr.p; });
   const erro = !talhoes.length ? "Marque pelo menos um talhão." : !$("pData").value ? "Informe a data programada."
-    : prods.find(x => !L.produtos.some(y => y.p === x.p.trim())) ? "Há produto que não está cadastrado. Escolha da lista."
+    : prods.find(x => !produto(x.p)) ? "Há produto que não está cadastrado. Escolha da lista de sugestões."
     : prods.find(x => !(num(x.dose) > 0)) ? "Informe a dose de todos os produtos." : "";
   if (erro) { msg("pMsg", "err", erro); return; }
   if (!prods.length && !confirm("Salvar a programação sem produtos? Dá para lançar os produtos depois na planilha.")) return;
@@ -408,10 +526,34 @@ $("pSave").addEventListener("click", async () => {
   try {
     const j = await enviar({acao:"programar", op:$("pOp").value, modo:P.modo, data:$("pData").value, talhoes, receita:$("pRec").value,
       produtos: prods.map(x => ({p:x.p.trim(), dose:num(x.dose)})), obs:$("pObs").value, permitirRepetida:$("pRep").checked});
-    toast(j.msg); P.sel.clear(); P.prods = []; $("pObs").value = ""; $("pRec").value = ""; $("pRep").checked = false;
-    await getListas(); location.hash = "home";
+    toast(j.msg); P.sel.clear(); P.prods = []; P.busca = ""; $("pBusca").value = ""; $("pObs").value = ""; $("pRec").value = ""; $("pRep").checked = false;
+    renderProdsUI(); await getListas(); location.hash = "home";
   } catch (e) { msg("pMsg", "err", e.message || String(e)); }
   finally { b.disabled = false; b.textContent = "Salvar programação"; }
+});
+
+/* ---------- chuva ---------- */
+function renderChuva(){
+  if (!L) return;
+  if (!$("cData").value) $("cData").value = hojeIso();
+  if (!$("cLocal").value) $("cLocal").value = lsGet("lancar.pluv") || "";
+  $("dlPluv").innerHTML = (L.pluvs || []).map(v => `<option value="${esc(v)}">`).join("");
+  const c = L.chuvas || [];
+  $("cLista").innerHTML = c.length ? c.slice(0, 12).map(x => `<div class="rain"><span><b>${fd(x.data)}</b> <small class="hint">${esc(x.local) || "sem local"}</small></span><b>${ha(x.mm, 1)} mm</b></div>`).join("")
+    : '<div class="empty">Nenhuma chuva registrada ainda.</div>';
+}
+$("cSave").addEventListener("click", async () => {
+  msg("cMsg", "", "");
+  const mm = num($("cMm").value);
+  if (!$("cData").value) { msg("cMsg", "err", "Informe a data."); return; }
+  if (mm == null || mm < 0) { msg("cMsg", "err", "Informe a chuva em mm (0 se não choveu)."); return; }
+  if ($("cData").value > hojeIso()) { msg("cMsg", "err", "A data não pode ser no futuro."); return; }
+  const b = $("cSave"); b.disabled = true; b.textContent = "Salvando…";
+  try {
+    const j = await enviar({acao:"chuva", data:$("cData").value, mm, local:$("cLocal").value.trim(), obs:$("cObs").value});
+    lsSet("lancar.pluv", $("cLocal").value.trim()); toast(j.msg); $("cMm").value = ""; $("cObs").value = ""; await getListas();
+  } catch (e) { msg("cMsg", "err", e.message || String(e)); }
+  finally { b.disabled = false; b.textContent = "Salvar chuva"; }
 });
 
 /* ---------- executar ---------- */
@@ -443,8 +585,7 @@ function renderExec(){
   const extraHa = outros.filter(p => E.extras.has(p.id)).reduce((s, p) => s + restante(p), 0);
   const n = (sel ? 1 : 0) + E.extras.size;
   $("eResumo").textContent = sel ? `${n} ${n === 1 ? "talhão" : "talhões"} · ${ha((a || 0) + extraHa)} ha` : "Escolha a aplicação";
-  const hist = JSON.parse(lsGet("lancar.hist") || '{"maq":[],"oper":[]}');
-  $("dlMaq").innerHTML = hist.maq.map(v => `<option value="${esc(v)}">`).join(""); $("dlOper").innerHTML = hist.oper.map(v => `<option value="${esc(v)}">`).join("");
+
 }
 function aplicarProg(){
   const p = L.progs.find(x => x.id === E.id); if (!p) return;
@@ -465,10 +606,7 @@ $("eSave").addEventListener("click", async () => {
   const itens = [{id: sel.id, area: a}].concat(L.progs.filter(p => E.extras.has(p.id)).map(p => ({id: p.id, area: restante(p)})));
   const b = $("eSave"); b.disabled = true; b.textContent = "Salvando…";
   try {
-    const j = await enviar({acao:"executar", data:$("eData").value, modo:E.modo, os:$("eOS").value, maq:$("eMaq").value, oper:$("eOper").value, obs:$("eObs").value, itens});
-    const hist = JSON.parse(lsGet("lancar.hist") || '{"maq":[],"oper":[]}');
-    [["maq", $("eMaq").value], ["oper", $("eOper").value]].forEach(([k, v]) => { v = v.trim(); if (v) hist[k] = [v].concat(hist[k].filter(x => x !== v)).slice(0, 15); });
-    lsSet("lancar.hist", JSON.stringify(hist));
+    const j = await enviar({acao:"executar", data:$("eData").value, modo:E.modo, os:$("eOS").value, obs:$("eObs").value, itens});
     toast(j.msg); E.id = null; E.extras.clear(); ["eOS", "eObs", "eArea"].forEach(id => $(id).value = ""); $("eTal").value = "";
     await getListas(); location.hash = "home";
   } catch (e) { msg("eMsg", "err", e.message || String(e)); }
