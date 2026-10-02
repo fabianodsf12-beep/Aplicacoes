@@ -339,7 +339,9 @@ tbody tr:hover td{background:var(--panel2)}
         <div class="cap-msg" id="ritmoMsg"></div>
       </div>
       <div class="card">
-        <div class="card-head"><div><h2>Aplicação × chuva</h2><p class="sub">Hectares aplicados por dia e chuva (mm). Vários pluviômetros no mesmo dia viram média.</p></div><div class="kfig" id="kfChuva"></div></div>
+        <div class="card-head"><div><h2>Aplicação × chuva</h2><p class="sub">Chuva (mm), chuva acumulada no período e área aplicada.</p></div>
+          <div class="seg" role="group" aria-label="Agrupar chuva" id="segChuva" style="margin-left:auto"><button type="button" data-v="d" aria-pressed="true">Diário</button><button type="button" data-v="w" aria-pressed="false">Semanal</button></div>
+          <div class="kfig" id="kfChuva" style="margin-left:14px"></div></div>
         <div class="chart-box tall" style="height:310px"><canvas id="chChuva" aria-label="Aplicação e pluviometria"></canvas></div>
         <div class="cap-msg" id="chuvaMsg"></div>
       </div>
@@ -461,7 +463,7 @@ const S = {
   db: null, src: "", modified: null, custom: false,
   ref: null, tol: 2, modo: "todas", op: -1, status: "todas",
   tab: "geral", zoom: "30", gSort: "crit", gAll: false, tm: "sit", q: "", sort: {k:"crit", d:1}, cap: 0,
-  per: "tudo", perA: "", perB: "", geo: "sit", geoLbl: true, mapa: null
+  per: "tudo", perA: "", perB: "", geo: "sit", geoLbl: true, mapa: null, chuvaModo: "d"
 };
 const charts = {};
 const $ = (id) => document.getElementById(id);
@@ -837,30 +839,33 @@ function renderChuva(M){
   const ev = base.flatMap(i => i.execs.map(e => ({d:dn(e.d), a:e.area == null ? i.area : Math.min(e.area, i.area || e.area)})));
   const rain = chuvaPorDia();
   const a = M.per ? M.per[0] : M.ref - 29, b = M.per ? M.per[1] : M.ref;
-  const labels = [], ap = [], mm = [];
-  for (let d = a; d <= b; d++) {
-    labels.push(fdn(d) + " " + wd(d));
-    ap.push(+ev.filter(e => e.d === d).reduce((s, e) => s + e.a, 0).toFixed(2));
-    mm.push(rain[d] != null ? +rain[d].toFixed(1) : null);
-  }
-  const maxHa = Math.max(10, ...ap), maxMm = Math.max(5, ...mm.map(v => v || 0));
-  const totMm = mm.reduce((s, v) => s + (v || 0), 0), dias = mm.filter(v => v > 0).length, temReg = mm.some(v => v != null);
-  kfig("kfChuva", ha(totMm, totMm < 100 ? 1 : 0) + " mm", `em ${dias} ${dias===1?"dia":"dias"} com chuva`);
-  const azul = "#4BA9E0";
-  mk("chChuva", {type:"bar", plugins:[pluginRotulos], data:{labels, datasets:[
-      {label:"Aplicado (ha)", data:ap, backgroundColor:grad(col("exec_prazo"), .45), borderRadius:5, borderSkipped:false, maxBarThickness:22, yAxisID:"y"},
-      {label:"Chuva (mm)", data:mm, backgroundColor:(c) => { const ar = c.chart.chartArea; if (!ar) return azul; const g = c.chart.ctx.createLinearGradient(0, ar.top, 0, ar.bottom); g.addColorStop(0, hexA(azul, 1)); g.addColorStop(.6, hexA(azul, .45)); return g; },
-        borderRadius:5, borderSkipped:false, maxBarThickness:22, yAxisID:"y2"}]},
-    options:{maintainAspectRatio:false, interaction:{mode:"index", intersect:false}, layout:{padding:{top:4}},
-      scales:{y:eixoY({max:Math.ceil(maxHa * 1.75), ticks:{callback:(v)=> v <= maxHa ? ha(v,0) : "", padding:8, color:css("--muted")}, title:{display:true, text:"ha aplicados", color:css("--muted")}}),
-        y2:{position:"right", reverse:true, beginAtZero:true, max:Math.ceil(maxMm * 2.4), grid:{display:false}, border:{display:false}, ticks:{callback:(v)=> v <= maxMm ? ha(v,0) : "", color:azul, padding:8}, title:{display:true, text:"chuva (mm)", color:azul}},
-        x:eixoX({ticks:{maxRotation:0, autoSkipPadding:10, color:css("--muted"), callback:function(v){ return this.getLabelForValue(v).split(" ")[0]; }}})},
-      plugins:{legend:{position:"bottom"}, rotulos:{on:true, datasets:[1], fmt:(v)=>ha(v,v<10?1:0), baixo:true, corDs:{1:azul}, size:11},
-        tooltip:{callbacks:{title:(it)=>{ const l = it[0].label.split(" "); return `${l[0]} (${l[1]})`; }, label:(c)=>c.raw == null ? ` ${c.dataset.label.replace(/ \(.*\)/,"")}: sem registro` : ` ${c.dataset.label.replace(/ \(.*\)/,"")}: ${c.datasetIndex ? ha(c.raw,1) + " mm" : ha(c.raw,0) + " ha"}`}}}}});
-  const apChuva = ap.reduce((s, v, i) => s + (mm[i] >= 5 ? v : 0), 0);
+  const dias = []; for (let d = a; d <= b; d++) dias.push(d);
+  const apD = (d) => ev.filter(e => e.d === d).reduce((s, e) => s + e.a, 0);
+  let labels, mm, ap;
+  if (S.chuvaModo === "w") {
+    const sem = []; dias.forEach(d => { const w = segunda(d); let g = sem.find(x => x.w === w); if (!g) sem.push(g = {w, ds:[]}); g.ds.push(d); });
+    labels = sem.map(g => "sem " + fdn(g.w)); mm = sem.map(g => +g.ds.reduce((s, d) => s + (rain[d] || 0), 0).toFixed(1)); ap = sem.map(g => +g.ds.reduce((s, d) => s + apD(d), 0).toFixed(2));
+  } else { labels = dias.map(d => fdn(d) + " " + wd(d)); mm = dias.map(d => +(rain[d] || 0).toFixed(1)); ap = dias.map(d => +apD(d).toFixed(2)); }
+  let acc = 0; const mmAcc = mm.map(v => +(acc += v).toFixed(1));
+  const totMm = acc, diasChuva = dias.filter(d => rain[d] > 0).length;
+  kfig("kfChuva", ha(totMm, totMm < 100 ? 1 : 0) + " mm", `em ${diasChuva} ${diasChuva===1?"dia":"dias"} com chuva`);
+  const azul = "#3E9BD6", sem = S.chuvaModo === "w";
+  mk("chChuva", {data:{labels, datasets:[
+      {type:"line", label:"Chuva (mm)", data:mm, borderColor:azul, backgroundColor:grad(azul, .05, .45), fill:"origin", yAxisID:"y", pointRadius:sem ? 3 : 0, pointHoverRadius:4, borderWidth:2, tension:.15, order:2},
+      {type:"line", label:"Chuva acumulada (mm)", data:mmAcc, borderColor:azul, borderDash:[5,4], yAxisID:"y2", pointRadius:0, borderWidth:1.6, fill:false, order:1},
+      {type:"bar", label:"Área aplicada (ha)", data:ap, backgroundColor:grad(col("exec_prazo"), .5, .9), yAxisID:"y1", order:3, borderRadius:4, borderSkipped:false, maxBarThickness:sem ? 38 : 16}]},
+    options:{maintainAspectRatio:false, interaction:{mode:"index", intersect:false},
+      scales:{x:eixoX({ticks:{maxRotation:0, autoSkipPadding:10, color:css("--muted"), callback:function(v){ return sem ? this.getLabelForValue(v) : this.getLabelForValue(v).split(" ")[0]; }}}),
+        y:eixoY({title:{display:true, text:"mm", color:azul}, ticks:{color:azul, padding:8}}),
+        y1:{position:"right", beginAtZero:true, grid:{display:false}, border:{display:false}, title:{display:true, text:"ha aplicados", color:css("--muted")}, ticks:{callback:(v)=>ha(v,0), color:css("--muted")}},
+        y2:{display:false, beginAtZero:true}},
+      plugins:{legend:{position:"bottom"}, tooltip:{callbacks:{title:(it)=>{ const l = it[0].label.split(" "); return sem ? `Semana de ${l[1]}` : `${l[0]} (${l[1]})`; },
+        label:(c)=>` ${c.dataset.label.replace(/ \(.*\)/,"")}: ${c.dataset.yAxisID === "y1" ? ha(c.raw,0) + " ha" : ha(c.raw,1) + " mm"}`}}}}});
+  const apChuva = dias.reduce((s, d) => s + ((rain[d] || 0) >= 5 ? apD(d) : 0), 0);
   $("chuvaMsg").innerHTML = !(S.db.chuvas || []).length ? '<span class="muted">Nenhuma chuva lançada ainda. Use Lançamentos → Chuva.</span>'
-    : `<span class="muted">${temReg ? "" : "Sem chuva registrada no período. "}Aplicado no período: <b style="color:var(--ink)">${ha(ap.reduce((s,v)=>s+v,0),0)} ha</b>${apChuva ? ` · ${ha(apChuva,0)} ha em dias com 5 mm ou mais` : ""}. A chuva desce do topo do gráfico.</span>`;
+    : `<span class="muted">Aplicado no período: <b style="color:var(--ink)">${ha(ap.reduce((s,v)=>s+v,0),0)} ha</b>${apChuva ? ` · ${ha(apChuva,0)} ha em dias com 5 mm ou mais de chuva` : ""}.</span>`;
 }
+
 function pill(s){ return `<span class="pill" style="--c:${col(s)}">${STATUS[s].t}</span>`; }
 function renderPrio(M){
   const arr = M.items.filter(i => passModo(i) && passOp(i) && passSt(i) && ["atrasada","janela","prox7"].includes(i.s))
@@ -1361,6 +1366,7 @@ function bind(){
   $("perB").addEventListener("change", () => { if ($("perB").value && !$("perA").value) $("perA").value = $("perB").value; datasPer(); });
 
   $("btnPdf").addEventListener("click", gerarPDF);
+  $("segChuva").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.chuvaModo = b.dataset.v; [...$("segChuva").children].forEach(x => x.setAttribute("aria-pressed", String(x === b))); if (S.db) { chartBase(); renderChuva(build()); } });
   $("geoSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.geo = b.dataset.v; [...$("geoSeg").children].forEach(x => x.setAttribute("aria-pressed", String(x === b))); render(); });
   $("geoLbl").addEventListener("change", (e) => { S.geoLbl = e.target.checked; render(); });
   $("btnSync").addEventListener("click", () => { if (S.custom && webOn()) S.custom = false; webRefresh(true); });

@@ -94,7 +94,7 @@ select.inp{appearance:auto}
 .sug button:last-child{border-bottom:0}
 .sug button:hover,.sug button:focus{background:var(--panel2)}
 .sug small{color:var(--muted);font-size:13px;white-space:nowrap}
-.pmap{height:380px;border-radius:10px;overflow:hidden;border:1px solid var(--line2);background:var(--panel2)}
+.pmap{position:relative;z-index:0;isolation:isolate;height:380px;border-radius:10px;overflow:hidden;border:1px solid var(--line2);background:var(--panel2)}
 .leaflet-tooltip.tlbl{background:transparent;border:0;box-shadow:none;color:#fff;font:600 12px 'Barlow',sans-serif;text-shadow:0 0 3px #000,0 0 2px #000;padding:0}
 .leaflet-tooltip.tlbl::before{display:none}
 .rain{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line2)}
@@ -217,10 +217,7 @@ select.inp{appearance:auto}
         <label class="f">Data<input class="inp" type="date" id="cData"></label>
         <label class="f">Chuva (mm)<input class="inp" id="cMm" inputmode="decimal" placeholder="0,0" autocomplete="off"></label>
       </div>
-      <label class="f">Pluviômetro ou local<input class="inp" id="cLocal" list="dlPluv" placeholder="Ex.: Sede, Bloco F (opcional)" autocomplete="off"></label>
-      <datalist id="dlPluv"></datalist>
-      <label class="f">Observação<input class="inp" id="cObs" placeholder="Opcional: granizo, vento forte…"></label>
-      <p class="hint">Dia sem chuva também vale lançar como 0 mm. Lançar de novo a mesma data e o mesmo pluviômetro corrige o valor.</p>
+      <p class="hint">Informe a média de todos os pluviômetros da fazenda no dia. Dia sem chuva também vale lançar como 0 mm. Lançar de novo a mesma data corrige o valor.</p>
       <div id="cMsg"></div>
       <button type="button" class="save" id="cSave">Salvar chuva</button>
     </div>
@@ -281,6 +278,7 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch(e) {} };
 const hojeIso = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
 const dn = (s) => Date.UTC(+s.slice(0,4), +s.slice(5,7)-1, +s.slice(8,10)) / 864e5;
 const tcmp = (a, b) => a.localeCompare(b, "pt", {numeric:true});
+const DIAS = ["dom","seg","ter","qua","qui","sex","sáb"];
 const X = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("on"); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove("on"),3200); }
 function net(kind, txt){ $("net").className = "net " + (kind||""); $("netTxt").textContent = txt; }
@@ -536,10 +534,8 @@ $("pSave").addEventListener("click", async () => {
 function renderChuva(){
   if (!L) return;
   if (!$("cData").value) $("cData").value = hojeIso();
-  if (!$("cLocal").value) $("cLocal").value = lsGet("lancar.pluv") || "";
-  $("dlPluv").innerHTML = (L.pluvs || []).map(v => `<option value="${esc(v)}">`).join("");
   const c = L.chuvas || [];
-  $("cLista").innerHTML = c.length ? c.slice(0, 12).map(x => `<div class="rain"><span><b>${fd(x.data)}</b> <small class="hint">${esc(x.local) || "sem local"}</small></span><b>${ha(x.mm, 1)} mm</b></div>`).join("")
+  $("cLista").innerHTML = c.length ? c.slice(0, 12).map(x => `<div class="rain"><span><b>${fd(x.data)}</b> <small class="hint">${DIAS[new Date(dn(x.data)*864e5).getUTCDay()]}</small></span><b>${ha(x.mm, 1)} mm</b></div>`).join("")
     : '<div class="empty">Nenhuma chuva registrada ainda.</div>';
 }
 $("cSave").addEventListener("click", async () => {
@@ -550,8 +546,8 @@ $("cSave").addEventListener("click", async () => {
   if ($("cData").value > hojeIso()) { msg("cMsg", "err", "A data não pode ser no futuro."); return; }
   const b = $("cSave"); b.disabled = true; b.textContent = "Salvando…";
   try {
-    const j = await enviar({acao:"chuva", data:$("cData").value, mm, local:$("cLocal").value.trim(), obs:$("cObs").value});
-    lsSet("lancar.pluv", $("cLocal").value.trim()); toast(j.msg); $("cMm").value = ""; $("cObs").value = ""; await getListas();
+    const j = await enviar({acao:"chuva", data:$("cData").value, mm, local:"", obs:""});
+    toast(j.msg); $("cMm").value = ""; $("cData").value = hojeIso(); await getListas(); $("cMm").blur(); window.scrollTo(0, 0);
   } catch (e) { msg("cMsg", "err", e.message || String(e)); }
   finally { b.disabled = false; b.textContent = "Salvar chuva"; }
 });
