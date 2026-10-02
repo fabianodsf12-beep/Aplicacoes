@@ -41,8 +41,16 @@ button,input,select{font:inherit;color:inherit}
 .muted{color:var(--muted)}
 
 /* topo */
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
-.top-inner{max-width:1440px;margin:0 auto;padding:14px 20px 0;display:flex;flex-direction:column;gap:12px}
+.top{background:var(--bg)}
+.barra{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);box-shadow:0 6px 14px -12px rgba(0,0,0,.35)}
+.barra-inner{max-width:1440px;margin:0 auto;padding:8px 20px 0;display:flex;flex-direction:column;gap:6px}
+.filtros{display:flex;flex-wrap:nowrap;align-items:flex-end;gap:14px;overflow-x:auto;scrollbar-width:thin;padding-bottom:2px}
+.filtros > *{flex-shrink:0}
+.per{display:flex;align-items:center;gap:6px}
+.per input[type=date],.per select{height:40px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.per input[type=date]{width:142px}
+.acoes{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.top-inner{max-width:1440px;margin:0 auto;padding:14px 20px 10px;display:flex;flex-direction:column;gap:12px}
 .title-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
 .brand{display:flex;align-items:center;gap:12px}
 .brand svg{flex-shrink:0}
@@ -59,7 +67,7 @@ button,input,select{font:inherit;color:inherit}
 .btn:hover{border-color:var(--muted)}
 .btn.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
 .tabs{display:flex;gap:4px;overflow-x:auto}
-.tabs button{border:0;background:transparent;padding:10px 14px 12px;cursor:pointer;font-size:15px;font-weight:500;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button{border:0;background:transparent;padding:8px 14px 10px;cursor:pointer;font-size:15px;font-weight:500;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--brand)}
 
 .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0 0;min-height:32px;font-size:13px}
@@ -209,16 +217,7 @@ tbody tr:hover td{background:var(--panel2)}
 .card{transition:box-shadow .2s}
 .card:hover{box-shadow:0 6px 20px rgba(23,34,28,.07)}
 .card h2{font-size:17.5px;letter-spacing:.1px}
-.top{transition:box-shadow .2s}
-.top.compact{box-shadow:0 4px 14px rgba(0,0,0,.18)}
-.top.compact .top-inner{padding-top:8px;gap:6px}
-.top.compact .brand p{display:none}
-.top.compact .brand h1{font-size:21px}
-.top.compact .brand svg{width:28px;height:28px}
-.top.compact .controls{display:none}
-.top.compact.abrir .controls{display:flex;padding-bottom:8px}
-.top.compact #btnFiltros{display:inline-flex}
-.top.compact .tabs button{padding:6px 14px 8px}
+
 .dline{display:flex;align-items:center;gap:6px;margin:4px 0 0;font-size:12.5px;color:var(--muted)}
 .sdot{width:8px;height:8px;border-radius:50%;background:var(--s-programada);flex-shrink:0}
 .dline.ok .sdot{background:#3a9b6a}.dline.busy .sdot{background:var(--s-janela)}.dline.err .sdot{background:var(--s-atrasada)}
@@ -250,53 +249,41 @@ tbody tr:hover td{background:var(--panel2)}
           <p id="dataLine" class="dline"><span class="sdot"></span><span id="dataTxt">Sem dados carregados</span></p>
         </div>
       </a>
-      <button type="button" class="btn" id="btnFiltros" aria-expanded="false">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5h18M6 12h12M10 19h4"/></svg>
-        Filtros
-      </button>
-      <div class="controls">
-        <label class="ctl">Data de referência<input type="date" id="refDate"></label>
-        <label class="ctl">Tolerância: <span id="tolOut">±2 dias</span><input type="range" id="tol" min="0" max="7" step="1" value="2"></label>
-        <div class="ctl">Modalidade
-          <div class="seg" role="group" aria-label="Modalidade" id="modoSeg">
-            <button type="button" data-v="todas" aria-pressed="true">Todas</button>
-            <button type="button" data-v="T" aria-pressed="false">Terrestre</button>
-            <button type="button" data-v="A" aria-pressed="false">Aérea</button>
-          </div>
-        </div>
-        <label class="ctl">Operação<select id="opSel"></select></label>
-        <div class="ctl">Período (de / até)
-          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-            <input type="date" id="perA" aria-label="Período: de" style="height:40px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel)">
-            <span class="muted">até</span>
-            <input type="date" id="perB" aria-label="Período: até" style="height:40px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel)">
-            <select id="perSel" aria-label="Atalhos de período" style="height:40px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel)">
-              <option value="tudo">Toda a safra</option><option value="7d">Últimos 7 dias</option><option value="sem">Esta semana</option><option value="semp">Semana passada</option>
-              <option value="mes">Este mês</option><option value="mesp">Mês passado</option><option value="pers" hidden>Datas escolhidas</option>
-            </select>
-          </div>
-        </div>
-        <a class="btn primary" href="./lancar.html" style="text-decoration:none">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-          Lançar
-        </a>
-        <button type="button" class="btn" id="btnSync" title="Buscar a versão mais recente da planilha no Drive">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>
-          Atualizar
-        </button>
-        <button type="button" class="btn" id="btnPdf" title="Baixar o relatório do painel em PDF, com os filtros e o período atuais">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
-          Baixar PDF
-        </button>
-        <label class="btn" for="file" style="cursor:pointer">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
-          Carregar planilha
-        </label>
+      <div class="acoes">
+        <a class="btn primary" href="./lancar.html" style="text-decoration:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Lançar</a>
+        <button type="button" class="btn" id="btnPdf" title="Baixar o relatório em PDF com os filtros e o período atuais"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Baixar PDF</button>
+        <button type="button" class="icon-btn" id="btnSync" title="Atualizar: buscar a versão mais recente da planilha no Drive" aria-label="Atualizar dados"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg></button>
+        <label class="icon-btn" for="file" title="Carregar planilha do computador" aria-label="Carregar planilha do computador" style="cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg></label>
         <input type="file" id="file" accept=".xlsx,.xlsm" hidden>
-        <button type="button" class="icon-btn" id="themeBtn" aria-label="Alternar tema claro/escuro">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
-        </button>
+        <button type="button" class="icon-btn" id="themeBtn" title="Tema claro ou escuro" aria-label="Alternar tema claro/escuro"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
       </div>
+    </div>
+  </div>
+</header>
+<div class="barra">
+  <div class="barra-inner">
+    <div class="filtros">
+      <div class="ctl">Modalidade
+        <div class="seg" role="group" aria-label="Modalidade" id="modoSeg">
+          <button type="button" data-v="todas" aria-pressed="true">Todas</button>
+          <button type="button" data-v="T" aria-pressed="false">Terrestre</button>
+          <button type="button" data-v="A" aria-pressed="false">Aérea</button>
+        </div>
+      </div>
+      <label class="ctl">Operação<select id="opSel"></select></label>
+      <div class="ctl">Período
+        <div class="per">
+          <select id="perSel" aria-label="Período">
+            <option value="tudo">Toda a safra</option><option value="7d">Últimos 7 dias</option><option value="sem">Esta semana</option><option value="semp">Semana passada</option>
+            <option value="mes">Este mês</option><option value="mesp">Mês passado</option><option value="pers">Escolher datas</option>
+          </select>
+          <input type="date" id="perA" aria-label="Período: de">
+          <span class="muted">até</span>
+          <input type="date" id="perB" aria-label="Período: até">
+        </div>
+      </div>
+      <label class="ctl">Tolerância<select id="tol"><option value="0">±0 dias</option><option value="1">±1 dia</option><option value="2" selected>±2 dias</option><option value="3">±3 dias</option><option value="4">±4 dias</option><option value="5">±5 dias</option><option value="6">±6 dias</option><option value="7">±7 dias</option></select></label>
+      <span id="tolOut" hidden></span>
     </div>
     <nav class="tabs" role="tablist" aria-label="Visões">
       <button role="tab" data-tab="geral" aria-selected="true">Visão geral</button>
@@ -306,7 +293,7 @@ tbody tr:hover td{background:var(--panel2)}
       <button role="tab" data-tab="tabela" aria-selected="false">Tabela</button>
     </nav>
   </div>
-</header>
+</div>
 
 <main class="wrap">
   <div class="card" id="emptyState" style="margin-top:16px" hidden>
@@ -551,6 +538,9 @@ function parseBase(wb){
 }
 
 /* ---------- modelo ---------- */
+/* data de referência = "até" do período (ou hoje, sem período) */
+function HOJE(){ const n = new Date(); return new Date(Date.UTC(n.getFullYear(), n.getMonth(), n.getDate())).toISOString().slice(0,10); }
+function syncRef(){ S.ref = S.perB && S.perA ? (S.perB < S.perA ? S.perA : S.perB) : HOJE(); }
 function periodo(ref){ return S.perA && S.perB ? (dn(S.perA) <= dn(S.perB) ? [dn(S.perA), dn(S.perB)] : [dn(S.perB), dn(S.perA)]) : null; }
 function atalho(ref, k){
   const dow = (n) => (new Date(n*864e5).getUTCDay() + 6) % 7;   // 0 = segunda
@@ -1356,26 +1346,20 @@ async function webRefresh(manual){
 /* ---------- eventos ---------- */
 function fillOpSel(){ const ops = S.db ? S.db.ops : OPS_DEFAULT; $("opSel").innerHTML = `<option value="-1">Todas</option>` + ops.map((o, k) => `<option value="${k}">${esc(o)}</option>`).join(""); }
 function bind(){
-  $("refDate").addEventListener("change", (e) => { if (e.target.value) { S.ref = e.target.value; render(); } });
-  $("tol").addEventListener("input", (e) => { S.tol = +e.target.value; $("tolOut").textContent = "±" + S.tol + (S.tol === 1 ? " dia" : " dias"); render(); });
+  $("tol").addEventListener("change", (e) => { S.tol = +e.target.value; render(); });
   $("modoSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setFilter("modo", b.dataset.v); });
   $("opSel").addEventListener("change", (e) => { S.op = +e.target.value; render(); });
   $("cap").addEventListener("input", (e) => { S.cap = Math.max(0, +e.target.value || 0); lsSet("painelAplic.cap", String(S.cap)); if (S.tab === "geral" && S.db) { chartBase(); renderLoad(build()); } });
   $("perSel").addEventListener("change", (e) => { S.per = e.target.value;
-    const r = S.per === "tudo" ? null : atalho(dn(S.ref), S.per);
-    S.perA = r ? iso(r[0]) : ""; S.perB = r ? iso(r[1]) : ""; $("perA").value = S.perA; $("perB").value = S.perB; render(); });
+    if (S.per === "pers") { if (!S.perA) { const h = dn(HOJE()); S.perA = iso(h - 6); S.perB = HOJE(); $("perA").value = S.perA; $("perB").value = S.perB; } syncRef(); render(); $("perA").focus(); return; }
+    const r = S.per === "tudo" ? null : atalho(dn(HOJE()), S.per);
+    S.perA = r ? iso(r[0]) : ""; S.perB = r ? iso(r[1]) : ""; $("perA").value = S.perA; $("perB").value = S.perB; syncRef(); render(); });
   const datasPer = () => { S.perA = $("perA").value; S.perB = $("perB").value;
-    S.per = S.perA || S.perB ? "pers" : "tudo"; $("perSel").value = S.per;
+    S.per = S.perA || S.perB ? "pers" : "tudo"; $("perSel").value = S.per; syncRef();
     if (S.perA && S.perB) render(); else if (!S.perA && !S.perB) render(); };
-  $("perA").addEventListener("change", () => { if ($("perA").value && !$("perB").value) $("perB").value = S.ref; datasPer(); });
+  $("perA").addEventListener("change", () => { if ($("perA").value && !$("perB").value) $("perB").value = HOJE(); datasPer(); });
   $("perB").addEventListener("change", () => { if ($("perB").value && !$("perA").value) $("perA").value = $("perB").value; datasPer(); });
-  /* cabeçalho compacto ao rolar */
-  const topo = document.querySelector(".top");
-  let compacto = false;
-  addEventListener("scroll", () => { const y = scrollY;
-    if (!compacto && y > 140) { compacto = true; topo.classList.add("compact"); }
-    else if (compacto && y < 30) { compacto = false; topo.classList.remove("compact", "abrir"); $("btnFiltros").setAttribute("aria-expanded", "false"); } }, {passive:true});
-  $("btnFiltros").addEventListener("click", () => { const ab = topo.classList.toggle("abrir"); $("btnFiltros").setAttribute("aria-expanded", String(ab)); });
+
   $("btnPdf").addEventListener("click", gerarPDF);
   $("geoSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.geo = b.dataset.v; [...$("geoSeg").children].forEach(x => x.setAttribute("aria-pressed", String(x === b))); render(); });
   $("geoLbl").addEventListener("change", (e) => { S.geoLbl = e.target.checked; render(); });
@@ -1390,7 +1374,7 @@ function bind(){
   $("q").addEventListener("input", (e) => { S.q = e.target.value; render(); });
   document.addEventListener("click", (e) => {
     const st = e.target.closest("[data-st]"); if (st) { if (st.dataset.st === "todas") { S.status = "todas"; render(); } else setFilter("status", st.dataset.st); return; }
-    const cl = e.target.closest("[data-clear]"); if (cl) { const k = cl.dataset.clear; if (k==="status"||k==="all") S.status="todas"; if (k==="op"||k==="all") S.op=-1; if (k==="modo"||k==="all") S.modo="todas"; if (k==="per"||k==="all") { S.per="tudo"; S.perA=""; S.perB=""; $("perSel").value="tudo"; $("perA").value=""; $("perB").value=""; } syncControls(); render(); return; }
+    const cl = e.target.closest("[data-clear]"); if (cl) { const k = cl.dataset.clear; if (k==="status"||k==="all") S.status="todas"; if (k==="op"||k==="all") S.op=-1; if (k==="modo"||k==="all") S.modo="todas"; if (k==="per"||k==="all") { S.per="tudo"; S.perA=""; S.perB=""; $("perSel").value="tudo"; $("perA").value=""; $("perB").value=""; syncRef(); } syncControls(); render(); return; }
     const so = e.target.closest("[data-sort]"); if (so) { const k = so.dataset.sort; S.sort = {k, d: S.sort.k === k ? -S.sort.d : 1}; render(); return; }
     const t = e.target.closest("[data-t]"); if (t && !e.target.closest(".drawer")) openDrawer(t.dataset.t);
   });
@@ -1430,8 +1414,7 @@ function bind(){
 (function init(){
   const th = lsGet("painelAplic.theme"); if (th) document.documentElement.setAttribute("data-theme", th);
   const cap = +lsGet("painelAplic.cap"); if (cap > 0) { S.cap = cap; $("cap").value = cap; }
-  const now = new Date(); S.ref = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).toISOString().slice(0,10);
-  $("refDate").value = S.ref;
+  S.ref = HOJE();
   bind();
   const saved = lsGet(LS_KEY);
   let loaded = false;
