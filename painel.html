@@ -519,9 +519,9 @@ function parseBase(wb){
   if (!talhoes.length) throw new Error("A aba Talhões está vazia.");
   const units = {};
   table(wb, "Produtos", {p:"Produto", un:"Unidade", cl:"Classe"}, false).forEach(r => { if (r.p) units[String(r.p).trim()] = {un: r.un ? String(r.un) : "", cl: r.cl ? String(r.cl) : ""}; });
-  const progs = table(wb, "Programação", {id:"ID", t:"Talhão", op:"Operação", modo:"Modalidade", prog:"Data programada", rec:"Receita", lote:"Lote", obs:"Observação"}, true)
+  const progs = table(wb, "Programação", {id:"ID", t:"Talhão", op:"Operação", modo:"Modalidade", prog:"Data programada", rec:"Receita", lote:"Lote", obs:"Observação", areaP:"Área programada"}, true)
     .filter(r => r.id && r.t && r.op)
-    .map(r => ({id:String(r.id).trim(), t:String(r.t).trim(), op:String(r.op).trim(), modo: norm(r.modo).startsWith("a") ? "A" : "T", prog:toIso(r.prog), rec:r.rec ? String(r.rec) : "", lote:r.lote ? String(r.lote).trim() : "", obs:r.obs ? String(r.obs) : ""}))
+    .map(r => ({id:String(r.id).trim(), t:String(r.t).trim(), op:String(r.op).trim(), modo: norm(r.modo).startsWith("a") ? "A" : "T", prog:toIso(r.prog), rec:r.rec ? String(r.rec) : "", lote:r.lote ? String(r.lote).trim() : "", obs:r.obs ? String(r.obs) : "", areaP:toNum(r.areaP)}))
     .filter(p => !norm(p.obs).includes("cancelad"));
   const lotes = {};
   table(wb, "Produtos programados", {lote:"Lote", p:"Produto", dose:"Dose", obs:"Observação"}, false).forEach(r => {
@@ -529,9 +529,9 @@ function parseBase(wb){
     const p = String(r.p).trim(); (lotes[String(r.lote).trim()] ||= []).push({p, dose:d, un:(units[p] || {}).un || "", cl:(units[p] || {}).cl || ""});
   });
   const execs = {};
-  table(wb, "Execuções", {id:"ID programação", d:"Data executada", area:"Área aplicada", modo:"Modalidade", os:"Nº OS", maq:"Máquina", oper:"Operador", obs:"Observação"}, true).forEach(r => {
+  table(wb, "Execuções", {id:"ID programação", d:"Data executada", area:"Área aplicada", modo:"Modalidade", os:"Nº OS", maq:"Máquina", oper:"Operador", obs:"Observação", concl:"Concluída"}, true).forEach(r => {
     if (!r.id) return; const d = toIso(r.d); if (!d) return;
-    (execs[String(r.id).trim()] ||= []).push({d, area:toNum(r.area), os:r.os != null ? String(r.os) : "", maq:r.maq ? String(r.maq) : "", oper:r.oper ? String(r.oper) : ""});
+    (execs[String(r.id).trim()] ||= []).push({d, area:toNum(r.area), os:r.os != null ? String(r.os) : "", maq:r.maq ? String(r.maq) : "", oper:r.oper ? String(r.oper) : "", concl:norm(r.concl) === "sim"});
   });
   progs.forEach(p => { if (!ops.includes(p.op)) ops.push(p.op); });
   const chuvas = table(wb, "Pluviometria", {d:"Data", mm:"Chuva", loc:"Pluviômetro"}, false)
@@ -569,10 +569,10 @@ function build(){
   db.progs.forEach(p => {
     let tl = tmap[p.t];
     if (!tl) { tl = {t:p.t, area:0, cult:"", vari:"", plantio:null, germ:null, items:[], orphan:true}; tmap[p.t] = tl; talhoes.push(tl); }
-    const area = tl.area;
+    const area = p.areaP > 0 ? p.areaP : tl.area;
     const ex = (db.execs[p.id] || []).slice().sort((a,b) => a.d.localeCompare(b.d));
     const exArea = ex.reduce((s, e) => s + (e.area == null ? area : e.area), 0);
-    const done = ex.length && (area <= 0 || exArea >= area * 0.98);
+    const done = ex.length && (ex.some(e => e.concl) || area <= 0 || exArea >= area * 0.98);
     const exec = done ? ex[ex.length-1].d : null;
     const it = {id:p.id, t:p.t, area, tl, k:db.ops.indexOf(p.op), op:p.op, prog:p.prog, exec, modo:p.modo, lote:p.lote, rec:p.rec, obs:p.obs,
       execs:ex, exArea:Math.min(exArea, area || exArea), parcial: !done && ex.length ? (area ? exArea/area : 0) : 0,
@@ -880,7 +880,7 @@ function consumo(M){
   const g = {};
   base.forEach(i => i.prods.forEach(p => {
     const k = p.p + "|" + p.un; const o = (g[k] ||= {p:p.p, un:p.un, cl:p.cl, prog:0, apl:0, lotes:new Set()});
-    o.prog += p.dose * i.area; o.apl += p.dose * (i.exec ? i.area : i.exArea); o.lotes.add(i.lote);
+    o.prog += p.dose * i.area; o.apl += p.dose * (i.exec ? (i.exArea || i.area) : i.exArea); o.lotes.add(i.lote);
   }));
   return Object.values(g).sort((a, b) => b.prog - a.prog);
 }

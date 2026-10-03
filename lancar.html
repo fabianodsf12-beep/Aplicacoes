@@ -89,6 +89,15 @@ select.inp{appearance:auto}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 [hidden]{display:none!important}
 .pwrap{position:relative}
+.selist{display:flex;flex-direction:column;border:1px solid var(--line2);border-radius:10px;overflow:hidden}
+.selist:empty{display:none}
+.selrow{display:grid;grid-template-columns:minmax(0,1fr) 120px 40px;gap:8px;align-items:center;padding:8px 8px 8px 12px;border-bottom:1px solid var(--line2);background:var(--brand-soft)}
+.selrow:last-child{border-bottom:0}
+.selrow b{font-weight:600}
+.selrow small{display:block;color:var(--muted);font-size:12.5px;font-weight:400}
+.selrow .inp{height:42px;text-align:right}
+.selrow .ed{border-color:var(--brand)}
+.selrow button{width:40px;height:42px;border:0;border-radius:8px;background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .sug{position:absolute;left:0;right:0;top:100%;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-top:4px;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.18)}
 .sug button{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line2);background:transparent;padding:12px 14px;min-height:46px;cursor:pointer;font-size:15px}
 .sug button:last-child{border-bottom:0}
@@ -155,7 +164,8 @@ select.inp{appearance:auto}
     </div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h2>Talhões</h2><span class="hint" id="pSel">nenhum marcado</span></div>
-      <div class="chips" id="pChips"></div>
+      <div class="selist" id="pChips"></div>
+      <p class="hint" id="pChipsHint" hidden>A área vem do cadastro do talhão. Altere se a aplicação for só em parte dele.</p>
       <div class="seg" id="pVista" role="group" aria-label="Escolher talhões por"><button type="button" data-v="lista" aria-pressed="true">Lista</button><button type="button" data-v="mapa" aria-pressed="false">Mapa</button></div>
       <div id="pVLista" style="display:flex;flex-direction:column;gap:14px">
         <label class="f">Buscar talhão<input class="inp" type="search" id="pBusca" placeholder="Digite RT, BT, SA…" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
@@ -193,6 +203,7 @@ select.inp{appearance:auto}
         <label class="f">Data executada<input class="inp" type="date" id="eData"></label>
         <label class="f">Área aplicada (ha)<input class="inp" id="eArea" inputmode="decimal"></label>
       </div>
+      <label class="check" id="eConclL"><input type="checkbox" id="eConcl" checked>Aplicação concluída neste talhão</label>
       <p class="hint" id="eParc"></p>
       <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Modalidade<div class="seg" id="eModo"><button type="button" data-v="T" aria-pressed="true">Terrestre</button><button type="button" data-v="A" aria-pressed="false">Aérea</button></div></div>
       <label class="f">Nº da OS no Protector<input class="inp" id="eOS" inputmode="numeric" placeholder="Opcional"></label>
@@ -374,14 +385,15 @@ function renderHome(){
 }
 
 /* ---------- programar ---------- */
-const P = {sel: new Set(), modo: "T", prods: [], busca: "", vista: "lista", opRender: null};
+const P = {sel: new Set(), modo: "T", prods: [], busca: "", vista: "lista", opRender: null, areas: {}};
 function grupoDe(t){ const m = t.match(/^([A-Za-zÀ-ú]+)[-\s]?\d/); return m ? m[1].toUpperCase() : "Outros"; }
 function jaProgramados(){ const op = $("pOp").value; return new Set(L.progs.filter(p => p.op === op).map(p => p.t)); }
 function disponiveis(){
   const rep = $("pRep").checked, ja = jaProgramados();
   return L.talhoes.filter(t => t.ativo && (rep || !ja.has(t.t))).sort((a, b) => tcmp(a.t, b.t));
 }
-function areaSel(){ const A = talArea(); return [...P.sel].reduce((s, t) => s + (A[t] || 0), 0); }
+function areaDe(t){ const v = num(P.areas[t]); return v != null && v > 0 ? v : (talArea()[t] || 0); }
+function areaSel(){ return [...P.sel].reduce((s, t) => s + areaDe(t), 0); }
 /* Monta tudo (dados novos, troca de operação). Nunca é chamado enquanto a pessoa digita. */
 function renderProg(){
   if (!L) return;
@@ -408,7 +420,12 @@ function renderSel(){
   const grp = [...new Set(disp.map(t => grupoDe(t.t)))].sort(tcmp);
   $("pGrp").innerHTML = grp.map(g => { const ts = disp.filter(t => grupoDe(t.t) === g); const all = ts.every(t => P.sel.has(t.t));
     return `<button type="button" data-g="${esc(g)}" aria-pressed="${all}">${esc(g)} <span style="color:var(--muted);font-weight:400">${ts.length}</span></button>`; }).join("");
-  $("pChips").innerHTML = sel.map(t => `<span class="chip">${esc(t)} <span>${ha(A[t])} ha</span><button type="button" data-rm="${esc(t)}" aria-label="Remover ${esc(t)}">${X}</button></span>`).join("");
+  Object.keys(P.areas).forEach(t => { if (!P.sel.has(t)) delete P.areas[t]; });
+  $("pChips").innerHTML = sel.map(t => { const ed = P.areas[t] != null && num(P.areas[t]) !== A[t];
+    return `<div class="selrow"><span><b>${esc(t)}</b><small>talhão: ${ha(A[t])} ha</small></span>
+      <input class="inp${ed ? " ed" : ""}" inputmode="decimal" data-area="${esc(t)}" value="${esc(P.areas[t] ?? ha(A[t]))}" aria-label="Área programada de ${esc(t)} (ha)" autocomplete="off">
+      <button type="button" data-rm="${esc(t)}" aria-label="Remover ${esc(t)}">${X}</button></div>`; }).join("");
+  $("pChipsHint").hidden = !sel.length;
   const area = areaSel();
   $("pSel").textContent = sel.length ? `${sel.length} marcados · ${ha(area)} ha` : "nenhum marcado";
   P.prods.forEach((_, i) => atualizarLinha(i));
@@ -455,6 +472,11 @@ $("pBusca").addEventListener("input", (e) => { P.busca = e.target.value; renderT
 $("pList").addEventListener("change", (e) => { const t = e.target.dataset.t; if (!t) return; e.target.checked ? P.sel.add(t) : P.sel.delete(t); renderSel(); });
 $("pGrp").addEventListener("click", (e) => { const b = e.target.closest("[data-g]"); if (!b) return; const ts = disponiveis().filter(t => grupoDe(t.t) === b.dataset.g); const all = ts.every(t => P.sel.has(t.t)); ts.forEach(t => all ? P.sel.delete(t.t) : P.sel.add(t.t)); renderTalList(); renderSel(); });
 $("pChips").addEventListener("click", (e) => { const b = e.target.closest("[data-rm]"); if (b) { P.sel.delete(b.dataset.rm); renderTalList(); renderSel(); } });
+$("pChips").addEventListener("input", (e) => { const t = e.target.dataset.area; if (!t) return; P.areas[t] = e.target.value;
+  const A = talArea()[t], v = num(e.target.value); e.target.classList.toggle("ed", v != null && Math.abs(v - A) > 0.004);
+  $("pSel").textContent = `${P.sel.size} marcados · ${ha(areaSel())} ha`; P.prods.forEach((_, i) => atualizarLinha(i)); resumoProg(); });
+$("pChips").addEventListener("focusout", (e) => { const t = e.target.dataset.area; if (!t) return; const v = num(e.target.value);
+  if (v == null || v <= 0) { delete P.areas[t]; e.target.value = ha(talArea()[t]); e.target.classList.remove("ed"); $("pSel").textContent = `${P.sel.size} marcados · ${ha(areaSel())} ha`; P.prods.forEach((_, i) => atualizarLinha(i)); resumoProg(); } });
 $("pRec").addEventListener("change", (e) => { const r = L.receitas.find(x => x.nome === e.target.value); if (r) { P.prods = r.itens.map(i => ({p:i.p, dose:String(i.dose).replace(".", ",")})); if (r.op && L.ops.includes(r.op) && $("pOp").value !== r.op) { $("pOp").value = r.op; renderProg(); } renderProdsUI(); } });
 $("pAdd").addEventListener("click", () => { P.prods.push({p:"", dose:""}); renderProdsUI(); const els = $("pProds").querySelectorAll('[data-k="p"]'); els[els.length-1].focus(); });
 $("pProds").addEventListener("input", (e) => { const d = e.target.dataset; if (d.pi == null) return; const i = +d.pi;
@@ -514,6 +536,9 @@ $("pVista").addEventListener("click", (e) => { const b = e.target.closest("butto
 $("pSave").addEventListener("click", async () => {
   msg("pMsg", "", "");
   const talhoes = [...P.sel], prods = P.prods.filter(x => x.p.trim());
+  const A = talArea(), areas = {}; let areaErr = "";
+  talhoes.forEach(t => { const v = num(P.areas[t]); if (P.areas[t] != null && P.areas[t] !== "") { if (!(v > 0)) areaErr = `Área inválida para ${t}.`; else if (v > A[t] * 1.05) areaErr = `A área de ${t} (${ha(v)} ha) é maior que a do talhão (${ha(A[t])} ha).`; else if (Math.abs(v - A[t]) > 0.004) areas[t] = v; } });
+  if (areaErr) { msg("pMsg", "err", areaErr); return; }
   prods.forEach(x => { const pr = produto(x.p); if (pr) x.p = pr.p; });
   const erro = !talhoes.length ? "Marque pelo menos um talhão." : !$("pData").value ? "Informe a data programada."
     : prods.find(x => !produto(x.p)) ? "Há produto que não está cadastrado. Escolha da lista de sugestões."
@@ -523,8 +548,8 @@ $("pSave").addEventListener("click", async () => {
   const b = $("pSave"); b.disabled = true; b.textContent = "Salvando…";
   try {
     const j = await enviar({acao:"programar", op:$("pOp").value, modo:P.modo, data:$("pData").value, talhoes, receita:$("pRec").value,
-      produtos: prods.map(x => ({p:x.p.trim(), dose:num(x.dose)})), obs:$("pObs").value, permitirRepetida:$("pRep").checked});
-    toast(j.msg); P.sel.clear(); P.prods = []; P.busca = ""; $("pBusca").value = ""; $("pObs").value = ""; $("pRec").value = ""; $("pRep").checked = false;
+      produtos: prods.map(x => ({p:x.p.trim(), dose:num(x.dose)})), obs:$("pObs").value, permitirRepetida:$("pRep").checked, areas});
+    toast(j.msg); P.sel.clear(); P.areas = {}; P.prods = []; P.busca = ""; $("pBusca").value = ""; $("pObs").value = ""; $("pRec").value = ""; $("pRep").checked = false;
     renderProdsUI(); await getListas(); location.hash = "home";
   } catch (e) { msg("pMsg", "err", e.message || String(e)); }
   finally { b.disabled = false; b.textContent = "Salvar programação"; }
@@ -577,7 +602,9 @@ function renderExec(){
   $("eLoteHint").textContent = sel ? `Marque os talhões do lote ${sel.lote} aplicados no mesmo dia, com a mesma OS. Cada um recebe a área que falta aplicar.` : "";
   $("eLote").innerHTML = outros.map(p => `<label><input type="checkbox" data-x="${esc(p.id)}" ${E.extras.has(p.id) ? "checked" : ""}><b>${esc(p.t)}</b><small>${ha(restante(p))} ha</small></label>`).join("");
   const a = num($("eArea").value);
-  $("eParc").textContent = sel && a != null && a < restante(sel) - 0.01 ? `Aplicação parcial: ${Math.round(a / sel.area * 100)}% do talhão. O restante continua pendente.` : "";
+  const menor = sel && a != null && a < restante(sel) - 0.01;
+  $("eParc").textContent = !sel ? "" : !$("eConcl").checked ? `Parcial: ${a ? ha(a) + " ha agora" : ""}${a ? ", " : ""}o restante continua pendente no painel.`
+    : menor ? `Será concluída com ${ha((sel.exArea || 0) + a)} ha de ${ha(sel.area)} ha programados. Se ainda falta aplicar, desmarque a opção acima.` : "";
   const extraHa = outros.filter(p => E.extras.has(p.id)).reduce((s, p) => s + restante(p), 0);
   const n = (sel ? 1 : 0) + E.extras.size;
   $("eResumo").textContent = sel ? `${n} ${n === 1 ? "talhão" : "talhões"} · ${ha((a || 0) + extraHa)} ha` : "Escolha a aplicação";
@@ -592,18 +619,19 @@ function aplicarProg(){
 $("eTal").addEventListener("change", () => { E.id = null; E.extras.clear(); renderExec(); });
 $("ePend").addEventListener("change", (e) => { if (e.target.name === "eProg") { E.id = e.target.value; E.extras.clear(); aplicarProg(); renderExec(); } });
 $("eArea").addEventListener("input", renderExec);
+$("eConcl").addEventListener("change", renderExec);
 $("eLote").addEventListener("change", (e) => { const id = e.target.dataset.x; if (!id) return; e.target.checked ? E.extras.add(id) : E.extras.delete(id); renderExec(); });
 $("eModo").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; E.modo = b.dataset.v; [...$("eModo").children].forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
 $("eSave").addEventListener("click", async () => {
   msg("eMsg", "", "");
   const sel = L && L.progs.find(p => p.id === E.id), a = num($("eArea").value);
-  const erro = !sel ? "Escolha o talhão e a aplicação executada." : !$("eData").value ? "Informe a data executada." : !(a > 0) ? "Informe a área aplicada." : a > sel.area * 1.05 ? `A área aplicada é maior que a do talhão (${ha(sel.area)} ha).` : "";
+  const erro = !sel ? "Escolha o talhão e a aplicação executada." : !$("eData").value ? "Informe a data executada." : !(a > 0) ? "Informe a área aplicada." : a > sel.area * 1.05 ? `A área aplicada é maior que a programada (${ha(sel.area)} ha).` : "";
   if (erro) { msg("eMsg", "err", erro); return; }
-  const itens = [{id: sel.id, area: a}].concat(L.progs.filter(p => E.extras.has(p.id)).map(p => ({id: p.id, area: restante(p)})));
+  const itens = [{id: sel.id, area: a, concluida: $("eConcl").checked}].concat(L.progs.filter(p => E.extras.has(p.id)).map(p => ({id: p.id, area: restante(p), concluida: true})));
   const b = $("eSave"); b.disabled = true; b.textContent = "Salvando…";
   try {
     const j = await enviar({acao:"executar", data:$("eData").value, modo:E.modo, os:$("eOS").value, obs:$("eObs").value, itens});
-    toast(j.msg); E.id = null; E.extras.clear(); ["eOS", "eObs", "eArea"].forEach(id => $(id).value = ""); $("eTal").value = "";
+    toast(j.msg); E.id = null; E.extras.clear(); ["eOS", "eObs", "eArea"].forEach(id => $(id).value = ""); $("eTal").value = ""; $("eConcl").checked = true;
     await getListas(); location.hash = "home";
   } catch (e) { msg("eMsg", "err", e.message || String(e)); }
   finally { b.disabled = false; b.textContent = "Salvar execução"; }
