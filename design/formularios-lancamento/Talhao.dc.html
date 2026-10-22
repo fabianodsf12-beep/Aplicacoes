@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Talhões e plantio</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&amp;family=Barlow+Condensed:wght@600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#21513B}a:hover{color:#163a28}
+</style>
+</helmet>
+<div style="width: 390px; min-height: 1300px; box-sizing: border-box; background: #EDF0EB; color: #17221C; font-family: 'Barlow', 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.4; display: flex; flex-direction: column">
+<header style="background: #21513B; color: #FFFFFF; padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 10px">
+<a href="Main.dc.html" style="display: inline-flex; align-items: center; gap: 4px; color: #FFFFFF; text-decoration: none; font-size: 14px; min-height: 44px; align-self: flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>Lançamentos</a>
+<div>
+<h1 style="margin: 0; font-family: 'Barlow Condensed', 'Barlow', sans-serif; font-weight: 600; font-size: 28px; line-height: 1.05">Talhões e plantio</h1>
+<p style="margin: 4px 0 0; font-size: 14px; color: #D5E6DC">Cadastro e datas de plantio e emergência</p>
+</div>
+</header>
+<main style="padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<section style="background: #FFFFFF; border: 1px solid #D9E0D7; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div><h2 style="margin: 0; font-size: 17px; font-weight: 600; color: #17221C">Lançar plantio em vários talhões</h2><p style="margin: 4px 0 0; font-size: 13px; color: #4F5C55">Aparecem só os talhões sem data de plantio.</p></div>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: #17221C">Data de plantio<input type="text" defaultValue="02/10/2026" style="height: 48px; padding: 0 14px; border: 1px solid #C9D1C7; border-radius: 10px; font: inherit; font-weight: 400; font-size: 16px; background: #FFFFFF; color: #17221C; box-sizing: border-box; width: 100%"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: #17221C">Data de emergência<input type="text" placeholder="dd/mm/aaaa (pode lançar depois)" style="height: 48px; padding: 0 14px; border: 1px solid #C9D1C7; border-radius: 10px; font: inherit; font-weight: 400; font-size: 16px; background: #FFFFFF; color: #17221C; box-sizing: border-box; width: 100%"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: #17221C">Variedade<input type="text" placeholder="[Variedade]" style="height: 48px; padding: 0 14px; border: 1px solid #C9D1C7; border-radius: 10px; font: inherit; font-weight: 400; font-size: 16px; background: #FFFFFF; color: #17221C; box-sizing: border-box; width: 100%"></label>
+<div style="display: flex; flex-direction: column"><label style="display: flex; align-items: center; gap: 12px; padding: 10px 2px; border-bottom: 1px solid #EEF1EC; min-height: 44px"><input type="checkbox" style="width: 22px; height: 22px; accent-color: #21513B"><span style="font-weight: 600; flex-grow: 1">RT-11</span><span style="color: #4F5C55">203,95 ha</span></label><label style="display: flex; align-items: center; gap: 12px; padding: 10px 2px; border-bottom: 1px solid #EEF1EC; min-height: 44px"><input type="checkbox" style="width: 22px; height: 22px; accent-color: #21513B"><span style="font-weight: 600; flex-grow: 1">RT-12</span><span style="color: #4F5C55">174,41 ha</span></label><label style="display: flex; align-items: center; gap: 12px; padding: 10px 2px; border-bottom: 1px solid #EEF1EC; min-height: 44px"><input type="checkbox" style="width: 22px; height: 22px; accent-color: #21513B"><span style="font-weight: 600; flex-grow: 1">RT-22</span><span style="color: #4F5C55">104,25 ha</span></label><label style="display: flex; align-items: center; gap: 12px; padding: 10px 2px; border-bottom: 1px solid #EEF1EC; min-height: 44px"><input type="checkbox" style="width: 22px; height: 22px; accent-color: #21513B"><span style="font-weight: 600; flex-grow: 1">RT-23</span><span style="color: #4F5C55">204,86 ha</span></label><label style="display: flex; align-items: center; gap: 12px; padding: 10px 2px; border-bottom: 1px solid #EEF1EC; min-height: 44px"><input type="checkbox" style="width: 22px; height: 22px; accent-color: #21513B"><span style="font-weight: 600; flex-grow: 1">RT-24</span><span style="color: #4F5C55">96,85 ha</span></label></div>
+<button type="button" style="height: 48px; border: 0; border-radius: 12px; background: #21513B; color: #FFFFFF; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer">Salvar plantio</button>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #D9E0D7; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600; color: #17221C">Cadastrar talhão novo</h2>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: #17221C">Talhão<input type="text" placeholder="Ex.: RT-53" style="height: 48px; padding: 0 14px; border: 1px solid #C9D1C7; border-radius: 10px; font: inherit; font-weight: 400; font-size: 16px; background: #FFFFFF; color: #17221C; box-sizing: border-box; width: 100%"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: #17221C">Fazenda<select defaultValue="Fazenda Reata" style="height: 48px; padding: 0 14px; border: 1px solid #C9D1C7; border-radius: 10px; font: inherit; font-weight: 400; font-size: 16px; background: #FFFFFF; color: #17221C; box-sizing: border-box; width: 100%; appearance: auto"><option>Fazenda Reata</option></select></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: #17221C">Área (ha)<input type="text" placeholder="0,00" inputMode="decimal" style="height: 48px; padding: 0 14px; border: 1px solid #C9D1C7; border-radius: 10px; font: inherit; font-weight: 400; font-size: 16px; background: #FFFFFF; color: #17221C; box-sizing: border-box; width: 100%"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: #17221C">Cultura<select defaultValue="Soja" style="height: 48px; padding: 0 14px; border: 1px solid #C9D1C7; border-radius: 10px; font: inherit; font-weight: 400; font-size: 16px; background: #FFFFFF; color: #17221C; box-sizing: border-box; width: 100%; appearance: auto"><option>Soja</option></select></label>
+<label style="display: flex; align-items: center; gap: 10px; font-size: 15px; min-height: 44px"><input type="checkbox" defaultChecked="{{ true }}" style="width: 22px; height: 22px; accent-color: #21513B">Ativo nesta safra</label>
+<button type="button" style="height: 48px; border: 1px solid #21513B; border-radius: 12px; background: #FFFFFF; color: #21513B; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer">Cadastrar talhão</button>
+</section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 390, "height": 1300}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

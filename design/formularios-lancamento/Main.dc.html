@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Lançamentos</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&amp;family=Barlow+Condensed:wght@600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#21513B}a:hover{color:#163a28}
+</style>
+</helmet>
+<div style="width: 390px; min-height: 844px; box-sizing: border-box; background: #EDF0EB; color: #17221C; font-family: 'Barlow', 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.4; display: flex; flex-direction: column">
+<header style="background: #21513B; color: #FFFFFF; padding: 28px 16px 22px; display: flex; align-items: center; gap: 12px">
+<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="#FFFFFF" fill-opacity="0.14"></rect><path d="M8 30 C14 22, 26 22, 32 30 M8 24 C14 16, 26 16, 32 24 M8 18 C14 10, 26 10, 32 18" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"></path></svg>
+<div>
+<h1 style="margin: 0; font-family: 'Barlow Condensed', 'Barlow', sans-serif; font-weight: 600; font-size: 28px; line-height: 1">Lançamentos</h1>
+<p style="margin: 4px 0 0; font-size: 14px; color: #D5E6DC">Fazenda Reata, safra soja 26/27</p>
+</div>
+</header>
+<main style="padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<sc-for list="{{acoes}}" as="a" hint-placeholder-count="3">
+<a href="{{a.href}}" style="display: flex; align-items: center; gap: 14px; background: #FFFFFF; border: 1px solid #D9E0D7; border-radius: 14px; padding: 16px; text-decoration: none; color: #17221C; min-height: 76px">
+<span style="width: 44px; height: 44px; border-radius: 12px; background: #E3EEE7; color: #21513B; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: 'Barlow Condensed', 'Barlow', sans-serif; font-size: 22px; font-weight: 600">{{a.n}}</span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1">
+<span style="font-size: 17px; font-weight: 600">{{a.t}}</span>
+<span style="font-size: 14px; color: #4F5C55">{{a.s}}</span>
+</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F5C55" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+</a>
+</sc-for>
+<h2 style="margin: 0; font-size: 17px; font-weight: 600; color: #17221C; margin-top: 12px">Últimos lançamentos</h2>
+<div style="background: #FFFFFF; border: 1px solid #D9E0D7; border-radius: 14px; padding: 4px 16px">
+<sc-for list="{{ultimos}}" as="u" hint-placeholder-count="4">
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid #EEF1EC">
+<span style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-weight: 600">{{u.t}}</span>
+<span style="font-size: 13px; color: #4F5C55">{{u.s}}</span>
+</span>
+<span style="font-size: 13px; color: #4F5C55; white-space: nowrap; text-align: right">{{u.d}}</span>
+</div>
+</sc-for>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {
+acoes: [
+{ href: "Programar.dc.html", n: "1", t: "Programar aplicação", s: "Talhões, operação, data e produtos" },
+{ href: "Execucao.dc.html", n: "2", t: "Registrar execução", s: "Data, área aplicada e nº da OS do Protector" },
+{ href: "Talhao.dc.html", n: "3", t: "Talhões e plantio", s: "Cadastrar talhão ou lançar plantio em vários" }
+],
+ultimos: [
+{ t: "Programação L006", s: "Dessecação Pré-Plantio, 5 talhões, 374,17 ha", d: "para 01/10" },
+{ t: "Execução RT-24", s: "Dessecação Pré-Plantio, 96,85 ha", d: "29/09" },
+{ t: "Execução RT-11, RT-12, RT-22, RT-23", s: "Dessecação Pré-Plantio, 687,47 ha", d: "28/09" },
+{ t: "Programação L005", s: "Pré-Emergente, 3 talhões, 522,33 ha", d: "para 29/09" }
+]
+};
+}
+}
+</script>
+</body>
+</html>

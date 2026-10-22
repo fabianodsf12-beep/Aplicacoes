@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Registrar execução</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&amp;family=Barlow+Condensed:wght@600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#21513B}a:hover{color:#163a28}
+</style>
+</helmet>
+<div style="width: 390px; min-height: 1560px; box-sizing: border-box; background: #EDF0EB; color: #17221C; font-family: 'Barlow', 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.4; display: flex; flex-direction: column">
+<header style="background: #21513B; color: #FFFFFF; padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 10px">
+<a href="Main.dc.html" style="display: inline-flex; align-items: center; gap: 4px; color: #FFFFFF; text-decoration: none; font-size: 14px; min-height: 44px; align-self: flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>Lançamentos</a>
+<div>
+<h1 style="margin: 0; font-family: 'Barlow Condensed', 'Barlow', sans-serif; font-weight: 600; font-size: 28px; line-height: 1.05">Registrar execução</h1>
+<p style="margin: 4px 0 0; font-size: 14px; color: #D5E6DC">Liga a aplicação feita à programação e à OS</p>
+</div>
+</header>
+<main style="padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<section style="background: #FFFFFF; border: 1px solid #D9E0D7; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600; color: #17221C">Talhão</h2>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: #17221C">Talhão<select defaultValue="MANO · 70,38 ha" style="height: 48px; padding: 0 14px; border: 1px solid #C9D1C7; border-radius: 10px; font: inherit; font-weight: 400; font-size: 16px; background: #FFFFFF; color: #17221C; box-sizing: border-box; width: 100%; appearance: auto"><option>MANO · 70,38 ha</option></select></label>
+<span style="font-size: 14px; font-weight: 500">Aplicação pendente</span>
+<label style="display: flex; gap: 12px; align-items: flex-start; padding: 14px; border: 2px solid #21513B; border-radius: 12px; background: #F3F8F5; cursor: pointer">
+<input type="radio" name="prog" defaultChecked="{{ true }}" style="width: 22px; height: 22px; margin: 2px 0 0; accent-color: #21513B">
+<span style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1">
+<span style="display: flex; justify-content: space-between; gap: 8px; align-items: center"><span style="font-weight: 600">Dessecação Pré-Plantio</span><span style="padding: 3px 10px; border-radius: 999px; background: #FDF2CF; color: #6B4A04; font-size: 12.5px; font-weight: 600; white-space: nowrap">Vence hoje</span></span>
+<span style="font-size: 13px; color: #4F5C55">P0018 · lote L006 · terrestre · programada 01/10</span>
+</span>
+</label>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #D9E0D7; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600; color: #17221C">Execução</h2>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: #17221C">Data executada<input type="text" defaultValue="02/10/2026" style="height: 48px; padding: 0 14px; border: 1px solid #C9D1C7; border-radius: 10px; font: inherit; font-weight: 400; font-size: 16px; background: #FFFFFF; color: #17221C; box-sizing: border-box; width: 100%"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: #17221C">Área aplicada (ha)<input type="text" defaultValue="70,38" inputMode="decimal" style="height: 48px; padding: 0 14px; border: 1px solid #C9D1C7; border-radius: 10px; font: inherit; font-weight: 400; font-size: 16px; background: #FFFFFF; color: #17221C; box-sizing: border-box; width: 100%"></label>
+<label style="display: flex; align-items: center; gap: 10px; font-size: 15px; min-height: 44px"><input type="checkbox" style="width: 22px; height: 22px; accent-color: #21513B">Aplicação parcial (faltou área)</label>
+<div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: #17221C">Modalidade<div style="display: flex; border: 1px solid #C9D1C7; border-radius: 10px; overflow: hidden"><button type="button" aria-pressed="true" style="flex-grow: 1; height: 46px; border: 0; font: inherit; font-size: 15px; font-weight: 500; cursor: pointer; background: #21513B; color: #FFFFFF">Terrestre</button><button type="button" aria-pressed="false" style="flex-grow: 1; height: 46px; border: 0; font: inherit; font-size: 15px; font-weight: 500; cursor: pointer; background: #FFFFFF; color: #17221C">Aérea</button></div></div>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: #17221C">Nº da OS no Protector<input type="text" placeholder="Ex.: número da OS" inputMode="numeric" style="height: 48px; padding: 0 14px; border: 1px solid #C9D1C7; border-radius: 10px; font: inherit; font-weight: 400; font-size: 16px; background: #FFFFFF; color: #17221C; box-sizing: border-box; width: 100%"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: #17221C">Máquina ou aeronave<input type="text" placeholder="[Pulverizador / aeronave]" style="height: 48px; padding: 0 14px; border: 1px solid #C9D1C7; border-radius: 10px; font: inherit; font-weight: 400; font-size: 16px; background: #FFFFFF; color: #17221C; box-sizing: border-box; width: 100%"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: #17221C">Operador<input type="text" placeholder="[Nome do operador]" style="height: 48px; padding: 0 14px; border: 1px solid #C9D1C7; border-radius: 10px; font: inherit; font-weight: 400; font-size: 16px; background: #FFFFFF; color: #17221C; box-sizing: border-box; width: 100%"></label>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #D9E0D7; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div><h2 style="margin: 0; font-size: 17px; font-weight: 600; color: #17221C">Mesma OS em outros talhões do lote</h2><p style="margin: 4px 0 0; font-size: 13px; color: #4F5C55">Marque os talhões do lote L006 aplicados no mesmo dia. Cada um recebe a área total.</p></div>
+<div style="display: flex; flex-direction: column"><label style="display: flex; align-items: center; gap: 12px; padding: 10px 2px; border-bottom: 1px solid #EEF1EC; min-height: 44px"><input type="checkbox" style="width: 22px; height: 22px; accent-color: #21513B"><span style="font-weight: 600; flex-grow: 1">RT-08</span><span style="color: #4F5C55">52,95 ha</span></label><label style="display: flex; align-items: center; gap: 12px; padding: 10px 2px; border-bottom: 1px solid #EEF1EC; min-height: 44px"><input type="checkbox" style="width: 22px; height: 22px; accent-color: #21513B"><span style="font-weight: 600; flex-grow: 1">RT-09</span><span style="color: #4F5C55">82,33 ha</span></label><label style="display: flex; align-items: center; gap: 12px; padding: 10px 2px; border-bottom: 1px solid #EEF1EC; min-height: 44px"><input type="checkbox" style="width: 22px; height: 22px; accent-color: #21513B"><span style="font-weight: 600; flex-grow: 1">RT-10</span><span style="color: #4F5C55">144,63 ha</span></label><label style="display: flex; align-items: center; gap: 12px; padding: 10px 2px; border-bottom: 1px solid #EEF1EC; min-height: 44px"><input type="checkbox" style="width: 22px; height: 22px; accent-color: #21513B"><span style="font-weight: 600; flex-grow: 1">RT-21</span><span style="color: #4F5C55">23,88 ha</span></label></div>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #D9E0D7; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: #17221C">Observação<textarea rows="3" placeholder="Opcional: vento, reaplicação, problema na máquina…" style="height: 48px; padding: 0 14px; border: 1px solid #C9D1C7; border-radius: 10px; font: inherit; font-weight: 400; font-size: 16px; background: #FFFFFF; color: #17221C; box-sizing: border-box; width: 100%; height: auto; padding: 12px 14px; resize: vertical"></textarea></label>
+</section>
+</main>
+<div style="position: sticky; bottom: 0; background: #FFFFFF; border-top: 1px solid #D9E0D7; padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 8px; margin-top: auto">
+<span style="font-size: 13px; color: #4F5C55">Grava 1 linha em Execuções</span>
+<button type="button" style="height: 52px; border: 0; border-radius: 12px; background: #21513B; color: #FFFFFF; font: inherit; font-size: 17px; font-weight: 600; cursor: pointer">Salvar execução</button>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 390, "height": 1560}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
