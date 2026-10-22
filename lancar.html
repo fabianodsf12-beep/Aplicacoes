@@ -243,7 +243,7 @@ select.inp{appearance:auto}
 <section id="s-talhoes" hidden>
   <main>
     <div class="card">
-      <div><h2>Trazer do painel de plantio</h2><p class="hint" style="margin-top:4px">Datas de plantio (aba Diário) e de emergência (aba Safra) do Plantio para os talhões que estão sem elas aqui. Talhão plantado em mais de um dia fica com o dia em que passou da metade da área.</p></div>
+      <div><h2>Trazer do painel de plantio</h2><p class="hint" style="margin-top:4px">Datas de plantio (aba Diário) e de emergência (aba Safra) do Plantio para os talhões que estão sem elas aqui. Talhão plantado em mais de um dia fica com o dia em que passou da metade da área; sem emergência no Plantio, ela fica em plantio + 5 dias.</p></div>
       <div class="list" id="pcList"></div>
       <div id="pcMsg"></div>
       <button type="button" class="save" id="pcSave" hidden>Lançar datas</button>
@@ -738,6 +738,7 @@ function lerPlantio(wb){
   }
   return out;
 }
+const EMERG_DIAS = 5;   // sem emergência no Plantio: estimada em plantio + 5 dias
 const PC = {P: null, mod: null, fora: new Set(), busy: false, erro: ""};
 try { const c = JSON.parse(lsGet("lancar.plantio") || "null"); if (c && c.P) { PC.P = c.P; PC.mod = c.modified; } } catch(e) {}
 async function carregarPlantio(){
@@ -761,13 +762,14 @@ async function carregarPlantio(){
 }
 /* o que falta na planilha e o painel de Plantio tem: plantio e/ou emergência */
 const pcLista = () => !L || !PC.P ? [] : L.talhoes.filter(t => t.ativo).map(t => { const p = PC.P[tkey(t.t)] || {};
-  const pl = !t.plantio && p.d ? p.d : "", dp = pl || t.plantio;   // emergência antes do plantio (talhão plantado em etapas): fica vazia
-  return {t, p, pl, gm: !t.germ && p.germ && (!dp || p.germ >= dp) ? p.germ : ""}; }).filter(x => x.pl || x.gm).sort((a, b) => tcmp(a.t.t, b.t.t));
+  const pl = !t.plantio && p.d ? p.d : "", dp = pl || t.plantio;
+  const ok = p.germ && (!dp || p.germ >= dp), est = !t.germ && !ok && dp && p.d;   // sem emergência (ou antes do plantio): plantio + 5 dias
+  return {t, p, pl, est: !!est, gm: t.germ ? "" : ok ? p.germ : est ? new Date((dn(dp) + EMERG_DIAS) * 864e5).toISOString().slice(0,10) : ""}; }).filter(x => x.pl || x.gm).sort((a, b) => tcmp(a.t.t, b.t.t));
 function renderPC(){
   if (!$("pcList")) return;
   const lista = pcLista(), sel = lista.filter(x => !PC.fora.has(x.t.t));
   $("pcList").innerHTML = !PC.P ? `<div class="empty">${PC.erro ? "Não consegui ler o painel de plantio: " + esc(PC.erro) : "Buscando as datas no painel de plantio…"}</div>`
-    : lista.length ? lista.map(({t, p, pl, gm}) => `<label><input type="checkbox" data-pc="${esc(t.t)}" ${PC.fora.has(t.t) ? "" : "checked"}><b>${esc(t.t)}</b><small>${[pl ? `plantio ${fd(pl)}${p.ini !== p.fim ? ` (de ${fd(p.ini)} a ${fd(p.fim)})` : ""}` : "", gm ? "emergência " + fd(gm) : "", pl && p.vari ? esc(p.vari) : ""].filter(Boolean).join(" · ")}</small></label>`).join("")
+    : lista.length ? lista.map(({t, p, pl, gm, est}) => `<label><input type="checkbox" data-pc="${esc(t.t)}" ${PC.fora.has(t.t) ? "" : "checked"}><b>${esc(t.t)}</b><small>${[pl ? `plantio ${fd(pl)}${p.ini !== p.fim ? ` (de ${fd(p.ini)} a ${fd(p.fim)})` : ""}` : "", gm ? "emergência " + fd(gm) + (est ? ` (plantio + ${EMERG_DIAS} dias)` : "") : "", pl && p.vari ? esc(p.vari) : ""].filter(Boolean).join(" · ")}</small></label>`).join("")
     : `<div class="empty">Nenhum talhão com data de plantio ou emergência vazia aqui tem a data no painel de plantio.</div>`;
   $("pcSave").hidden = !lista.length;
   $("pcSave").textContent = sel.length ? `Lançar datas em ${sel.length} ${sel.length === 1 ? "talhão" : "talhões"}` : "Marque os talhões para lançar";

@@ -451,7 +451,8 @@ const SNAPSHOT = null;
 const MAPA_SNAPSHOT = null;
 const OPS_DEFAULT = ["Dessecação Pré-Plantio","Pré-Emergente","Aplicação de MIB","1º Pós-Emergente","2º Pós-Emergente","1º Fungicida","2º Fungicida","3º Fungicida","4º Fungicida","5º Fungicida"];
 const LS_KEY = "painelAplic.base.v2";
-const PC_EVERY = 5 * 60 * 1000;  // datas de plantio: o Diário muda no máximo algumas vezes por dia
+const PC_EVERY = 5 * 60 * 1000;
+const EMERG_DIAS = 5;              // sem emergência no Plantio: estimada em plantio + 5 dias  // datas de plantio: o Diário muda no máximo algumas vezes por dia
 const CHECK_EVERY = 15 * 1000;   // consulta leve (só a data de alteração); baixa a planilha só quando ela mudou
 
 const STATUS = {
@@ -569,8 +570,10 @@ function build(){
   PER = periodo(ref);
   const talhoes = db.talhoes.map(t => { const p = S.plantio ? S.plantio[tkey(t.t)] : null;   // completa o que falta com o painel de Plantio
     if (!p) return {...t, items:[]};
-    const pl = !t.plantio && p.d, dp = pl ? p.d : t.plantio, gm = !t.germ && p.germ && (!dp || p.germ >= dp);   // emergência antes do plantio: fica vazia
-    return {...t, plantio: pl ? p.d : t.plantio, germ: gm ? p.germ : t.germ, vari: t.vari || p.vari || "", plantioPC: pl ? p : null, germPC: !!gm, items:[]}; });
+    const pl = !t.plantio && p.d, dp = pl ? p.d : t.plantio;
+    const ok = p.germ && (!dp || p.germ >= dp), est = !t.germ && !ok && dp && p.d;   // sem emergência (ou antes do plantio): plantio + 5 dias
+    const gm = t.germ ? null : ok ? p.germ : est ? iso(dn(dp) + EMERG_DIAS) : null;
+    return {...t, plantio: pl ? p.d : t.plantio, germ: gm || t.germ, vari: t.vari || p.vari || "", plantioPC: pl ? p : null, germPC: gm ? (est ? "est" : "pc") : "", items:[]}; });
   const tmap = Object.fromEntries(talhoes.map(t => [t.t, t]));
   const items = [];
   db.progs.forEach(p => {
@@ -1282,7 +1285,7 @@ function openDrawer(t){
       <div class="fact"><span>Área</span><b>${ha(tl.area)} ha</b></div>
       <div class="fact"><span>Aplicações executadas</span><b>${ex} de ${tl.items.length}</b></div>
       <div class="fact"><span>Plantio</span><b>${tl.plantio ? fd(tl.plantio) + " · " + (M.ref - dn(tl.plantio)) + " DAP" : "—"}</b>${tl.plantioPC ? `<span>do painel de plantio${tl.plantioPC.ini !== tl.plantioPC.fim ? `, plantado de ${fd(tl.plantioPC.ini)} a ${fd(tl.plantioPC.fim)}` : ""}</span>` : ""}</div>
-      <div class="fact"><span>Emergência</span><b>${tl.germ ? fd(tl.germ) + " · " + (M.ref - dn(tl.germ)) + " DAE" : "—"}</b>${tl.germPC ? "<span>do painel de plantio</span>" : ""}</div>
+      <div class="fact"><span>Emergência</span><b>${tl.germ ? fd(tl.germ) + " · " + (M.ref >= dn(tl.germ) ? (M.ref - dn(tl.germ)) + " DAE" : "prevista, em " + (dn(tl.germ) - M.ref) + " d") : "—"}</b>${tl.germPC ? `<span>${tl.germPC === "est" ? `estimada: plantio + ${EMERG_DIAS} dias` : "do painel de plantio"}</span>` : ""}</div>
     </div>
     ${tl.orphan ? `<div class="fact" style="color:${col("atrasada")}">Este talhão aparece na Programação mas não está na aba Talhões. Cadastre-o para ter área e datas.</div>` : ""}
     <div><h4 style="margin:0 0 4px;font-size:15px">Operações</h4><div class="oplist">${S.db.ops.map((o, k) => rowsFor(k, o)).join("")}</div></div>`;
