@@ -567,8 +567,10 @@ let PER = null;
 function build(){
   const db = S.db, ref = dn(S.ref), tol = S.tol;
   PER = periodo(ref);
-  const talhoes = db.talhoes.map(t => { const p = !t.plantio && S.plantio ? S.plantio[tkey(t.t)] : null;
-    return p ? {...t, plantio:p.d, vari:t.vari || p.vari, plantioPC:p, items:[]} : {...t, items:[]}; });
+  const talhoes = db.talhoes.map(t => { const p = S.plantio ? S.plantio[tkey(t.t)] : null;   // completa o que falta com o painel de Plantio
+    if (!p) return {...t, items:[]};
+    const pl = !t.plantio && p.d, dp = pl ? p.d : t.plantio, gm = !t.germ && p.germ && (!dp || p.germ >= dp);   // emergência antes do plantio: fica vazia
+    return {...t, plantio: pl ? p.d : t.plantio, germ: gm ? p.germ : t.germ, vari: t.vari || p.vari || "", plantioPC: pl ? p : null, germPC: !!gm, items:[]}; });
   const tmap = Object.fromEntries(talhoes.map(t => [t.t, t]));
   const items = [];
   db.progs.forEach(p => {
@@ -1280,7 +1282,7 @@ function openDrawer(t){
       <div class="fact"><span>Área</span><b>${ha(tl.area)} ha</b></div>
       <div class="fact"><span>Aplicações executadas</span><b>${ex} de ${tl.items.length}</b></div>
       <div class="fact"><span>Plantio</span><b>${tl.plantio ? fd(tl.plantio) + " · " + (M.ref - dn(tl.plantio)) + " DAP" : "—"}</b>${tl.plantioPC ? `<span>do painel de plantio${tl.plantioPC.ini !== tl.plantioPC.fim ? `, plantado de ${fd(tl.plantioPC.ini)} a ${fd(tl.plantioPC.fim)}` : ""}</span>` : ""}</div>
-      <div class="fact"><span>Emergência</span><b>${tl.germ ? fd(tl.germ) + " · " + (M.ref - dn(tl.germ)) + " DAE" : "—"}</b></div>
+      <div class="fact"><span>Emergência</span><b>${tl.germ ? fd(tl.germ) + " · " + (M.ref - dn(tl.germ)) + " DAE" : "—"}</b>${tl.germPC ? "<span>do painel de plantio</span>" : ""}</div>
     </div>
     ${tl.orphan ? `<div class="fact" style="color:${col("atrasada")}">Este talhão aparece na Programação mas não está na aba Talhões. Cadastre-o para ter área e datas.</div>` : ""}
     <div><h4 style="margin:0 0 4px;font-size:15px">Operações</h4><div class="oplist">${S.db.ops.map((o, k) => rowsFor(k, o)).join("")}</div></div>`;
@@ -1305,7 +1307,7 @@ function render(){
   if (S.tab === "tabela") renderTable(M);
   const nProd = Object.keys(S.db.lotes).length;
   $("srcInfo").textContent = `Fonte: ${S.src || "planilha"} · ${M.talhoes.length} talhões · ${ha(M.talhoes.reduce((s,t)=>s+t.area,0))} ha cadastrados · ${M.items.length} programações · ${nProd} lotes com produtos · status com tolerância de ±${S.tol} dias sobre a data programada.` +
-    (() => { const n = M.talhoes.filter(t => t.plantioPC).length; return n ? ` ${n} ${n === 1 ? "talhão sem data de plantio na planilha usa" : "talhões sem data de plantio na planilha usam"} a data do painel de plantio.` : ""; })() +
+    (() => { const n = M.talhoes.filter(t => t.plantioPC || t.germPC).length; return n ? ` ${n} ${n === 1 ? "talhão usa" : "talhões usam"} data de plantio ou de emergência do painel de plantio onde a planilha está vazia.` : ""; })() +
     (S.plantioErr ? ` Não consegui ler o painel de plantio (${S.plantioErr}).` : "");
 }
 function setDb(db, src, modified, custom){
@@ -1323,7 +1325,7 @@ function readBuffer(buf){
 /* ---------- datas de plantio do painel de Plantio (aba Diário) ---------- */
 const PC_KEY = "painelAplic.plantio.v1";
 const tkey = (s) => norm(s).replace(/\s+/g, "");
-/* uma data por talhão: o dia em que o plantio passou da metade da área plantada */
+/* uma data por talhão: o dia em que o plantio passou da metade da área plantada (aba Diário) */
 function lerPlantio(wb){
   const nome = wb.SheetNames.find(n => norm(n).startsWith("diario"));
   if (!nome) throw new Error("a planilha do Plantio não tem a aba Diário");
@@ -1350,6 +1352,24 @@ function lerPlantio(wb){
   const out = {};
   for (const [k, xs] of Object.entries(gs)) out[k] = resumo(xs);
   for (const [k, xs] of Object.entries(g)) out[k] = resumo(xs);
+  // emergência: aba Safra (planejamento), da linha com maior área plantada; emergência antes do início é da safra anterior
+  const abas = wb.SheetNames.filter(n => !norm(n).startsWith("diario")).sort((a, b) => norm(b).startsWith("safra") - norm(a).startsWith("safra"));
+  for (const n of abas) {
+    const rs = XLSX.utils.sheet_to_json(wb.Sheets[n], {header:1, raw:true, defval:null});
+    const i = rs.findIndex(r => r && r.some(c => norm(c).startsWith("talh")) && r.some(c => norm(c).startsWith("emergencia")));
+    if (i < 0) continue;
+    const hh = rs[i].map(norm), ix = (p) => hh.findIndex(c => c.startsWith(p));
+    const cT2 = ix("talh"), cE = ix("emergencia"), cP = ix("area plantada"), cI = ix("inicio");
+    const em = {}, emS = {}, pega = (m, k, x) => { if (!m[k] || x.a > m[k].a) m[k] = x; };
+    rs.slice(i + 1).forEach(r => {
+      const t = r[cT2] != null ? String(r[cT2]).trim() : "", e = toIso(r[cE]); if (!t || !e || norm(t) === "total") return;
+      const ini = cI >= 0 ? toIso(r[cI]) : null; if (ini && e < ini) return;
+      const x = {e, a: cP >= 0 ? toNum(r[cP]) || 0 : 0}, k = tkey(t);
+      pega(em, k, x); if (/\d[a-z]$/.test(k)) pega(emS, k.slice(0, -1), x);
+    });
+    for (const [k, x] of Object.entries({...emS, ...em})) (out[k] ||= {}).germ = x.e;
+    break;
+  }
   return out;
 }
 let pcBusy = false;

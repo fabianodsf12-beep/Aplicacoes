@@ -243,7 +243,7 @@ select.inp{appearance:auto}
 <section id="s-talhoes" hidden>
   <main>
     <div class="card">
-      <div><h2>Trazer do painel de plantio</h2><p class="hint" style="margin-top:4px">Datas do Diário do Plantio para os talhões que ainda estão sem plantio aqui. Talhão plantado em mais de um dia fica com o dia em que passou da metade da área.</p></div>
+      <div><h2>Trazer do painel de plantio</h2><p class="hint" style="margin-top:4px">Datas de plantio (aba Diário) e de emergência (aba Safra) do Plantio para os talhões que estão sem elas aqui. Talhão plantado em mais de um dia fica com o dia em que passou da metade da área.</p></div>
       <div class="list" id="pcList"></div>
       <div id="pcMsg"></div>
       <button type="button" class="save" id="pcSave" hidden>Lançar datas</button>
@@ -718,6 +718,24 @@ function lerPlantio(wb){
   const out = {};
   for (const [k, xs] of Object.entries(gs)) out[k] = resumo(xs);
   for (const [k, xs] of Object.entries(g)) out[k] = resumo(xs);
+  // emergência: aba Safra (planejamento), da linha com maior área plantada; emergência antes do início é da safra anterior
+  const abas = wb.SheetNames.filter(n => !norm(n).startsWith("diario")).sort((a, b) => norm(b).startsWith("safra") - norm(a).startsWith("safra"));
+  for (const n of abas) {
+    const rs = XLSX.utils.sheet_to_json(wb.Sheets[n], {header:1, raw:true, defval:null});
+    const i = rs.findIndex(r => r && r.some(c => norm(c).startsWith("talh")) && r.some(c => norm(c).startsWith("emergencia")));
+    if (i < 0) continue;
+    const hh = rs[i].map(norm), ix = (p) => hh.findIndex(c => c.startsWith(p));
+    const cT2 = ix("talh"), cE = ix("emergencia"), cP = ix("area plantada"), cI = ix("inicio");
+    const em = {}, emS = {}, pega = (m, k, x) => { if (!m[k] || x.a > m[k].a) m[k] = x; };
+    rs.slice(i + 1).forEach(r => {
+      const t = r[cT2] != null ? String(r[cT2]).trim() : "", e = toIso(r[cE]); if (!t || !e || norm(t) === "total") return;
+      const ini = cI >= 0 ? toIso(r[cI]) : null; if (ini && e < ini) return;
+      const x = {e, a: cP >= 0 ? num(r[cP]) || 0 : 0}, k = tkey(t);
+      pega(em, k, x); if (/\d[a-z]$/.test(k)) pega(emS, k.slice(0, -1), x);
+    });
+    for (const [k, x] of Object.entries({...emS, ...em})) (out[k] ||= {}).germ = x.e;
+    break;
+  }
   return out;
 }
 const PC = {P: null, mod: null, fora: new Set(), busy: false, erro: ""};
@@ -741,28 +759,31 @@ async function carregarPlantio(){
   } catch (e) { PC.erro = e.message || String(e); }
   finally { PC.busy = false; renderPC(); }
 }
-const pcLista = () => !L || !PC.P ? [] : L.talhoes.filter(t => t.ativo && !t.plantio).map(t => ({t, p: PC.P[tkey(t.t)]})).filter(x => x.p).sort((a, b) => tcmp(a.t.t, b.t.t));
+/* o que falta na planilha e o painel de Plantio tem: plantio e/ou emergência */
+const pcLista = () => !L || !PC.P ? [] : L.talhoes.filter(t => t.ativo).map(t => { const p = PC.P[tkey(t.t)] || {};
+  const pl = !t.plantio && p.d ? p.d : "", dp = pl || t.plantio;   // emergência antes do plantio (talhão plantado em etapas): fica vazia
+  return {t, p, pl, gm: !t.germ && p.germ && (!dp || p.germ >= dp) ? p.germ : ""}; }).filter(x => x.pl || x.gm).sort((a, b) => tcmp(a.t.t, b.t.t));
 function renderPC(){
   if (!$("pcList")) return;
   const lista = pcLista(), sel = lista.filter(x => !PC.fora.has(x.t.t));
   $("pcList").innerHTML = !PC.P ? `<div class="empty">${PC.erro ? "Não consegui ler o painel de plantio: " + esc(PC.erro) : "Buscando as datas no painel de plantio…"}</div>`
-    : lista.length ? lista.map(({t, p}) => `<label><input type="checkbox" data-pc="${esc(t.t)}" ${PC.fora.has(t.t) ? "" : "checked"}><b>${esc(t.t)}</b><small>plantio ${fd(p.d)}${p.ini !== p.fim ? ` (de ${fd(p.ini)} a ${fd(p.fim)})` : ""}${p.vari ? " · " + esc(p.vari) : ""}</small></label>`).join("")
-    : `<div class="empty">Nenhum talhão sem plantio aqui tem data no painel de plantio.</div>`;
+    : lista.length ? lista.map(({t, p, pl, gm}) => `<label><input type="checkbox" data-pc="${esc(t.t)}" ${PC.fora.has(t.t) ? "" : "checked"}><b>${esc(t.t)}</b><small>${[pl ? `plantio ${fd(pl)}${p.ini !== p.fim ? ` (de ${fd(p.ini)} a ${fd(p.fim)})` : ""}` : "", gm ? "emergência " + fd(gm) : "", pl && p.vari ? esc(p.vari) : ""].filter(Boolean).join(" · ")}</small></label>`).join("")
+    : `<div class="empty">Nenhum talhão com data de plantio ou emergência vazia aqui tem a data no painel de plantio.</div>`;
   $("pcSave").hidden = !lista.length;
-  $("pcSave").textContent = sel.length ? `Lançar ${sel.length} ${sel.length === 1 ? "data" : "datas"} de plantio` : "Marque os talhões para lançar";
+  $("pcSave").textContent = sel.length ? `Lançar datas em ${sel.length} ${sel.length === 1 ? "talhão" : "talhões"}` : "Marque os talhões para lançar";
   $("pcSave").disabled = !sel.length;
 }
 $("pcList").addEventListener("change", (e) => { const t = e.target.dataset.pc; if (!t) return; e.target.checked ? PC.fora.delete(t) : PC.fora.add(t); renderPC(); });
 $("pcSave").addEventListener("click", async () => {
   msg("pcMsg", "", "");
   const sel = pcLista().filter(x => !PC.fora.has(x.t.t)); if (!sel.length) return;
-  const grupos = {};   // um envio por data e variedade (variedade só para talhão que ainda não tem)
-  sel.forEach(({t, p}) => { const v = t.vari ? "" : p.vari, k = p.d + "|" + v; (grupos[k] ||= {plantio: p.d, variedade: v, talhoes: []}).talhoes.push(t.t); });
+  const grupos = {};   // um envio por plantio, emergência e variedade; campo vazio não apaga o que já existe
+  sel.forEach(({t, p, pl, gm}) => { const v = pl && !t.vari ? p.vari || "" : "", k = [pl, gm, v].join("|"); (grupos[k] ||= {plantio: pl, germ: gm, variedade: v, talhoes: []}).talhoes.push(t.t); });
   const b = $("pcSave"); b.disabled = true; b.textContent = "Lançando…";
   let ok = 0;
   try {
-    for (const g of Object.values(grupos)) { await enviar({acao:"plantio", talhoes: g.talhoes, plantio: g.plantio, germ: "", variedade: g.variedade}); ok += g.talhoes.length; }
-    toast(`Datas de plantio lançadas em ${ok} ${ok === 1 ? "talhão" : "talhões"}.`); PC.fora.clear();
+    for (const g of Object.values(grupos)) { await enviar({acao:"plantio", talhoes: g.talhoes, plantio: g.plantio, germ: g.germ, variedade: g.variedade}); ok += g.talhoes.length; }
+    toast(`Datas lançadas em ${ok} ${ok === 1 ? "talhão" : "talhões"}.`); PC.fora.clear();
   } catch (e) { msg("pcMsg", "err", (ok ? `Lancei ${ok} e parei: ` : "") + (e.message || String(e))); }
   finally { await getListas(); renderPC(); }
 });
