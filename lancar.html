@@ -243,6 +243,12 @@ select.inp{appearance:auto}
 <section id="s-talhoes" hidden>
   <main>
     <div class="card">
+      <div><h2>Trazer do painel de plantio</h2><p class="hint" style="margin-top:4px">Datas do Diário do Plantio para os talhões que ainda estão sem plantio aqui. Talhão plantado em mais de um dia fica com o dia em que passou da metade da área.</p></div>
+      <div class="list" id="pcList"></div>
+      <div id="pcMsg"></div>
+      <button type="button" class="save" id="pcSave" hidden>Lançar datas</button>
+    </div>
+    <div class="card">
       <div><h2>Lançar plantio em vários talhões</h2><p class="hint" style="margin-top:4px">Preencha só o que for lançar. Campos vazios não apagam o que já existe.</p></div>
       <div class="row2">
         <label class="f">Data de plantio<input class="inp" type="date" id="tPlant"></label>
@@ -277,6 +283,8 @@ select.inp{appearance:auto}
 /* ============ CONFIGURAÇÃO ============
    Cole entre as aspas o endereço do Apps Script (termina em /exec). */
 const DATA_URL = "https://script.google.com/macros/s/AKfycbwxeuEaQ6gyYzEo3yWbs4SPVj529WUWqdp04ObgWcei8J8z4SiuciiEiXBFNg7-R2FrKg/exec";
+/* Apps Script do painel de Plantio (datas de plantio do Diário) */
+const PLANTIO_URL = "https://script.google.com/macros/s/AKfycbz5_QCzuaya1GKYIdLrrotkpj51H01k99vvgZFWWNq1CONkdmrX3w2iOeDvwp6cn4zEGw/exec";
 /* ===================================== */
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -351,7 +359,7 @@ $("cfgSave").addEventListener("click", () => {
   cfg = {nome, cod}; lsSet("lancar.cfg", JSON.stringify(cfg)); msg("cfgMsg", "", ""); location.hash = "home"; route();
 });
 
-function refreshAll(){ if (!L) return; renderHome(); renderProg(); renderExec(); renderTal(); renderChuva(); }
+function refreshAll(){ if (!L) return; renderHome(); renderProg(); renderExec(); renderTal(); renderPC(); renderChuva(); }
 const talArea = () => Object.fromEntries((L ? L.talhoes : []).map(t => [t.t, t.area]));
 const pendentes = () => L.progs.filter(p => !p.done);
 function statusTxt(p){
@@ -672,12 +680,100 @@ $("nSave").addEventListener("click", async () => {
   finally { b.disabled = false; }
 });
 
+/* ---------- datas do painel de Plantio ---------- */
+const tkey = (s) => norm(s).replace(/\s+/g, "");
+function toIso(v){
+  if (v == null || v === "") return null;
+  if (typeof v === "number" && v > 30000 && v < 80000) return new Date(Math.round((v - 25569) * 864e5)).toISOString().slice(0,10);
+  const t = String(v).trim(); let m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if (m) return `${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`;
+  m = t.match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[0] : null;
+}
+const xlsxPronto = () => window.XLSX ? Promise.resolve() : (xlsxPronto.p ||= new Promise((ok, no) => {
+  const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+  s.onload = ok; s.onerror = () => { xlsxPronto.p = null; no(new Error("o leitor de planilhas não carregou")); }; document.head.appendChild(s); }));
+/* uma data por talhão: o dia em que o plantio passou da metade da área plantada (mesma regra do painel) */
+function lerPlantio(wb){
+  const nome = wb.SheetNames.find(n => norm(n).startsWith("diario"));
+  if (!nome) throw new Error("a planilha do Plantio não tem a aba Diário");
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[nome], {header:1, raw:true, defval:null});
+  const hi = rows.findIndex(r => r && r.some(c => norm(c) === "data") && r.some(c => norm(c).startsWith("talhao")));
+  if (hi < 0) throw new Error("a aba Diário do Plantio não tem as colunas Data e Talhão");
+  const h = rows[hi].map(norm);
+  const col = (...ns) => { for (const n of ns) { const i = h.indexOf(n); if (i >= 0) return i; } for (const n of ns) { const i = h.findIndex(c => c.startsWith(n)); if (i >= 0) return i; } return -1; };
+  const cD = col("data"), cT = col("talhao"), cA = col("area"), cV = col("hibrido", "cultivar", "variedade");
+  const g = {}, gs = {};
+  rows.slice(hi + 1).forEach(r => {
+    const d = toIso(r[cD]), t = r[cT] != null ? String(r[cT]).trim() : ""; if (!d || !t) return;
+    const x = {d, a: cA >= 0 ? num(r[cA]) || 0 : 0, v: cV >= 0 && r[cV] ? String(r[cV]).trim() : ""}, k = tkey(t);
+    (g[k] ||= []).push(x);
+    if (/\d[a-z]$/.test(k)) (gs[k.slice(0, -1)] ||= []).push(x);   // FT-01B também vale para FT-01
+  });
+  const resumo = (xs) => {
+    xs.sort((a, b) => a.d.localeCompare(b.d));
+    const tot = xs.reduce((s, x) => s + x.a, 0); let acc = 0, d = xs[0].d;
+    for (const x of xs) { acc += x.a; if (acc >= tot / 2) { d = x.d; break; } }
+    const pv = {}; xs.forEach(x => { if (x.v) pv[x.v] = (pv[x.v] || 0) + x.a + 1e-6; });
+    return {d, ini: xs[0].d, fim: xs[xs.length - 1].d, area: tot, vari: Object.keys(pv).sort((a, b) => pv[b] - pv[a])[0] || ""};
+  };
+  const out = {};
+  for (const [k, xs] of Object.entries(gs)) out[k] = resumo(xs);
+  for (const [k, xs] of Object.entries(g)) out[k] = resumo(xs);
+  return out;
+}
+const PC = {P: null, mod: null, fora: new Set(), busy: false, erro: ""};
+try { const c = JSON.parse(lsGet("lancar.plantio") || "null"); if (c && c.P) { PC.P = c.P; PC.mod = c.modified; } } catch(e) {}
+async function carregarPlantio(){
+  if (PC.busy) return; PC.busy = true;
+  try {
+    const sep = PLANTIO_URL.includes("?") ? "&" : "?";
+    const meta = await (await fetch(PLANTIO_URL + sep + "meta=1&t=" + Date.now(), {cache:"no-store", redirect:"follow"})).json();
+    if (!meta || !meta.ok) throw new Error(meta && meta.error || "resposta inválida");
+    if (!PC.P || PC.mod !== meta.modified) {
+      const [j] = await Promise.all([fetch(PLANTIO_URL + sep + "t=" + Date.now(), {cache:"no-store", redirect:"follow"}).then(r => r.json()), xlsxPronto()]);
+      const raw = j && j.ok && (j.b64 || j.base64 || j.content || j.data);
+      if (typeof raw !== "string" || !raw) throw new Error(j && j.error || "a resposta não trouxe a planilha");
+      let b = raw.replace(/^data:[^,]*,/, "").replace(/\s+/g, "").replace(/-/g, "+").replace(/_/g, "/"); while (b.length % 4) b += "=";
+      const bin = atob(b), buf = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+      PC.P = lerPlantio(XLSX.read(buf, {type:"array"})); PC.mod = j.modified || meta.modified;
+      lsSet("lancar.plantio", JSON.stringify({P: PC.P, modified: PC.mod}));
+    }
+    PC.erro = "";
+  } catch (e) { PC.erro = e.message || String(e); }
+  finally { PC.busy = false; renderPC(); }
+}
+const pcLista = () => !L || !PC.P ? [] : L.talhoes.filter(t => t.ativo && !t.plantio).map(t => ({t, p: PC.P[tkey(t.t)]})).filter(x => x.p).sort((a, b) => tcmp(a.t.t, b.t.t));
+function renderPC(){
+  if (!$("pcList")) return;
+  const lista = pcLista(), sel = lista.filter(x => !PC.fora.has(x.t.t));
+  $("pcList").innerHTML = !PC.P ? `<div class="empty">${PC.erro ? "Não consegui ler o painel de plantio: " + esc(PC.erro) : "Buscando as datas no painel de plantio…"}</div>`
+    : lista.length ? lista.map(({t, p}) => `<label><input type="checkbox" data-pc="${esc(t.t)}" ${PC.fora.has(t.t) ? "" : "checked"}><b>${esc(t.t)}</b><small>plantio ${fd(p.d)}${p.ini !== p.fim ? ` (de ${fd(p.ini)} a ${fd(p.fim)})` : ""}${p.vari ? " · " + esc(p.vari) : ""}</small></label>`).join("")
+    : `<div class="empty">Nenhum talhão sem plantio aqui tem data no painel de plantio.</div>`;
+  $("pcSave").hidden = !lista.length;
+  $("pcSave").textContent = sel.length ? `Lançar ${sel.length} ${sel.length === 1 ? "data" : "datas"} de plantio` : "Marque os talhões para lançar";
+  $("pcSave").disabled = !sel.length;
+}
+$("pcList").addEventListener("change", (e) => { const t = e.target.dataset.pc; if (!t) return; e.target.checked ? PC.fora.delete(t) : PC.fora.add(t); renderPC(); });
+$("pcSave").addEventListener("click", async () => {
+  msg("pcMsg", "", "");
+  const sel = pcLista().filter(x => !PC.fora.has(x.t.t)); if (!sel.length) return;
+  const grupos = {};   // um envio por data e variedade (variedade só para talhão que ainda não tem)
+  sel.forEach(({t, p}) => { const v = t.vari ? "" : p.vari, k = p.d + "|" + v; (grupos[k] ||= {plantio: p.d, variedade: v, talhoes: []}).talhoes.push(t.t); });
+  const b = $("pcSave"); b.disabled = true; b.textContent = "Lançando…";
+  let ok = 0;
+  try {
+    for (const g of Object.values(grupos)) { await enviar({acao:"plantio", talhoes: g.talhoes, plantio: g.plantio, germ: "", variedade: g.variedade}); ok += g.talhoes.length; }
+    toast(`Datas de plantio lançadas em ${ok} ${ok === 1 ? "talhão" : "talhões"}.`); PC.fora.clear();
+  } catch (e) { msg("pcMsg", "err", (ok ? `Lancei ${ok} e parei: ` : "") + (e.message || String(e))); }
+  finally { await getListas(); renderPC(); }
+});
+
 /* ---------- início ---------- */
 (function init(){
   try { const c = JSON.parse(lsGet("lancar.listas") || "null"); if (c && c.ok) { L = c; net("", "Últimas listas salvas"); } } catch(e) {}
   route();
   getListas();
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) getListas(); });
+  carregarPlantio();
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { getListas(); carregarPlantio(); } });
   addEventListener("online", getListas);
 })();
 </script>

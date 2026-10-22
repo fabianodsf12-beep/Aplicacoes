@@ -444,11 +444,14 @@ tbody tr:hover td{background:var(--panel2)}
 /* ============ CONFIGURAÇÃO ============
    Cole entre as aspas o endereço do Apps Script (termina em /exec). */
 const DATA_URL = "https://script.google.com/macros/s/AKfycbwxeuEaQ6gyYzEo3yWbs4SPVj529WUWqdp04ObgWcei8J8z4SiuciiEiXBFNg7-R2FrKg/exec";
+/* Apps Script do painel de Plantio: completa as datas de plantio que faltam na aba Talhões */
+const PLANTIO_URL = "https://script.google.com/macros/s/AKfycbz5_QCzuaya1GKYIdLrrotkpj51H01k99vvgZFWWNq1CONkdmrX3w2iOeDvwp6cn4zEGw/exec";
 /* ===================================== */
 const SNAPSHOT = null;
 const MAPA_SNAPSHOT = null;
 const OPS_DEFAULT = ["Dessecação Pré-Plantio","Pré-Emergente","Aplicação de MIB","1º Pós-Emergente","2º Pós-Emergente","1º Fungicida","2º Fungicida","3º Fungicida","4º Fungicida","5º Fungicida"];
 const LS_KEY = "painelAplic.base.v2";
+const PC_EVERY = 5 * 60 * 1000;  // datas de plantio: o Diário muda no máximo algumas vezes por dia
 const CHECK_EVERY = 15 * 1000;   // consulta leve (só a data de alteração); baixa a planilha só quando ela mudou
 
 const STATUS = {
@@ -460,7 +463,7 @@ const EXEC = ["exec_prazo","adiantada","exec_atraso"];
 const DIAS = ["dom","seg","ter","qua","qui","sex","sáb"];
 
 const S = {
-  db: null, src: "", modified: null, custom: false,
+  db: null, src: "", modified: null, custom: false, plantio: null, plantioMod: null, plantioErr: "",
   ref: null, tol: 2, modo: "todas", op: -1, status: "todas",
   tab: "geral", zoom: "30", gSort: "crit", gAll: false, tm: "sit", q: "", sort: {k:"crit", d:1}, cap: 0,
   per: "tudo", perA: "", perB: "", geo: "sit", geoLbl: true, mapa: null, chuvaModo: "d"
@@ -564,7 +567,8 @@ let PER = null;
 function build(){
   const db = S.db, ref = dn(S.ref), tol = S.tol;
   PER = periodo(ref);
-  const talhoes = db.talhoes.map(t => ({...t, items: []}));
+  const talhoes = db.talhoes.map(t => { const p = !t.plantio && S.plantio ? S.plantio[tkey(t.t)] : null;
+    return p ? {...t, plantio:p.d, vari:t.vari || p.vari, plantioPC:p, items:[]} : {...t, items:[]}; });
   const tmap = Object.fromEntries(talhoes.map(t => [t.t, t]));
   const items = [];
   db.progs.forEach(p => {
@@ -1275,7 +1279,7 @@ function openDrawer(t){
   $("drBody").innerHTML = `<div class="facts">
       <div class="fact"><span>Área</span><b>${ha(tl.area)} ha</b></div>
       <div class="fact"><span>Aplicações executadas</span><b>${ex} de ${tl.items.length}</b></div>
-      <div class="fact"><span>Plantio</span><b>${tl.plantio ? fd(tl.plantio) + " · " + (M.ref - dn(tl.plantio)) + " DAP" : "—"}</b></div>
+      <div class="fact"><span>Plantio</span><b>${tl.plantio ? fd(tl.plantio) + " · " + (M.ref - dn(tl.plantio)) + " DAP" : "—"}</b>${tl.plantioPC ? `<span>do painel de plantio${tl.plantioPC.ini !== tl.plantioPC.fim ? `, plantado de ${fd(tl.plantioPC.ini)} a ${fd(tl.plantioPC.fim)}` : ""}</span>` : ""}</div>
       <div class="fact"><span>Emergência</span><b>${tl.germ ? fd(tl.germ) + " · " + (M.ref - dn(tl.germ)) + " DAE" : "—"}</b></div>
     </div>
     ${tl.orphan ? `<div class="fact" style="color:${col("atrasada")}">Este talhão aparece na Programação mas não está na aba Talhões. Cadastre-o para ter área e datas.</div>` : ""}
@@ -1300,7 +1304,9 @@ function render(){
   if (S.tab === "mapa") renderTreemap(M);
   if (S.tab === "tabela") renderTable(M);
   const nProd = Object.keys(S.db.lotes).length;
-  $("srcInfo").textContent = `Fonte: ${S.src || "planilha"} · ${M.talhoes.length} talhões · ${ha(M.talhoes.reduce((s,t)=>s+t.area,0))} ha cadastrados · ${M.items.length} programações · ${nProd} lotes com produtos · status com tolerância de ±${S.tol} dias sobre a data programada.`;
+  $("srcInfo").textContent = `Fonte: ${S.src || "planilha"} · ${M.talhoes.length} talhões · ${ha(M.talhoes.reduce((s,t)=>s+t.area,0))} ha cadastrados · ${M.items.length} programações · ${nProd} lotes com produtos · status com tolerância de ±${S.tol} dias sobre a data programada.` +
+    (() => { const n = M.talhoes.filter(t => t.plantioPC).length; return n ? ` ${n} ${n === 1 ? "talhão sem data de plantio na planilha usa" : "talhões sem data de plantio na planilha usam"} a data do painel de plantio.` : ""; })() +
+    (S.plantioErr ? ` Não consegui ler o painel de plantio (${S.plantioErr}).` : "");
 }
 function setDb(db, src, modified, custom){
   S.db = db; S.src = src; S.modified = modified || null; S.custom = !!custom;
@@ -1312,6 +1318,59 @@ function setDb(db, src, modified, custom){
 function readBuffer(buf){
   if (typeof XLSX === "undefined") throw new Error("o leitor de planilhas não carregou; verifique a conexão e recarregue a página");
   return parseBase(XLSX.read(buf, {type:"array"}));
+}
+
+/* ---------- datas de plantio do painel de Plantio (aba Diário) ---------- */
+const PC_KEY = "painelAplic.plantio.v1";
+const tkey = (s) => norm(s).replace(/\s+/g, "");
+/* uma data por talhão: o dia em que o plantio passou da metade da área plantada */
+function lerPlantio(wb){
+  const nome = wb.SheetNames.find(n => norm(n).startsWith("diario"));
+  if (!nome) throw new Error("a planilha do Plantio não tem a aba Diário");
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[nome], {header:1, raw:true, defval:null});
+  const hi = rows.findIndex(r => r && r.some(c => norm(c) === "data") && r.some(c => norm(c).startsWith("talhao")));
+  if (hi < 0) throw new Error("a aba Diário do Plantio não tem as colunas Data e Talhão");
+  const h = rows[hi].map(norm);
+  const col = (...ns) => { for (const n of ns) { const i = h.indexOf(n); if (i >= 0) return i; } for (const n of ns) { const i = h.findIndex(c => c.startsWith(n)); if (i >= 0) return i; } return -1; };
+  const cD = col("data"), cT = col("talhao"), cA = col("area"), cV = col("hibrido", "cultivar", "variedade");
+  const g = {}, gs = {};
+  rows.slice(hi + 1).forEach(r => {
+    const d = toIso(r[cD]), t = r[cT] != null ? String(r[cT]).trim() : ""; if (!d || !t) return;
+    const x = {d, a: cA >= 0 ? toNum(r[cA]) || 0 : 0, v: cV >= 0 && r[cV] ? String(r[cV]).trim() : ""}, k = tkey(t);
+    (g[k] ||= []).push(x);
+    if (/\d[a-z]$/.test(k)) (gs[k.slice(0, -1)] ||= []).push(x);   // FT-01B também vale para FT-01
+  });
+  const resumo = (xs) => {
+    xs.sort((a, b) => a.d.localeCompare(b.d));
+    const tot = xs.reduce((s, x) => s + x.a, 0); let acc = 0, d = xs[0].d;
+    for (const x of xs) { acc += x.a; if (acc >= tot / 2) { d = x.d; break; } }
+    const pv = {}; xs.forEach(x => { if (x.v) pv[x.v] = (pv[x.v] || 0) + x.a + 1e-6; });
+    return {d, ini: xs[0].d, fim: xs[xs.length - 1].d, area: tot, vari: Object.keys(pv).sort((a, b) => pv[b] - pv[a])[0] || ""};
+  };
+  const out = {};
+  for (const [k, xs] of Object.entries(gs)) out[k] = resumo(xs);
+  for (const [k, xs] of Object.entries(g)) out[k] = resumo(xs);
+  return out;
+}
+let pcBusy = false;
+async function plantioRefresh(){
+  if (pcBusy || !/^https:\/\/script\.google\.com\//.test(PLANTIO_URL)) return; pcBusy = true;
+  try {
+    const sep = PLANTIO_URL.includes("?") ? "&" : "?";
+    const meta = await getJson(PLANTIO_URL + sep + "meta=1&t=" + Date.now(), 45000);
+    if (!meta || !meta.ok) throw new Error(meta && meta.error || "resposta inválida");
+    if (S.plantio && S.plantioMod === meta.modified) { if (S.plantioErr) { S.plantioErr = ""; if (S.db) render(); } return; }
+    const j = await getJson(PLANTIO_URL + sep + "t=" + Date.now(), 120000);
+    const raw = j && j.ok && (j.b64 || j.base64 || j.content || j.data);
+    if (typeof raw !== "string" || !raw) throw new Error(j && j.error || "a resposta não trouxe a planilha");
+    let b = raw.replace(/^data:[^,]*,/, "").replace(/\s+/g, "").replace(/-/g, "+").replace(/_/g, "/"); while (b.length % 4) b += "=";
+    const bin = atob(b), buf = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    if (typeof XLSX === "undefined") throw new Error("o leitor de planilhas não carregou");
+    S.plantio = lerPlantio(XLSX.read(buf, {type:"array"})); S.plantioMod = j.modified || meta.modified; S.plantioErr = "";
+    lsSet(PC_KEY, JSON.stringify({P: S.plantio, modified: S.plantioMod}));
+    if (S.db) render();
+  } catch (e) { S.plantioErr = e && e.message ? e.message : String(e); if (S.db) render(); }
+  finally { pcBusy = false; }
 }
 
 /* ---------- atualização pelo Drive (Apps Script) ---------- */
@@ -1419,7 +1478,7 @@ function bind(){
   });
   let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { if (S.tab === "mapa") render(); }, 150); });
   document.addEventListener("visibilitychange", () => { if (!document.hidden) webRefresh(false); });
-  addEventListener("focus", () => webRefresh(false));
+  addEventListener("focus", () => { webRefresh(false); plantioRefresh(); });
 }
 
 /* ---------- início ---------- */
@@ -1428,6 +1487,7 @@ function bind(){
   const cap = +lsGet("painelAplic.cap"); if (cap > 0) { S.cap = cap; $("cap").value = cap; }
   S.ref = HOJE();
   bind();
+  try { const pc = JSON.parse(lsGet(PC_KEY) || "null"); if (pc && pc.P) { S.plantio = pc.P; S.plantioMod = pc.modified; } } catch(e) {}
   const saved = lsGet(LS_KEY);
   let loaded = false;
   if (saved) { try { const o = JSON.parse(saved); if (o && o.db && o.db.talhoes) { S.db = o.db; S.src = o.src; S.modified = o.modified; S.custom = !!o.custom; loaded = true;
@@ -1438,6 +1498,7 @@ function bind(){
   render();
   if (webOn()) { webRefresh(false); setInterval(() => { if (!document.hidden) webRefresh(false); }, CHECK_EVERY); }
   else if (!S.db) dataStatus("", "Sem dados carregados");
+  plantioRefresh(); setInterval(() => { if (!document.hidden) plantioRefresh(); }, PC_EVERY);
 })();
 </script>
 </body>
