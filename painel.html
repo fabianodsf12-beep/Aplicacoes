@@ -449,7 +449,7 @@ const SNAPSHOT = null;
 const MAPA_SNAPSHOT = null;
 const OPS_DEFAULT = ["Dessecação Pré-Plantio","Pré-Emergente","Aplicação de MIB","1º Pós-Emergente","2º Pós-Emergente","1º Fungicida","2º Fungicida","3º Fungicida","4º Fungicida","5º Fungicida"];
 const LS_KEY = "painelAplic.base.v2";
-const CHECK_EVERY = 10 * 60 * 1000;
+const CHECK_EVERY = 15 * 1000;   // consulta leve (só a data de alteração); baixa a planilha só quando ela mudou
 
 const STATUS = {
   atrasada:{t:"Atrasada",ord:0}, janela:{t:"Na janela",ord:1}, prox7:{t:"Próximos 7 dias",ord:2}, programada:{t:"Programada",ord:3},
@@ -497,7 +497,8 @@ function toIso(v){
 }
 const toNum = (v) => { if (typeof v === "number") return v; if (v == null || v === "") return null; const n = parseFloat(String(v).replace(/\./g,"").replace(",", ".")); return isFinite(n) ? n : null; };
 function findSheet(wb, name){ const k = wb.SheetNames.find(n => norm(n) === norm(name)); return k ? wb.Sheets[k] : null; }
-function table(wb, name, cols, required){
+/* colunas em "opt" podem faltar na planilha (o valor fica vazio) */
+function table(wb, name, cols, required, opt){
   const ws = findSheet(wb, name);
   if (!ws) { if (required) throw new Error(`Não encontrei a aba “${name}” na planilha.`); return []; }
   const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
@@ -505,7 +506,7 @@ function table(wb, name, cols, required){
   const idx = {};
   for (const [key, label] of Object.entries(cols)) {
     const i = head.findIndex(h => h.startsWith(norm(label)));
-    if (i < 0 && required) throw new Error(`A aba “${name}” não tem a coluna “${label}”.`);
+    if (i < 0 && required && !(opt || []).includes(key)) throw new Error(`A aba “${name}” não tem a coluna “${label}”.`);
     idx[key] = i;
   }
   return rows.slice(1).map(r => { const o = {}; for (const k in idx) o[k] = idx[k] >= 0 ? r[idx[k]] : null; return o; });
@@ -513,13 +514,13 @@ function table(wb, name, cols, required){
 function parseBase(wb){
   const lst = table(wb, "Listas", {op:"Operação"}, false).map(r => r.op).filter(Boolean).map(s => String(s).trim());
   const ops = lst.length ? lst : OPS_DEFAULT.slice();
-  const talhoes = table(wb, "Talhões", {t:"Talhão", faz:"Fazenda", area:"Área", cult:"Cultura", vari:"Variedade", plantio:"Data de plantio", germ:"Data de emergência", ativo:"Ativo"}, true)
+  const talhoes = table(wb, "Talhões", {t:"Talhão", faz:"Fazenda", area:"Área", cult:"Cultura", vari:"Variedade", plantio:"Data de plantio", germ:"Data de emergência", ativo:"Ativo"}, true, ["faz","cult","vari","germ","ativo"])
     .filter(r => r.t && norm(r.ativo) !== "nao")
     .map(r => ({t:String(r.t).trim(), faz:r.faz ? String(r.faz) : "", area:toNum(r.area) || 0, cult:r.cult ? String(r.cult) : "", vari:r.vari ? String(r.vari) : "", plantio:toIso(r.plantio), germ:toIso(r.germ)}));
   if (!talhoes.length) throw new Error("A aba Talhões está vazia.");
   const units = {};
   table(wb, "Produtos", {p:"Produto", un:"Unidade", cl:"Classe"}, false).forEach(r => { if (r.p) units[String(r.p).trim()] = {un: r.un ? String(r.un) : "", cl: r.cl ? String(r.cl) : ""}; });
-  const progs = table(wb, "Programação", {id:"ID", t:"Talhão", op:"Operação", modo:"Modalidade", prog:"Data programada", rec:"Receita", lote:"Lote", obs:"Observação", areaP:"Área programada"}, true)
+  const progs = table(wb, "Programação", {id:"ID", t:"Talhão", op:"Operação", modo:"Modalidade", prog:"Data programada", rec:"Receita", lote:"Lote", obs:"Observação", areaP:"Área programada"}, true, ["modo","rec","lote","obs","areaP"])
     .filter(r => r.id && r.t && r.op)
     .map(r => ({id:String(r.id).trim(), t:String(r.t).trim(), op:String(r.op).trim(), modo: norm(r.modo).startsWith("a") ? "A" : "T", prog:toIso(r.prog), rec:r.rec ? String(r.rec) : "", lote:r.lote ? String(r.lote).trim() : "", obs:r.obs ? String(r.obs) : "", areaP:toNum(r.areaP)}))
     .filter(p => !norm(p.obs).includes("cancelad"));
@@ -529,7 +530,7 @@ function parseBase(wb){
     const p = String(r.p).trim(); (lotes[String(r.lote).trim()] ||= []).push({p, dose:d, un:(units[p] || {}).un || "", cl:(units[p] || {}).cl || ""});
   });
   const execs = {};
-  table(wb, "Execuções", {id:"ID programação", d:"Data executada", area:"Área aplicada", modo:"Modalidade", os:"Nº OS", maq:"Máquina", oper:"Operador", obs:"Observação", concl:"Concluída"}, true).forEach(r => {
+  table(wb, "Execuções", {id:"ID programação", d:"Data executada", area:"Área aplicada", modo:"Modalidade", os:"Nº OS", maq:"Máquina", oper:"Operador", obs:"Observação", concl:"Concluída"}, true, ["area","modo","os","maq","oper","obs","concl"]).forEach(r => {
     if (!r.id) return; const d = toIso(r.d); if (!d) return;
     (execs[String(r.id).trim()] ||= []).push({d, area:toNum(r.area), os:r.os != null ? String(r.os) : "", maq:r.maq ? String(r.maq) : "", oper:r.oper ? String(r.oper) : "", concl:norm(r.concl) === "sim"});
   });
@@ -1333,16 +1334,20 @@ async function webRefresh(manual){
     if (!S.db) dataStatus("busy", "Buscando a planilha no Drive…"); else if (manual) dataStatus("busy", "Verificando a planilha…");
     const meta = await getJson(DATA_URL + (DATA_URL.includes("?") ? "&" : "?") + "meta=1", 45000);
     if (!meta.ok) throw new Error(meta.error || "o script não encontrou a planilha");
+    if (!manual && webRefresh.bad === meta.modified) return;
     if (S.db && !S.custom && S.modified === meta.modified) { dataStatus("ok", `Dados em dia: planilha salva em ${fmtDT(meta.modified)}`); if (manual) toast("Nenhuma alteração desde a última leitura."); return; }
     const t0 = Date.now(); const tick = setInterval(() => dataStatus("busy", `Baixando a versão salva em ${fmtDT(meta.modified)}… ${Math.round((Date.now()-t0)/1000)} s`), 1000);
     let j; try { j = await getJson(DATA_URL, 120000); } finally { clearInterval(tick); }
     if (!j.ok || !j.b64) throw new Error(j.error || "o script não devolveu o arquivo");
     const bin = atob(j.b64), buf = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-    setDb(readBuffer(buf), j.name || meta.name, j.modified || meta.modified, false);
+    let db; try { db = readBuffer(buf); } catch (pe) { pe.parse = j.modified || meta.modified; throw pe; }
+    webRefresh.bad = null;
+    setDb(db, j.name || meta.name, j.modified || meta.modified, false);
     dataStatus("ok", `Dados em dia: planilha salva em ${fmtDT(S.modified)}`);
     if (manual) toast("Painel atualizado com a planilha do Drive.");
   } catch (e) {
     const msg = e && e.message ? e.message : String(e);
+    if (e && e.parse) webRefresh.bad = e.parse;
     dataStatus("err", (S.db ? `Não consegui atualizar (${msg}). Mostrando os dados salvos em ${S.modified ? fmtDT(S.modified) : "cache"}.` : `Não consegui buscar a planilha: ${msg}.`));
     if (!S.db) $("emptyMsg").textContent = `Não consegui buscar a planilha no Drive: ${msg}. Você pode usar Carregar planilha enquanto isso.`;
   } finally { busy = false; $("btnSync").classList.remove("spin"); }
@@ -1414,6 +1419,7 @@ function bind(){
   });
   let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { if (S.tab === "mapa") render(); }, 150); });
   document.addEventListener("visibilitychange", () => { if (!document.hidden) webRefresh(false); });
+  addEventListener("focus", () => webRefresh(false));
 }
 
 /* ---------- início ---------- */
@@ -1430,7 +1436,7 @@ function bind(){
   fillOpSel(); syncControls();
   if (typeof Chart === "undefined") document.querySelector("#v-geral").insertAdjacentHTML("afterbegin", '<div class="card" style="margin-bottom:16px">Os gráficos não carregaram. Verifique a conexão e recarregue a página.</div>');
   render();
-  if (webOn()) { webRefresh(false); setInterval(() => webRefresh(false), CHECK_EVERY); }
+  if (webOn()) { webRefresh(false); setInterval(() => { if (!document.hidden) webRefresh(false); }, CHECK_EVERY); }
   else if (!S.db) dataStatus("", "Sem dados carregados");
 })();
 </script>
