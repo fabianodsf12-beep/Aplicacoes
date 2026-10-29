@@ -9,6 +9,7 @@
 <link rel="icon" href="nadiana/logos/nadiana-simbolo.png">
 <link rel="stylesheet" href="nadiana/tokens.css">
 <link rel="stylesheet" href="nadiana/componentes.css">
+<script src="nadiana/tokens.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
@@ -542,11 +543,13 @@ async function mostrarMapaP(){
   $("pMapMsg").textContent = "Toque num talhão para marcar ou desmarcar. Verde: marcado. Cinza: já tem esta operação ou está inativo.";
   estiloMapaP();
 }
+/* cores do mapa (base Nadiana): marcado no verde claro da marca, indisponível em cinza; sobre a imagem de satélite vale sempre o tema claro */
+const MAPA_COR = (() => { const T = (window.NadianaTokens || {}).light || {}; return {marcado: T["nadiana-verde-claro"] || "#04B365", inativo: T.muted || "#4F5C55"}; })();
 function estiloMapaP(){
   if (!MP.layer) return;
   const disp = new Set(disponiveis().map(t => t.t));
   MP.layer.eachLayer(l => { const t = l.feature.properties.talhao, s = P.sel.has(t), d = disp.has(t);
-    l.setStyle({color: s ? "#9fe0bb" : "#ffffff", weight: s ? 3 : 1.4, fillColor: s ? "#2F7553" : d ? "#ffffff" : "#5c6660", fillOpacity: s ? .7 : d ? .12 : .55}); });
+    l.setStyle({color: "#FFFFFF", weight: s ? 3 : 1.4, fillColor: s ? MAPA_COR.marcado : d ? "#FFFFFF" : MAPA_COR.inativo, fillOpacity: s ? .65 : d ? .12 : .6}); });
 }
 $("pVista").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; P.vista = b.dataset.v;
   [...$("pVista").children].forEach(x => x.setAttribute("aria-pressed", String(x === b)));

@@ -9,6 +9,7 @@
 <link rel="icon" href="nadiana/logos/nadiana-simbolo.png">
 <link rel="stylesheet" href="nadiana/tokens.css">
 <link rel="stylesheet" href="nadiana/componentes.css">
+<script src="nadiana/tokens.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -1001,6 +1002,14 @@ function pdfMapa(doc, M, x0, y0, W, H){
   doc.setFont("helvetica", "normal");
   return true;
 }
+/* logo horizontal da Nadiana para o cabeçalho do PDF (null se não carregar) */
+function logoNadiana(){
+  return logoNadiana.p ||= new Promise(ok => {
+    const im = new Image();
+    im.onload = () => { try { const c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight;
+      c.getContext("2d").drawImage(im, 0, 0); ok({url: c.toDataURL("image/png"), w: im.naturalWidth, h: im.naturalHeight}); } catch(e) { ok(null); } };
+    im.onerror = () => ok(null); im.src = "nadiana/logos/nadiana-logo.png"; });
+}
 async function gerarPDF(){
   if (!S.db) { toast("Carregue os dados antes de gerar o relatório."); return; }
   if (!window.jspdf || !window.jspdf.jsPDF) { toast("O gerador de PDF não carregou. Verifique a conexão e recarregue a página."); return; }
@@ -1020,24 +1029,31 @@ async function gerarPDF(){
     const kf = (id) => { const el = $(id); return el ? [el.querySelector("b")?.textContent || "", el.querySelector("span")?.textContent || ""] : ["", ""]; };
     const M = build();
     const {jsPDF} = window.jspdf, doc = new jsPDF({orientation:"landscape", unit:"mm", format:"a4", compress:true});
-    const W = 297, H = 210, mg = 12, verde = [33,81,59], verdeC = [227,238,231], tinta = [23,34,28], cinza = [96,108,101], linha = [221,226,219];
+    /* cores da base Nadiana (tema claro de nadiana/tokens.json) */
+    const TK = (window.NadianaTokens || {}).light || {}, tk = (n, f) => rgb(TK[n] || f);
+    const W = 297, H = 210, mg = 12, verde = tk("nadiana-verde", "#04954D"), verdeE = tk("nadiana-verde-escuro", "#007637"), petroleo = tk("nadiana-petroleo", "#01252B"),
+      fundo2 = tk("panel2", "#F6F8F5"), suave = tk("brand-soft", "#E3EEE7"), tinta = tk("ink", "#17221C"), cinza = tk("muted", "#4F5C55"), linha = tk("line2", "#E3E8E1"), linhaF = tk("line", "#C9D1C7");
+    const logoPng = await logoNadiana();
     const filtros = [S.op >= 0 ? "Operação: " + S.db.ops[S.op] : "", S.modo !== "todas" ? "Modalidade: " + modoNome(S.modo) : "", S.status !== "todas" ? "Situação: " + (S.status === "executadas" ? "Executadas" : STATUS[S.status].t) : ""].filter(Boolean).join("  ·  ") || "Sem filtros";
-    const logo = (x, y, sz) => { doc.setFillColor(255,255,255); doc.setDrawColor(255,255,255); doc.roundedRect(x, y, sz, sz, 2.2, 2.2, "S");
-      doc.setLineWidth(0.55); [0.72, 0.56, 0.40].forEach(f => { const yy = y + sz * f, x1 = x + sz*.2, x2 = x + sz*.8, h = sz*.2;
-        doc.lines([[ (x2-x1)*.3, -h, (x2-x1)*.7, -h, x2-x1, 0 ]], x1, yy, [1,1], "S", false); }); doc.setLineWidth(0.2); };
-    const cab = (secao) => { doc.setFillColor(...verde); doc.rect(0, 0, W, 22, "F"); logo(mg, 5, 12);
-      doc.setTextColor(255); doc.setFont("helvetica","bold"); doc.setFontSize(15); doc.text("Relatório de aplicações", mg + 16, 10.5);
-      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(213,230,220); doc.text(`Fazenda Reata  ·  safra soja 26/27${secao ? "  ·  " + secao : ""}`, mg + 16, 16);
-      const per = perLabel(M.per); doc.setFontSize(8.5); const pw = doc.getTextWidth(per) + 8; doc.setFillColor(47,117,83); doc.roundedRect(W - mg - pw, 6, pw, 6.5, 3.2, 3.2, "F");
-      doc.setTextColor(255); doc.text(per, W - mg - pw/2, 10.4, {align:"center"});
-      doc.setTextColor(213,230,220); doc.setFontSize(7.5); doc.text(`Referência ${fdn(M.ref)}/${iso(M.ref).slice(0,4)}  ·  tolerância ±${S.tol} d  ·  ${filtros}`, W - mg, 17, {align:"right"});
+    const logo = (x, y, h) => { if (logoPng) { doc.addImage(logoPng.url, "PNG", x, y, h * logoPng.w / logoPng.h, h, undefined, "FAST"); return h * logoPng.w / logoPng.h; }
+      doc.setFont("helvetica","bold"); doc.setFontSize(13); doc.setTextColor(...petroleo); doc.text("NADIANA", x, y + h - 1); return doc.getTextWidth("NADIANA"); };
+    /* cabeçalho claro: logo, título em petróleo, período e filtros à direita, traço verde curto embaixo */
+    const cab = (secao) => { doc.setFillColor(255,255,255); doc.rect(0, 0, W, 22, "F");
+      const lw = logo(mg, 6.2, 6.6), tx = mg + lw + 7;
+      doc.setDrawColor(...linhaF); doc.setLineWidth(0.25); doc.line(tx - 3.5, 5.5, tx - 3.5, 16.5);
+      doc.setTextColor(...petroleo); doc.setFont("helvetica","bold"); doc.setFontSize(15); doc.text("Relatório de aplicações", tx, 10.5);
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...cinza); doc.text(`Fazenda Reata  ·  safra soja 26/27${secao ? "  ·  " + secao : ""}`, tx, 15.6);
+      const per = perLabel(M.per); doc.setFont("helvetica","bold"); doc.setFontSize(8.5); const pw = doc.getTextWidth(per) + 8; doc.setFillColor(...suave); doc.roundedRect(W - mg - pw, 5.6, pw, 6.5, 3.2, 3.2, "F");
+      doc.setTextColor(...petroleo); doc.text(per, W - mg - pw/2, 10, {align:"center"}); doc.setFont("helvetica","normal");
+      doc.setTextColor(...cinza); doc.setFontSize(7.5); doc.text(`Referência ${fdn(M.ref)}/${iso(M.ref).slice(0,4)}  ·  tolerância ±${S.tol} d  ·  ${filtros}`, W - mg, 16.4, {align:"right"});
+      doc.setFillColor(...verde); doc.rect(mg, 19.6, 18, 1.1, "F"); doc.setDrawColor(...linha); doc.setLineWidth(0.25); doc.line(mg + 18, 20.15, W - mg, 20.15);
       doc.setTextColor(...tinta); };
     const titulo = (t, y, sub, x = mg) => { doc.setFillColor(...verde); doc.rect(x, y - 3.6, 1.2, 4.6, "F"); doc.setFont("helvetica","bold"); doc.setFontSize(11.5); doc.setTextColor(...tinta); doc.text(t, x + 3, y);
       if (sub) { const tw = doc.getTextWidth(t); doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...cinza); doc.text(sub, x + 3 + tw + 3, y); } doc.setFont("helvetica","normal"); };
     const cartao = (x, y, w, h) => { doc.setFillColor(255,255,255); doc.setDrawColor(...linha); doc.setLineWidth(0.25); doc.roundedRect(x, y, w, h, 2.5, 2.5, "FD"); };
     const graf = (t, k, im, x, y, w, h) => { cartao(x, y, w, h);
       doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...tinta); doc.text(t, x + 4, y + 6.5);
-      if (k && k[0]) { doc.setFontSize(13); doc.setTextColor(...verde); doc.text(k[0], x + w - 4, y + 7, {align:"right"}); doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setTextColor(...cinza); doc.text(k[1], x + w - 4, y + 10.6, {align:"right"}); }
+      if (k && k[0]) { doc.setFontSize(13); doc.setTextColor(...verdeE); doc.text(k[0], x + w - 4, y + 7, {align:"right"}); doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setTextColor(...cinza); doc.text(k[1], x + w - 4, y + 10.6, {align:"right"}); }
       doc.setFont("helvetica","normal");
       if (im) { const p = doc.getImageProperties(im), bw = w - 8, bh = h - 15, r = Math.min(bw / p.width, bh / p.height); doc.addImage(im, "PNG", x + 4 + (bw - p.width*r)/2, y + 12.5, p.width * r, p.height * r, undefined, "FAST"); }
       else { doc.setFontSize(9); doc.setTextColor(...cinza); doc.text("sem dados no período", x + w/2, y + h/2, {align:"center"}); } };
@@ -1081,7 +1097,7 @@ async function gerarPDF(){
       const linhasOp = S.db.ops.map((o, j) => { const a = base.filter(i => i.k === j && passSt(i)); if (!a.length) return null; const e = a.filter(i => EXEC.includes(i.s));
         return [o, ha(sumHa(a),0), ha(sumHa(e),0), Math.round(sumHa(e)/Math.max(1,sumHa(a))*100) + "%", String(a.filter(i => i.s === "atrasada").length)]; }).filter(Boolean);
       doc.autoTable({startY:ly, margin:{left:lx, right:mg}, head:[["Operação","Prog. ha","Aplic. ha","%","Atras."]], body:linhasOp, theme:"plain",
-        styles:{fontSize:7.6, cellPadding:{top:1.6,bottom:1.6,left:1.6,right:1.6}, textColor:tinta}, headStyles:{fillColor:verdeC, textColor:verde, fontStyle:"bold"},
+        styles:{fontSize:7.6, cellPadding:{top:1.6,bottom:1.6,left:1.6,right:1.6}, textColor:tinta}, headStyles:{fillColor:fundo2, textColor:cinza, fontStyle:"bold", lineColor:linhaF, lineWidth:{bottom:0.25}},
         columnStyles:{1:{halign:"right"},2:{halign:"right"},3:{halign:"right", fontStyle:"bold"},4:{halign:"right"}},
         didDrawCell:(d) => { if (d.section === "body") { doc.setDrawColor(...linha); doc.setLineWidth(0.15); doc.line(d.cell.x, d.cell.y + d.cell.height, d.cell.x + d.cell.width, d.cell.y + d.cell.height); } }});
     }
@@ -1093,10 +1109,10 @@ async function gerarPDF(){
     doc.autoTable({startY:34, margin:{left:mg, right:mg, top:28, bottom:14}, theme:"plain",
       head:[["Talhão","Área (ha)","Operação","Lote","Modalidade","Programada","Executada","Desvio","OS Protector","Situação"]],
       body:rows.map(i => [i.t, ha(i.area), i.op, i.lote || "-", modoNome(i.modo), fd(i.prog), fd(i.exec), i.devTxt, i.os || "-", STATUS[i.s].t]),
-      styles:{fontSize:7.8, cellPadding:{top:2,bottom:2,left:2,right:2}, textColor:tinta, valign:"middle"}, headStyles:{fillColor:verde, textColor:255, fontStyle:"bold"},
-      alternateRowStyles:{fillColor:[248,250,247]}, columnStyles:{0:{fontStyle:"bold"},1:{halign:"right"},9:{cellWidth:38}},
+      styles:{fontSize:7.8, cellPadding:{top:2,bottom:2,left:2,right:2}, textColor:tinta, valign:"middle"}, headStyles:{fillColor:fundo2, textColor:cinza, fontStyle:"bold", lineColor:linhaF, lineWidth:{bottom:0.25}},
+      alternateRowStyles:{fillColor:fundo2}, columnStyles:{0:{fontStyle:"bold"},1:{halign:"right"},9:{cellWidth:38}},
       willDrawCell:(d) => { if (d.section === "body" && d.column.index === 9) { const s = rows[d.row.index].s, c = rgb(col(s));
-        if (d.row.index % 2) { doc.setFillColor(248,250,247); doc.rect(d.cell.x, d.cell.y, d.cell.width, d.cell.height, "F"); }
+        if (d.row.index % 2) { doc.setFillColor(...fundo2); doc.rect(d.cell.x, d.cell.y, d.cell.width, d.cell.height, "F"); }
         doc.setFillColor(...mix(c, .8)); doc.roundedRect(d.cell.x + 1.2, d.cell.y + 1.3, d.cell.width - 2.4, d.cell.height - 2.6, 2, 2, "F");
         doc.setFillColor(...c); doc.circle(d.cell.x + 4.2, d.cell.y + d.cell.height/2, 0.9, "F");
         d.cell.styles.fillColor = false; d.cell.styles.textColor = c.map(v => Math.round(v * .62)); d.cell.styles.fontStyle = "bold"; } },
@@ -1109,17 +1125,17 @@ async function gerarPDF(){
       const un = (u) => String(u || "").replace(/\/ha$/, "");
       doc.autoTable({startY:y + 4, margin:{left:mg, right:mg, top:28, bottom:14}, theme:"plain", head:[["Produto","Classe","Programado","Aplicado","A aplicar","Execução"]],
         body:cons.map(o => [o.p, o.cl || "-", ha(o.prog,1) + " " + un(o.un), ha(o.apl,1) + " " + un(o.un), ha(Math.max(0, o.prog - o.apl),1) + " " + un(o.un), Math.round(o.prog ? o.apl / o.prog * 100 : 0) + "%"]),
-        styles:{fontSize:7.8, cellPadding:2, textColor:tinta}, headStyles:{fillColor:verde, textColor:255, fontStyle:"bold"}, alternateRowStyles:{fillColor:[248,250,247]},
+        styles:{fontSize:7.8, cellPadding:2, textColor:tinta}, headStyles:{fillColor:fundo2, textColor:cinza, fontStyle:"bold", lineColor:linhaF, lineWidth:{bottom:0.25}}, alternateRowStyles:{fillColor:fundo2},
         columnStyles:{0:{fontStyle:"bold"},2:{halign:"right"},3:{halign:"right"},4:{halign:"right"},5:{cellWidth:44}},
         willDrawCell:(d) => { if (d.section === "body" && d.column.index === 5) { const o = cons[d.row.index], p = o.prog ? Math.min(1, o.apl / o.prog) : 0, x = d.cell.x + 2, yy = d.cell.y + d.cell.height/2 - 1, w = d.cell.width - 16;
-          if (d.row.index % 2) { doc.setFillColor(248,250,247); doc.rect(d.cell.x, d.cell.y, d.cell.width, d.cell.height, "F"); } d.cell.styles.fillColor = false;
+          if (d.row.index % 2) { doc.setFillColor(...fundo2); doc.rect(d.cell.x, d.cell.y, d.cell.width, d.cell.height, "F"); } d.cell.styles.fillColor = false;
           doc.setFillColor(...mix(rgb(col("exec_prazo")), .82)); doc.roundedRect(x, yy, w, 2, 1, 1, "F"); doc.setFillColor(...rgb(col("exec_prazo"))); if (p > 0) doc.roundedRect(x, yy, Math.max(2, w * p), 2, 1, 1, "F");
           d.cell.styles.halign = "right"; } },
         didDrawPage:() => cab("Produtos")});
     }
     const n = doc.getNumberOfPages();
     for (let i = 1; i <= n; i++) { doc.setPage(i); doc.setDrawColor(...linha); doc.setLineWidth(0.2); doc.line(mg, H - 10, W - mg, H - 10); doc.setFontSize(7); doc.setTextColor(...cinza);
-      doc.text(`Gerado em ${new Date().toLocaleString("pt-BR")}  ·  Fonte: ${S.src || "planilha"}${S.modified ? " salva em " + fmtDT(S.modified) : ""}`, mg, H - 5.5); doc.text(`Página ${i} de ${n}`, W - mg, H - 5.5, {align:"right"}); }
+      doc.text(`Nadiana Agropecuária  ·  Gerado em ${new Date().toLocaleString("pt-BR")}  ·  Fonte: ${S.src || "planilha"}${S.modified ? " salva em " + fmtDT(S.modified) : ""}`, mg, H - 5.5); doc.text(`Página ${i} de ${n}`, W - mg, H - 5.5, {align:"right"}); }
     doc.save(`Relatorio_Aplicacoes_Reata_${S.ref}${M.per ? "_" + iso(M.per[0]) + "_a_" + iso(M.per[1]) : ""}.pdf`);
     toast("Relatório gerado.");
   } catch (e) { toast("Não foi possível gerar o PDF: " + (e.message || e)); console.error(e); }
