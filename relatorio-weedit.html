@@ -27,15 +27,15 @@ body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16p
 .wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 
 header{background:var(--head);position:relative}
-header::after{content:"";display:block;height:5px;background:linear-gradient(90deg,var(--petrol) 0 22%,var(--green) 22% 78%,var(--green2) 78%)}
-.hbar{display:flex;align-items:center;justify-content:space-between;gap:16px 28px;flex-wrap:wrap;padding-block:18px}
+header::after{content:"";display:block;height:4px;background:linear-gradient(90deg,var(--petrol) 0 22%,var(--green) 22% 78%,var(--green2) 78%)}
+.hbar{display:flex;align-items:center;justify-content:space-between;gap:10px 28px;flex-wrap:wrap;padding-block:10px}
 .brand{display:flex;align-items:center;gap:14px;min-width:0}
-.brand img{height:56px;width:auto;max-width:220px;object-fit:contain}
+.brand img{height:42px;width:auto;max-width:220px;object-fit:contain}
 .wordmark{display:grid;line-height:1}
-.wordmark b{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.14em;color:var(--title)}
-.wordmark span{font-family:var(--body);font-weight:600;font-size:11px;letter-spacing:.3em;color:var(--green);margin-top:5px;padding-left:2px}
+.wordmark b{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:.14em;color:var(--title)}
+.wordmark span{font-family:var(--body);font-weight:600;font-size:9.5px;letter-spacing:.3em;color:var(--green);margin-top:3px;padding-left:2px}
 .tool{text-align:right;display:grid;gap:2px}
-.tool .t{font-family:var(--display);font-weight:700;font-size:clamp(22px,3.4vw,30px);color:var(--title);line-height:1.05}
+.tool .t{font-family:var(--display);font-weight:700;font-size:clamp(19px,2.6vw,23px);color:var(--title);line-height:1.05}
 .tool .s{font-size:14px;color:var(--muted)}
 @media (max-width:620px){.tool{text-align:left}}
 
@@ -136,6 +136,27 @@ details.idv summary{cursor:pointer;font-weight:600;color:var(--title)}
 .idrow .pv{height:54px;min-width:120px;border:1px dashed var(--line);border-radius:8px;display:grid;place-items:center;padding:4px 10px;background:#fff;color:#56666B;font-size:13px}
 .idrow .pv img{max-height:46px;max-width:200px}
 footer{font-size:13px;color:var(--muted);text-align:center;padding-block:0 32px}
+.view{display:grid;gap:20px;min-width:0}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tabs a{font-weight:600;font-size:15px;padding:8px 16px;border-radius:999px;text-decoration:none;color:var(--ink);background:var(--panel);border:1px solid var(--line);display:inline-flex;align-items:center;gap:8px}
+.tabs a:hover{border-color:var(--green)}
+.tabs a[aria-current="page"]{background:var(--petrol);color:#fff;border-color:var(--petrol)}
+.tabs .cnt{min-width:22px;padding:1px 7px;border-radius:999px;background:var(--green);color:#fff;font-size:12px;text-align:center;font-variant-numeric:tabular-nums}
+.saved-top{display:flex;gap:12px 20px;flex-wrap:wrap;align-items:end;justify-content:space-between}
+.saved-top input{max-width:380px}
+.slist{display:grid;gap:10px}
+.srow{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(3,minmax(0,1fr)) auto;gap:10px 18px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:12px 16px;background:var(--field)}
+@media (max-width:860px){.srow{grid-template-columns:repeat(2,minmax(0,1fr))}.srow .who,.srow .act{grid-column:1/-1}}
+.srow .t{font-family:var(--display);font-weight:700;font-size:19px;color:var(--title);line-height:1.15}
+.srow .m{font-size:13px;color:var(--muted)}
+.srow .k{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.srow .v{font-weight:600;font-variant-numeric:tabular-nums}
+.srow .act{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+.btn.sm{font-size:14px;padding:7px 12px}
+.btn.danger{color:#fff;background:var(--bad);border-color:var(--bad)}
+.empty{color:var(--muted);font-size:15px;padding:18px;border:1.5px dashed var(--line);border-radius:10px;text-align:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--petrol);color:#fff;padding:12px 18px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:20;display:flex;gap:14px;align-items:center;width:max-content;max-width:calc(100% - 32px);font-size:15px}
+.toast a{color:#9FE0B4;font-weight:600}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 
@@ -155,6 +176,12 @@ footer{font-size:13px;color:var(--muted);text-align:center;padding-block:0 32px}
 <main>
 <div class="wrap">
 
+<nav class="tabs" aria-label="Seções">
+  <a href="#novo" id="tab-novo" aria-current="page">Novo relatório</a>
+  <a href="#salvos" id="tab-salvos">Relatórios salvos <span class="cnt" id="cnt" hidden>0</span></a>
+</nav>
+
+<div class="view" id="view-novo">
 <div class="cols">
   <div class="stack">
     <section class="card" aria-labelledby="h1">
@@ -224,6 +251,7 @@ footer{font-size:13px;color:var(--muted);text-align:center;padding-block:0 32px}
     <figure><canvas id="cv-dens"></canvas><figcaption>Densidade de plantas daninhas (quadrados de 5 × 5 m)</figcaption></figure>
   </div>
   <div class="dl">
+    <button type="button" class="btn pri" id="save-rep" style="font-size:16px;padding:10px 20px">Salvar relatório</button>
     <button type="button" class="btn dark" id="save">Baixar PDF</button>
     <span class="hint" id="save-msg"></span>
   </div>
@@ -239,9 +267,20 @@ footer{font-size:13px;color:var(--muted);text-align:center;padding-block:0 32px}
     <span class="hint">PNG, JPG ou SVG. Fica salvo neste navegador e vai no cabeçalho do PDF. Sem logo, o relatório usa o nome NADIANA.</span>
   </div>
 </details>
+</div>
+
+<section class="card" id="view-salvos" hidden aria-labelledby="hs">
+  <div class="saved-top">
+    <div class="ch"><div><h2 id="hs">Relatórios salvos</h2><p>Todos os relatórios guardados neste artefato, do mais novo para o mais antigo</p></div></div>
+    <input id="q" type="search" placeholder="Buscar fazenda, talhão, data ou produto" aria-label="Buscar relatórios salvos" autocomplete="off">
+  </div>
+  <p class="hint" id="s-msg" hidden></p>
+  <div class="slist" id="slist"><p class="empty">Carregando relatórios salvos…</p></div>
+</section>
 
 </div>
 </main>
+<div class="toast" id="toast" role="status" hidden></div>
 <footer><div class="wrap">Nadiana Agropecuária · Relatório de aplicação localizada WEED-IT</div></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -1029,30 +1068,32 @@ function buildPDF(M, cvP, cvD, det) {
   };
 
   /* ===== 1. Capa ===== */
-  box(0, 0, 210, 122, C.petrol);
-  for (let i = 0; i < 6; i++) poly([[150 + i * 14, 0], [164 + i * 14, 0], [104 + i * 14, 122], [90 + i * 14, 122]], i % 2 ? "#143542" : "#163947");
-  rule(122, 2);
-  const ld = logoDims(58, 20);
-  if (ld) { box(ML, 12, ld[0] + 10, ld[1] + 8, C.white, 2.5); doc.addImage(LOGO, "PNG", ML + 5, 16, ld[0], ld[1], "logo"); }
-  else wordmark(ML, 14, 13, true);
-  F("C6", 9, C.onPetrol, 0.7); T("WEED-IT · APLICAÇÃO LOCALIZADA", R, 20, {align: "right"});
-  F("C7", 36, C.white); T("Relatório de", ML, 58); T("Aplicação Localizada", ML, 72);
-  F("B4", 12, C.onPetrol); T("Quanto de água e herbicida o WEED-IT economizou neste talhão", ML, 82);
+  const BH = 76;
+  box(0, 0, 210, BH, C.petrol);
+  for (let i = 0; i < 6; i++) poly([[150 + i * 14, 0], [164 + i * 14, 0], [128 + i * 14, BH], [114 + i * 14, BH]], i % 2 ? "#143542" : "#163947");
+  rule(BH, 2);
+  const ld = logoDims(48, 14);
+  if (ld) { box(ML, 9, ld[0] + 8, ld[1] + 6, C.white, 2); doc.addImage(LOGO, "PNG", ML + 4, 12, ld[0], ld[1], "logo"); }
+  else wordmark(ML, 10, 10, true);
+  F("C6", 8.5, C.onPetrol, 0.7); T("WEED-IT · APLICAÇÃO LOCALIZADA", R, 16, {align: "right"});
+  F("C7", 27, C.white); T("Relatório de Aplicação Localizada", ML, 40);
+  F("B4", 10.5, C.onPetrol); T("Quanto de água e herbicida o WEED-IT economizou neste talhão", ML, 47.5);
   const chips = [["FAZENDA", M.fazenda], ["TALHÃO", M.talhao], ["DATA DA APLICAÇÃO", M.data || "—"], ["EQUIPAMENTO", M.maquina || "—"]];
   const cwid = CW / 4;
   chips.forEach(([k, v], i) => {
     const x = ML + i * cwid;
-    if (i) { doc.setDrawColor("#2E5866"); doc.setLineWidth(0.3); doc.line(x - 3, 96, x - 3, 112); }
-    F("C6", 7.6, C.onPetrol, 0.5); T(k, x, 100);
-    F("C7", 15, C.white); T(wrap(v, cwid - 6)[0], x, 108.5);
+    if (i) { doc.setDrawColor("#2E5866"); doc.setLineWidth(0.3); doc.line(x - 3, 55, x - 3, 69); }
+    F("C6", 7.4, C.onPetrol, 0.5); T(k, x, 59);
+    F("C7", 14, C.white); T(wrap(v, cwid - 6)[0], x, 66.5);
   });
 
-  y = 136;
+  y = 90;
   const heroes = [
     ["ÁGUA ECONOMIZADA", nf(M.saved) + " L", `${nPct(M.sp)} menos calda que uma aplicação convencional`, C.petrol],
     hasRS ? ["HERBICIDA ECONOMIZADO", brl(M.rsTot), `${nPct(M.sp)} menos produto${M.prods.length > 1 ? ", somando os " + M.prods.length + " produtos" : ""}`, C.green]
       : ["HERBICIDA ECONOMIZADO", nPct(M.sp), "menos produto que uma aplicação convencional", C.green],
-    ["ÁREA QUE RECEBEU PRODUTO", nPct(M.APL / M.TOTAL), `${nf(M.APL, 2)} ha de ${nf(M.TOTAL, 2)} ha; o resto do talhão ficou sem aplicação`, C.petrol]
+    ["ÁREA QUE RECEBEU PRODUTO", nPct(M.APL / M.TOTAL), `${nf(M.APL, 2)} ha de ${nf(M.TOTAL, 2)} ha; o resto do talhão ficou sem aplicação`, C.petrol],
+    ["ABASTECIMENTOS EVITADOS", nf(M.tk.c - M.tk.l), `${M.tk.c} na convencional e ${M.tk.l} com o WEED-IT, com tanque de ${nf(M.tanque)} L`, C.green]
   ];
   heroes.forEach(([l, v, s, c]) => {
     box(ML, y, 1.6, 27, c);
@@ -1061,16 +1102,17 @@ function buildPDF(M, cvP, cvD, det) {
     para(s, ML + 6, y + 23, 74, "B4", 9, C.muted);
     y += 34;
   });
-  const cvx = 104, cvw = 90;
-  const k0 = Math.min((cvw - 6) / M.ras.frame.w, 100 / M.ras.frame.h), ciw = M.ras.frame.w * k0, cih = M.ras.frame.h * k0;
-  box(cvx, 132, cvw, cih + 14, C.soft2, 2.5);
-  doc.addImage(cvP.toDataURL("image/png"), "PNG", cvx + (cvw - ciw) / 2, 135, ciw, cih, "mapcover", "FAST");
-  box(cvx + 4, 135 + cih + 4.2, 4, 3, C.orange, 0.5);
-  F("B4", 8, C.muted); T("Pontos onde o WEED-IT aplicou", cvx + 10, 135 + cih + 6.8);
-  y = Math.max(y, 135 + cih + 16) + 2;
+  const cvx = 104, cvw = 90, cvy = 86;
+  const k0 = Math.min((cvw - 6) / M.ras.frame.w, 124 / M.ras.frame.h), ciw = M.ras.frame.w * k0, cih = M.ras.frame.h * k0;
+  box(cvx, cvy, cvw, cih + 14, C.soft2, 2.5);
+  doc.addImage(cvP.toDataURL("image/png"), "PNG", cvx + (cvw - ciw) / 2, cvy + 3, ciw, cih, "mapcover", "FAST");
+  box(cvx + 4, cvy + 3 + cih + 4.2, 4, 3, C.orange, 0.5);
+  F("B4", 8, C.muted); T("Pontos onde o WEED-IT aplicou", cvx + 10, cvy + 3 + cih + 6.8);
+  y = Math.max(y, cvy + cih + 16) + 4;
   F("B4", 9.5, C.ink);
   const intro = `Na aplicação localizada, um sensor no implemento identifica cada planta daninha e abre o bico só sobre ela. Este relatório compara o que foi gasto nesta aplicação com o que seria gasto em uma aplicação convencional, que pulveriza o talhão inteiro com ${nf(M.vazao, 0)} L/ha.`;
   const il = wrap(intro, CW - 12), ih2 = lineH(9.5) * il.length + 8;
+  y = Math.min(y, 276 - ih2);
   box(ML, y, CW, ih2, C.soft, 2);
   T(il, ML + 6, y + 6.2, {lineHeightFactor: 1.38});
 
@@ -1343,14 +1385,137 @@ $("gen").onclick = async () => {
     ].map(([l, v, u, s]) => `<div class="kpi"><div class="l">${l}</div><div class="v">${v}${u ? `<small>${u}</small>` : ""}</div><div class="s">${s}</div></div>`).join("");
     $("result").hidden = false; $("save-msg").textContent = "";
     $("result").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start"});
-    save();
   } catch (e) {
     $("todo").innerHTML = `<b>Não foi possível gerar</b><span>${esc(e.message)}</span>`;
   }
   $("gen").textContent = "Gerar relatório em PDF"; validate();
 };
 
-applyLogo(); renderProducts(); validate();
+/* ---------- salvar dentro do artefato ---------- */
+const cap = name => window.claude && window.claude.use ? window.claude.use(name) : Promise.resolve(null);
+const norm2 = s => String(s == null ? "" : s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const isId = s => /^[0-9a-f]{32}$/.test(String(s || ""));
+let DBS = null, ASSETS = null, SAVED = [], savedState = "loading", pendingDel = null, toastT = null;
+
+function toast(html) {
+  const el = $("toast"); el.innerHTML = html; el.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 6000);
+}
+function saveBtnState() {
+  const b = $("save-rep"), ok = DBS && ASSETS;
+  b.disabled = !ok;
+  b.title = ok ? "" : "Para salvar, abra a página no claude.ai com permissão de edição do artefato.";
+}
+function resetForm() {
+  ["f-fazenda", "f-talhao", "f-vazao", "f-tanque"].forEach(id => { $(id).value = ""; });
+  products = [{n: "", d: "", u: "L", p: ""}]; renderProducts();
+  Object.assign(pool, {sheet: null, shp: null, rasters: [], ras: null, rings: null, lonlat: null, path: null});
+  ["sheet", "shp", "tif"].forEach(id => slot(id, "wait", "Aguardando", "", ""));
+  $("f-row").hidden = true; $("read-chips").hidden = true; $("vazao-hint").hidden = true;
+  $("result").hidden = true; $("save-msg").textContent = ""; LAST = null; window.__lastPdf = null;
+  validate(); window.scrollTo({top: 0});
+}
+async function saveReport() {
+  if (!LAST || !DBS || !ASSETS) return;
+  const b = $("save-rep"); b.disabled = true; b.textContent = "Salvando…";
+  const M = LAST.M;
+  try {
+    const up = await ASSETS.upload(LAST.blob, {type: "application/pdf"});
+    const rec = {
+      fazenda: M.fazenda, talhao: M.talhao, data: M.data, maquina: M.maquina || "", modo: M.modo,
+      areaTalhao: M.TOTAL, areaAplicada: M.APL, agua: M.saved, economia: M.sp, rsTot: M.rsTot,
+      vazao: M.vazao, tanque: M.tanque, produtos: M.prods.map(p => ({n: p.n, d: p.d, u: p.u, preco: p.price})),
+      pdf: up.id, arquivo: LAST.name, tamanho: up.sizeBytes, criadoEm: new Date().toISOString()
+    };
+    try { await DBS.collection("relatorios").add(rec); }
+    catch (e) { await ASSETS.delete(up.id).catch(() => {}); throw e; }
+    resetForm();
+    toast(`Relatório salvo: Fazenda ${esc(M.fazenda)} · Talhão ${esc(M.talhao)}. <a href="#salvos">Ver salvos</a>`);
+  } catch (e) {
+    const c = e && e.code;
+    $("save-msg").textContent = c === "quota_or_state" || c === "quota_exceeded" ? "O espaço do artefato está cheio. Exclua relatórios antigos em Salvos e tente de novo."
+      : c === "not_granted" || c === "invalid_argument" ? "Você não tem permissão para salvar neste artefato. Peça acesso de edição ao dono."
+      : c === "rate_limited" || c === "resource_exhausted" ? "Muitas operações seguidas. Espere alguns segundos e clique em Salvar de novo."
+      : `Não foi possível salvar (${c || "erro"}). Clique em Salvar para tentar de novo.`;
+  }
+  b.textContent = "Salvar relatório"; saveBtnState();
+}
+$("save-rep").onclick = saveReport;
+
+function renderSaved() {
+  $("cnt").hidden = !SAVED.length; $("cnt").textContent = SAVED.length;
+  const list = $("slist");
+  if (savedState === "off") { list.innerHTML = `<p class="empty">Os relatórios salvos aparecem com a página aberta no claude.ai ou no app do Claude.</p>`; return; }
+  if (savedState === "error") { list.innerHTML = `<p class="empty">Não foi possível carregar os relatórios salvos. Recarregue a página.</p>`; return; }
+  if (savedState === "loading") return;
+  if (!SAVED.length) { list.innerHTML = `<p class="empty">Nenhum relatório salvo ainda. Gere um relatório em <a href="#novo">Novo relatório</a> e clique em Salvar.</p>`; return; }
+  const q = norm2($("q").value.trim());
+  const rows = SAVED.filter(r => !q || norm2([r.fazenda, "talhao " + r.talhao, r.data, r.maquina, (r.produtos || []).map(p => p.n).join(" ")].join(" ")).includes(q));
+  if (!rows.length) { list.innerHTML = `<p class="empty">Nenhum relatório encontrado para “${esc($("q").value.trim())}”.</p>`; return; }
+  const when = s => { const d = new Date(s); return isNaN(d) ? "—" : d.toLocaleDateString("pt-BR") + " às " + d.toLocaleTimeString("pt-BR", {hour: "2-digit", minute: "2-digit"}); };
+  list.innerHTML = rows.map(r => `<div class="srow">
+    <div class="who"><div class="t">Fazenda ${esc(r.fazenda)} · Talhão ${esc(r.talhao)}</div><div class="m">Aplicação em ${esc(r.data || "—")}${r.maquina ? " · " + esc(r.maquina) : ""} · salvo em ${when(r.criadoEm)}</div></div>
+    <div><div class="k">Área aplicada</div><div class="v">${nf(+r.areaAplicada, 2)} de ${nf(+r.areaTalhao, 2)} ha</div></div>
+    <div><div class="k">Água economizada</div><div class="v">${nf(+r.agua)} L · ${pct(+r.economia)}</div></div>
+    <div><div class="k">Herbicida economizado</div><div class="v">${r.rsTot != null ? brl(+r.rsTot) : pct(+r.economia)}</div></div>
+    <div class="act">${pendingDel === r.id
+      ? `<span class="hint">Excluir este relatório?</span><button type="button" class="btn sm danger" data-delok="${esc(r.id)}">Excluir</button><button type="button" class="btn sm" data-delno="1">Cancelar</button>`
+      : `<button type="button" class="btn sm dark" data-dl="${esc(r.id)}"${isId(r.pdf) ? "" : " disabled"}>Baixar PDF</button>${ASSETS ? `<button type="button" class="btn sm x" data-del="${esc(r.id)}">Excluir</button>` : ""}`}</div>
+  </div>`).join("");
+}
+function sMsg(html) { const m = $("s-msg"); m.hidden = !html; m.innerHTML = html || ""; }
+$("q").addEventListener("input", renderSaved);
+$("slist").addEventListener("click", async e => {
+  const t = e.target.closest("button"); if (!t) return;
+  const find = id => SAVED.find(r => r.id === id);
+  if (t.dataset.del) { pendingDel = t.dataset.del; renderSaved(); return; }
+  if (t.dataset.delno) { pendingDel = null; renderSaved(); return; }
+  if (t.dataset.delok) {
+    const r = find(t.dataset.delok); pendingDel = null; if (!r) return renderSaved();
+    t.disabled = true;
+    try {
+      await DBS.doc("relatorios/" + r.id).delete();
+      if (ASSETS && isId(r.pdf)) await ASSETS.delete(r.pdf).catch(() => {});
+      sMsg(`Relatório da Fazenda ${esc(r.fazenda)} · Talhão ${esc(r.talhao)} excluído.`);
+    } catch (err) { sMsg(`Não foi possível excluir (${esc(err && err.code || "erro")}).`); renderSaved(); }
+    return;
+  }
+  if (t.dataset.dl) {
+    const r = find(t.dataset.dl); if (!r || !isId(r.pdf)) return;
+    const label = t.textContent; t.disabled = true; t.textContent = "Preparando…"; sMsg("");
+    try {
+      const res = await fetch("/_blob/" + r.pdf);
+      if (!res.ok) throw {code: "http_" + res.status};
+      const blob = await res.blob();
+      const dl = await cap("downloads");
+      if (!dl) throw {code: "unavailable"};
+      await dl.save({filename: r.arquivo || "Relatorio WEED-IT.pdf", data: blob});
+    } catch (err) {
+      if (!(err && err.code === "declined")) sMsg(`Não foi possível baixar daqui. <a href="/_blob/${r.pdf}" target="_blank" rel="noopener">Abrir o PDF numa nova aba</a>.`);
+    }
+    t.disabled = false; t.textContent = label;
+  }
+});
+
+function route() {
+  const s = location.hash === "#salvos";
+  $("view-novo").hidden = s; $("view-salvos").hidden = !s;
+  $("tab-novo").setAttribute("aria-current", s ? "false" : "page");
+  $("tab-salvos").setAttribute("aria-current", s ? "page" : "false");
+  if (s) { pendingDel = null; renderSaved(); }
+}
+window.addEventListener("hashchange", route);
+
+applyLogo(); renderProducts(); validate(); route(); saveBtnState();
+(async () => {
+  [DBS, ASSETS] = await Promise.all([cap("db"), cap("assets")]);
+  saveBtnState();
+  if (!DBS) { savedState = "off"; renderSaved(); return; }
+  DBS.collection("relatorios").orderBy("criadoEm", "desc").onSnapshot(snap => {
+    SAVED = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    savedState = "ok"; renderSaved();
+  }, () => { savedState = "error"; renderSaved(); });
+})();
 })();
 </script>
 
