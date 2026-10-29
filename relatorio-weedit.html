@@ -1135,22 +1135,30 @@ function buildPDF(M, cvP, cvD, det) {
   }
   { // tanques
     const x = panel(1, "CALDA E ABASTECIMENTOS");
-    const tank = (tx, ty, fill, c) => {
-      doc.setDrawColor(c); doc.setLineWidth(0.4); doc.roundedRect(tx, ty, 6.4, 9, 1.2, 1.2, "S");
-      box(tx + 2.2, ty - 1.3, 2, 1.3, c);
-      if (fill > 0) box(tx + 0.6, ty + 0.6 + 7.8 * (1 - fill), 5.2, 7.8 * fill, c, 0.6);
+    /* silhueta de pulverizador autopropelido (lado), u = mm por unidade */
+    const sprayer = (sx, sy, c, mist) => {
+      const u = 0.82, P = (x, y) => [sx + x * u, sy + y * u];
+      doc.setFillColor(mist); doc.triangle(...P(9.95, 5.6), ...P(9.05, 7.9), ...P(10.85, 7.9), "F");
+      doc.setFillColor(c);
+      doc.roundedRect(...P(0.5, 0.9), 5.5 * u, 2.5 * u, 0.9 * u, 0.9 * u, "F");
+      poly([P(6.3, 0), P(8.4, 0), P(9.1, 3.3), P(6.3, 3.3)], c);
+      poly([P(6.85, 0.6), P(8.0, 0.6), P(8.4, 2.1), P(6.85, 2.1)], C.soft2);
+      doc.setFillColor(c); doc.rect(...P(1.0, 3.2), 8.2 * u, 0.7 * u, "F");
+      doc.rect(...P(9.6, 1.6), 0.7 * u, 4.1 * u, "F");
+      doc.circle(...P(2.5, 5.7), 1.95 * u, "F"); doc.circle(...P(7.3, 5.7), 1.95 * u, "F");
+      doc.setFillColor(C.soft2); doc.circle(...P(2.5, 5.7), 0.6 * u, "F"); doc.circle(...P(7.3, 5.7), 0.6 * u, "F");
     };
-    const row = (ty, label, vol, c) => {
+    const row = (ty, label, vol, c, mist) => {
       F("B6", 9, C.ink); T(label, x + 5, ty);
       F("C7", 13, C.petrol); T(nf(vol) + " L", x + pw - 5, ty, {align: "right"});
-      const n = Math.ceil(vol / M.tanque), rem = vol / M.tanque - Math.floor(vol / M.tanque);
-      const show = Math.min(n, 6);
-      for (let i = 0; i < show; i++) tank(x + 5 + i * 8.6, ty + 4.5, i === n - 1 && rem > 0 ? rem : 1, c);
-      if (n > 6) { F("C7", 11, C.petrol); T(`× ${n}`, x + 5 + 6 * 8.6, ty + 11.5); }
-      F("B4", 7.8, C.muted); T(`${n} abastecimento${n === 1 ? "" : "s"}`, x + 5, ty + 19.5);
+      const n = Math.ceil(vol / M.tanque), max = 5;
+      const show = n > max ? 1 : n;
+      for (let i = 0; i < show; i++) sprayer(x + 5 + i * 9.6, ty + 3.4, c, mist);
+      if (n > max) { F("C7", 12, C.petrol); T(`× ${n}`, x + 15.5, ty + 9.6); }
+      F("B4", 7.8, C.muted); T(`${n} abastecimento${n === 1 ? "" : "s"}`, x + 5, ty + 15.5);
     };
-    row(py + 17, "Convencional", M.conv, C.conv);
-    row(py + 45, "WEED-IT", M.VOL, C.green);
+    row(py + 19, "Convencional", M.conv, C.conv, "#C4CCC8");
+    row(py + 46, "WEED-IT", M.VOL, C.green, "#7FCB97");
   }
   { // herbicida
     const x = panel(2, hasRS ? "CUSTO COM HERBICIDA" : "QUANTIDADE DE HERBICIDA");
