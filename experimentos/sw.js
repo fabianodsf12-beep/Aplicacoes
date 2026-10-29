@@ -1,8 +1,12 @@
 // Guarda o app no celular para abrir sem sinal. Mude VERSAO a cada publicação.
-const VERSAO='v3';
+const VERSAO='v4';
 const CACHE='agenda-campo-'+VERSAO;
-const BASE=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./nd/tokens.css','./nd/componentes.css','./nd/icones.js','./nd/nadiana.js','./nd/nadiana-logo.png','./nd/nadiana-simbolo.png','./nd/fonts/Barlow-400.woff2','./nd/fonts/Barlow-500.woff2','./nd/fonts/Barlow-600.woff2','./nd/fonts/BarlowCondensed-500.woff2','./nd/fonts/BarlowCondensed-600.woff2','./nd/fonts/BarlowCondensed-700.woff2'];
-self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(BASE)).then(()=>self.skipWaiting()))});
+// A base de design Nadiana vem do endereço publicado e também fica guardada aqui.
+const BASE=["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.css", "https://fabianodsf12-beep.github.io/nadiana-design/v1/componentes.css", "https://fabianodsf12-beep.github.io/nadiana-design/v1/icones.js", "https://fabianodsf12-beep.github.io/nadiana-design/v1/nadiana.js", "https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.svg", "https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-logo-vertical.svg", "https://fabianodsf12-beep.github.io/nadiana-design/v1/fonts/Barlow-400.woff2", "https://fabianodsf12-beep.github.io/nadiana-design/v1/fonts/Barlow-500.woff2", "https://fabianodsf12-beep.github.io/nadiana-design/v1/fonts/Barlow-600.woff2", "https://fabianodsf12-beep.github.io/nadiana-design/v1/fonts/BarlowCondensed-500.woff2", "https://fabianodsf12-beep.github.io/nadiana-design/v1/fonts/BarlowCondensed-600.woff2", "https://fabianodsf12-beep.github.io/nadiana-design/v1/fonts/BarlowCondensed-700.woff2"];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>
+  // o app precisa entrar inteiro; a base de design entra arquivo por arquivo (se um falhar, é guardado no primeiro uso)
+  c.addAll(BASE.filter(u=>u.startsWith('./'))).then(()=>Promise.all(BASE.filter(u=>!u.startsWith('./')).map(u=>c.add(u).catch(()=>{}))))
+).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('agenda-campo-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 const comPrazo=(p,ms)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r(new Error('prazo')),ms))]);
 self.addEventListener('fetch',e=>{
