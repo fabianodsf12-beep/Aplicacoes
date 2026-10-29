@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#21513B">
+<title>Nome do app – Nadiana</title>
+<!-- Modelo de partida para um novo app da Nadiana. Copie este arquivo e ajuste os caminhos de nadiana/. -->
+<link rel="icon" href="logos/nadiana-simbolo.png">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="componentes.css">
+<style>
+/* Estilos só deste app. Use sempre var(--token); nenhuma cor solta. */
+main{display:flex;flex-direction:column;gap:var(--space-5);padding-block:var(--space-5)}
+</style>
+</head>
+<body>
+<header class="nd-topo">
+  <div class="nd-wrap">
+    <span class="nd-placa"><img src="logos/nadiana-simbolo.png" alt=""></span>
+    <div><h1>Nome do app</h1><p>Fazenda Reata, safra soja 26/27</p></div>
+  </div>
+</header>
+
+<main class="nd-wrap">
+  <div class="nd-grade">
+    <div class="nd-cartao"><div class="nd-kpi"><span class="rot">Área aplicada</span><span class="val">142,51<small>ha</small></span></div></div>
+    <div class="nd-cartao"><div class="nd-kpi"><span class="rot">Pendentes</span><span class="val">5</span></div></div>
+  </div>
+
+  <section class="nd-cartao">
+    <h2>Primeira seção</h2>
+    <p class="nd-corpo" style="margin:0">Diga o resultado primeiro, o detalhe depois.</p>
+    <button class="nd-btn primario" type="button">Ação principal</button>
+  </section>
+
+  <footer class="nd-rodape">Os dados vêm da planilha … no Google Drive.</footer>
+</main>
+</body>
+</html>

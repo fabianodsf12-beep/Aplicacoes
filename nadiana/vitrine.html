@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#21513B">
+<title>Vitrine Nadiana</title>
+<link rel="icon" href="logos/nadiana-simbolo.png">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="componentes.css">
+<style>
+section{display:flex;flex-direction:column;gap:var(--space-3_5)}
+section > h2{margin:0;font-family:var(--font-display);font-weight:600;font-size:22px}
+main{display:flex;flex-direction:column;gap:var(--space-6);padding-block:var(--space-6) var(--space-6)}
+.cores{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--space-3)}
+.cor{border:1px solid var(--line2);border-radius:var(--radius-xl);overflow:hidden;background:var(--panel);font-size:13px}
+.cor b{display:block;height:56px;background:var(--c)}
+.cor span{display:block;padding:var(--space-2) var(--space-3)}
+.cor code{color:var(--muted);font-size:12px}
+.logos{display:flex;flex-wrap:wrap;gap:var(--space-4);align-items:center;background:#FFFFFF;border-radius:var(--radius-xl);padding:var(--space-5);border:1px solid var(--line2)}
+.logos img{height:72px;width:auto}
+.linha{display:flex;flex-wrap:wrap;gap:var(--space-2);align-items:center}
+.tema{margin-left:auto}
+.tema.nd-btn{color:var(--brand-ink);background:transparent;border-color:rgba(255,255,255,.4)}
+</style>
+</head>
+<body>
+<header class="nd-topo">
+  <div class="nd-wrap">
+    <span class="nd-placa"><img src="logos/nadiana-simbolo.png" alt=""></span>
+    <div><h1>Vitrine Nadiana</h1><p>Cores, textos e componentes que todo projeto da Nadiana usa</p></div>
+    <button class="nd-btn tema" id="tema" type="button">Tema escuro</button>
+  </div>
+</header>
+
+<main class="nd-wrap">
+  <section>
+    <h2>Logos</h2>
+    <div class="logos">
+      <img src="logos/nadiana-logo-vertical.png" alt="Nadiana, logo vertical">
+      <img src="logos/nadiana-logo.png" alt="Nadiana, logo horizontal" style="height:48px">
+      <img src="logos/nadiana-simbolo.png" alt="Nadiana, símbolo">
+    </div>
+    <p class="nd-corpo-pequeno nd-muted" style="margin:0">Sempre sobre branco. Em faixa escura, dentro de uma placa branca (<code>.nd-placa</code>).</p>
+  </section>
+
+  <section>
+    <h2>Cores da marca</h2>
+    <div class="cores" id="cores-marca"></div>
+    <h2>Cores de interface</h2>
+    <div class="cores" id="cores-ui"></div>
+    <h2>Status do calendário</h2>
+    <div class="cores" id="cores-status"></div>
+  </section>
+
+  <section>
+    <h2>Textos</h2>
+    <div class="nd-cartao">
+      <span class="nd-titulo-pagina">Lançar aplicação</span>
+      <span class="nd-subtitulo">Talhão RT-52</span>
+      <span class="nd-numero-destaque">12.702 L</span>
+      <span class="nd-corpo-destaque">Fazenda Reata</span>
+      <span class="nd-corpo">A vazão recomendada é de 100 L/ha.</span>
+      <span class="nd-corpo-pequeno">142,51 ha percorridos</span>
+      <span class="nd-rotulo nd-muted">Área aplicada</span>
+      <span class="nd-legenda nd-muted">Atualizado a cada 15 s</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Números</h2>
+    <div class="nd-grade">
+      <div class="nd-cartao"><div class="nd-kpi"><span class="rot">Área aplicada</span><span class="val">142,51<small>ha</small></span></div></div>
+      <div class="nd-cartao"><div class="nd-kpi"><span class="rot">Calda</span><span class="val">12.702<small>L</small></span></div></div>
+      <div class="nd-cartao"><div class="nd-kpi"><span class="rot">Custo</span><span class="val">R$ 7.113,32</span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Botões e seleção</h2>
+    <div class="linha">
+      <button class="nd-btn primario" type="button">Salvar programação</button>
+      <button class="nd-btn" type="button">Cancelar</button>
+      <button class="nd-btn" type="button" disabled>Enviando…</button>
+    </div>
+    <div class="nd-seg" role="group" aria-label="Tipo de lançamento" id="seg">
+      <button type="button" aria-pressed="true">Programar</button>
+      <button type="button" aria-pressed="false">Execução</button>
+      <button type="button" aria-pressed="false">Plantio</button>
+    </div>
+    <div class="nd-chips">
+      <span class="nd-chip">Glifosato <span>2,0 L/ha</span><button type="button" aria-label="Remover Glifosato"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>
+      <span class="nd-chip">Óleo mineral <span>0,5 L/ha</span><button type="button" aria-label="Remover Óleo mineral"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>
+      <span class="nd-chip">RT-52</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Formulário</h2>
+    <form class="nd-cartao" onsubmit="event.preventDefault()">
+      <h2>Registrar execução</h2>
+      <label class="nd-campo" for="os">Nº da OS<input class="nd-inp" id="os" inputmode="numeric" value="4812"></label>
+      <div class="nd-linha2">
+        <label class="nd-campo" for="data">Data<input class="nd-inp" id="data" type="date" value="2026-10-29"></label>
+        <label class="nd-campo" for="vazao">Vazão (L/ha)<input class="nd-inp" id="vazao" inputmode="decimal" value="100"></label>
+      </div>
+      <label class="nd-campo" for="obs">Observação<span class="dica">Vento, chuva ou parada do pulverizador.</span><textarea class="nd-inp" id="obs" rows="3"></textarea></label>
+      <button class="nd-btn primario grande" type="submit">Registrar execução</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>Situação</h2>
+    <div class="linha">
+      <span class="nd-pill ok">Concluída</span>
+      <span class="nd-pill aviso">3 na janela</span>
+      <span class="nd-pill erro">2 atrasadas</span>
+      <span class="nd-pill">12 programadas</span>
+    </div>
+    <div class="linha" style="gap:var(--space-4)">
+      <span class="nd-st programada">Programada</span><span class="nd-st prox7">Próximos 7 dias</span><span class="nd-st janela">Na janela</span>
+      <span class="nd-st atrasada">Atrasada</span><span class="nd-st adiantada">Adiantada</span><span class="nd-st none">Sem programação</span>
+    </div>
+    <div class="nd-msg aviso"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg><span>Sem internet. O lançamento fica guardado e é enviado quando a conexão voltar.</span></div>
+    <div class="nd-msg erro"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><span>Informe o nº da OS antes de registrar a execução.</span></div>
+    <div class="nd-msg"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg><span>Execução da OS 4812 registrada.</span></div>
+  </section>
+
+  <section>
+    <h2>Lista e tabela</h2>
+    <div class="nd-cartao" style="padding-block:var(--space-1)">
+      <div class="nd-lista">
+        <div><span><span class="t">RT-52 · Dessecação</span><br><span class="s">Programada para 02/11/2026</span></span><span class="nd-st janela">Na janela</span></div>
+        <div><span><span class="t">RT-14 · Fungicida 1ª</span><br><span class="s">Era para 25/10/2026</span></span><span class="nd-st atrasada">Atrasada</span></div>
+        <div><span><span class="t">RT-07 · Inseticida</span><br><span class="s">Feita em 28/10/2026</span></span><span class="nd-pill ok">Concluída</span></div>
+      </div>
+    </div>
+    <div class="nd-tabela-wrap">
+      <table class="nd-tabela">
+        <thead><tr><th>Produto</th><th class="n">Dose</th><th class="n">Área</th><th class="n">Total</th></tr></thead>
+        <tbody>
+          <tr><td>Glifosato</td><td class="n">2,0 L/ha</td><td class="n">142,51 ha</td><td class="n">285,0 L</td></tr>
+          <tr><td>Óleo mineral</td><td class="n">0,5 L/ha</td><td class="n">142,51 ha</td><td class="n">71,3 L</td></tr>
+          <tr><td>2,4-D</td><td class="n">1,5 L/ha</td><td class="n">88,20 ha</td><td class="n">132,3 L</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="nd-rodape">Fonte das regras: Design System “Nadiana” no claude.ai e a pasta <code>nadiana/</code> deste repositório.</footer>
+</main>
+
+<script>
+const GRUPOS = {
+  "cores-marca": ["nadiana-verde","nadiana-verde-escuro","nadiana-verde-claro","nadiana-petroleo","nadiana-preto"],
+  "cores-ui": ["bg","panel","panel2","ink","muted","line","line2","brand","brand-ink","brand-soft","ok","warn","warn-bg","bad","bad-bg","focus"],
+  "cores-status": ["s-programada","s-prox7","s-janela","s-atrasada","s-adiantada","s-none"]
+};
+function pintar(){
+  const cs = getComputedStyle(document.documentElement);
+  for (const [id, nomes] of Object.entries(GRUPOS)) {
+    document.getElementById(id).innerHTML = nomes.map(n =>
+      `<div class="cor" style="--c:var(--${n})"><b></b><span>${n}<br><code>${cs.getPropertyValue("--"+n).trim()}</code></span></div>`).join("");
+  }
+}
+pintar();
+const btn = document.getElementById("tema");
+function escuroAgora(){
+  const t = document.documentElement.dataset.theme;
+  return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+}
+function rotulo(){ btn.textContent = escuroAgora() ? "Tema claro" : "Tema escuro"; }
+btn.addEventListener("click", () => { document.documentElement.dataset.theme = escuroAgora() ? "light" : "dark"; rotulo(); pintar(); });
+rotulo();
+document.getElementById("seg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  for (const x of e.currentTarget.children) x.setAttribute("aria-pressed", x === b ? "true" : "false");
+});
+</script>
+</body>
+</html>

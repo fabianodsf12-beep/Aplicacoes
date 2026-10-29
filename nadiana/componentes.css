@@ -1,0 +1,111 @@
+/* Nadiana — base e componentes. Usa só os tokens de tokens.css (carregue tokens.css antes deste). */
+
+/* Base */
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.4;min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+h1,h2,h3{text-wrap:balance}
+.nd-num{font-family:var(--font-display);font-variant-numeric:tabular-nums}
+.nd-muted{color:var(--muted)}
+.nd-wrap{max-width:860px;margin:0 auto;padding-left:max(var(--space-4),env(safe-area-inset-left,0px));padding-right:max(var(--space-4),env(safe-area-inset-right,0px))}
+.nd-wrap.largo{max-width:1440px}
+.nd-wrap.estreito{max-width:640px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* Cabeçalho: faixa brand com o nome do app */
+.nd-topo{background:var(--brand);color:var(--brand-ink);padding-block:var(--space-4) var(--space-5)}
+.nd-topo .nd-wrap{display:flex;align-items:center;gap:var(--space-3)}
+.nd-topo h1{margin:0;font-family:var(--font-display);font-weight:600;font-size:28px;line-height:1.05}
+.nd-topo p{margin:var(--space-1) 0 0;font-size:14px;opacity:.85}
+.nd-topo.sticky{position:sticky;top:env(safe-area-inset-top,0px);z-index:10}
+/* Logo PNG (fundo branco) sobre faixa escura: sempre numa placa branca */
+.nd-placa{background:#FFFFFF;border-radius:var(--radius-md);padding:var(--space-2);display:inline-flex;flex-shrink:0}
+.nd-placa img{display:block;height:32px;width:auto}
+
+/* Cartão */
+.nd-cartao{background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius-2xl);padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-3_5)}
+.nd-cartao.grande{padding:var(--space-6)}
+.nd-cartao h2{margin:0;font-family:var(--font-display);font-weight:600;font-size:18px;line-height:1.1}
+a.nd-cartao{text-decoration:none;color:var(--ink);transition:border-color .15s,transform .15s}
+a.nd-cartao:hover{border-color:var(--brand);transform:translateY(-2px)}
+.nd-grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:var(--space-5)}
+.nd-pilha{display:flex;flex-direction:column;gap:var(--space-3_5)}
+
+/* Número com rótulo */
+.nd-kpi{display:flex;flex-direction:column;gap:2px}
+.nd-kpi .rot{font-size:13px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.nd-kpi .val{font-family:var(--font-display);font-weight:600;font-size:30px;line-height:1.05;font-variant-numeric:tabular-nums}
+.nd-kpi .val small{font-family:var(--font-body);font-size:15px;font-weight:500;color:var(--muted);margin-left:var(--space-1)}
+
+/* Botões */
+.nd-btn{min-height:44px;padding:0 var(--space-4);border:1px solid var(--line);border-radius:var(--radius-md);background:var(--panel);color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);font-size:15px;font-weight:500;white-space:nowrap;text-decoration:none}
+.nd-btn:hover{border-color:var(--muted)}
+.nd-btn.primario{background:var(--brand);color:var(--brand-ink);border-color:var(--brand);font-weight:600}
+.nd-btn.primario:hover{filter:brightness(1.08)}
+.nd-btn.grande{min-height:52px;width:100%;font-size:17px;border-radius:var(--radius-lg)}
+.nd-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Campos de formulário */
+.nd-campo{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500}
+.nd-campo .dica{font-size:13.5px;font-weight:400;color:var(--muted)}
+.nd-inp{height:48px;padding:0 var(--space-3_5);border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--panel);font-size:16px;width:100%;min-width:0}
+textarea.nd-inp{height:auto;padding:var(--space-3) var(--space-3_5);resize:vertical}
+.nd-linha2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3)}
+
+/* Seletor segmentado (uma opção entre poucas) */
+.nd-seg{display:flex;border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden;background:var(--panel)}
+.nd-seg button{flex:1;min-height:44px;padding:0 var(--space-3);border:0;background:transparent;font-size:15px;font-weight:500;cursor:pointer}
+.nd-seg button+button{border-left:1px solid var(--line)}
+.nd-seg button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink)}
+
+/* Chips (itens escolhidos, removíveis) */
+.nd-chips{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.nd-chip{display:inline-flex;align-items:center;gap:var(--space-1);padding:var(--space-1) var(--space-1) var(--space-1) var(--space-3);border-radius:var(--radius-pill);background:var(--brand-soft);color:var(--ink);font-size:14px;font-weight:600;min-height:34px}
+.nd-chip span{font-weight:400;color:var(--muted)}
+.nd-chip button{width:30px;height:30px;border:0;border-radius:50%;background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:var(--muted)}
+.nd-chip:not(:has(button)){padding-right:var(--space-3)}
+
+/* Etiqueta de situação (sempre com palavra, nunca só cor) */
+.nd-pill{display:inline-flex;align-items:center;gap:6px;padding:var(--space-1) var(--space-3);border-radius:var(--radius-pill);font-weight:600;font-size:13.5px;background:var(--panel);border:1px solid var(--line);color:var(--ink);white-space:nowrap}
+.nd-pill.aviso{background:var(--warn-bg);color:var(--warn);border-color:transparent}
+.nd-pill.erro{background:var(--bad-bg);color:var(--bad);border-color:transparent}
+.nd-pill.ok{background:var(--brand-soft);color:var(--ok);border-color:transparent}
+
+/* Status do calendário de aplicações: bolinha colorida + nome */
+.nd-st{display:inline-flex;align-items:center;gap:6px;font-size:14px}
+.nd-st::before{content:"";width:10px;height:10px;border-radius:var(--radius-sm);background:var(--c,var(--s-none));flex-shrink:0}
+.nd-st.programada{--c:var(--s-programada)}.nd-st.prox7{--c:var(--s-prox7)}.nd-st.janela{--c:var(--s-janela)}
+.nd-st.atrasada{--c:var(--s-atrasada)}.nd-st.adiantada{--c:var(--s-adiantada)}.nd-st.none{--c:var(--s-none);}
+.nd-st.none::before{box-shadow:inset 0 0 0 1px var(--line)}
+
+/* Mensagem em faixa */
+.nd-msg{display:flex;gap:var(--space-3);align-items:flex-start;padding:var(--space-3) var(--space-3_5);border-radius:var(--radius-lg);background:var(--brand-soft);color:var(--ink);font-size:15px}
+.nd-msg.aviso{background:var(--warn-bg);color:var(--warn)}
+.nd-msg.erro{background:var(--bad-bg);color:var(--bad)}
+.nd-msg svg{flex-shrink:0;margin-top:1px}
+
+/* Lista de linhas dentro de cartão */
+.nd-lista{display:flex;flex-direction:column}
+.nd-lista > *{display:flex;justify-content:space-between;align-items:center;gap:var(--space-3);padding:var(--space-3) 0;border-bottom:1px solid var(--line2);min-height:48px}
+.nd-lista > *:last-child{border-bottom:0}
+.nd-lista .t{font-weight:600}
+.nd-lista .s{font-size:13px;color:var(--muted)}
+
+/* Tabela */
+.nd-tabela-wrap{overflow-x:auto;border:1px solid var(--line2);border-radius:var(--radius-xl);background:var(--panel)}
+.nd-tabela{width:100%;border-collapse:collapse;font-size:14px}
+.nd-tabela th{text-align:left;font-size:12.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:var(--space-3) var(--space-3_5);border-bottom:1px solid var(--line);white-space:nowrap}
+.nd-tabela td{padding:var(--space-3) var(--space-3_5);border-bottom:1px solid var(--line2)}
+.nd-tabela tr:last-child td{border-bottom:0}
+.nd-tabela tbody tr:nth-child(even){background:var(--panel2)}
+.nd-tabela .n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* Indicador de conexão (no cabeçalho) */
+.nd-net{display:inline-flex;align-items:center;gap:6px;font-size:13px;opacity:.9}
+.nd-net i{width:8px;height:8px;border-radius:50%;background:#9FD7B5}
+.nd-net.ocupado i{background:#F0C65A}.nd-net.erro i{background:#F4A26B}
+
+/* Rodapé */
+.nd-rodape{font-size:12.5px;color:var(--muted);padding-block:var(--space-6)}
