@@ -803,7 +803,7 @@ document.addEventListener('click',async e=>{
 const t=today(); $('today').textContent='Hoje: '+SEM[t.getDay()]+', '+String(t.getDate()).padStart(2,'0')+' '+MES[t.getMonth()]+' '+t.getFullYear();
 sExps=LS.get('cache_exps',[]);sAvals=LS.get('cache_avals',{});atualizarTudo();
 /* ---------- planilha Google (Apps Script): leitura, gravação e fotos ---------- */
-const SCRIPT_URL=''; // endereço /exec do Apps Script, preenchido na instalação
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxDf57BRoIl8qrrU8MmTz6632FtEA_yg8qoBK_98K7dXLL1h9KlZcoA8gvhJvEqZRD4kQ/exec'; // endereço /exec do Apps Script, preenchido na instalação
 let cfg=LS.get('cfg_v1',null), conectando=null;
 const NOTA=$('note').textContent;
 async function api(acao,dados,ms){

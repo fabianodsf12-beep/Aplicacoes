@@ -1,5 +1,5 @@
 // Guarda o app no celular para abrir sem sinal. Mude VERSAO a cada publicação.
-const VERSAO='v1';
+const VERSAO='v2';
 const CACHE='agenda-campo-'+VERSAO;
 const BASE=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(BASE)).then(()=>self.skipWaiting()))});
