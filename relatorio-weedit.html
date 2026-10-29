@@ -585,7 +585,33 @@ function ringsPath(rings, frame) {
   }).join("");
 }
 
-return {tiffHeader, tiffChunk, lzw, parseShp, utmOfEpsg, utmForward, ringsArea, parseSheet, splitCliente, processRasters, ringsPath, BINS, CELL};
+/* Recorte quadrado do mapa na resolução original (para o detalhe ampliado). x0/yTop em coordenadas do mapa, size em metros. */
+async function rasterCrop(rasters, x0, yTop, size) {
+  for (const r of rasters) {
+    const h = tiffHeader(r.buf);
+    const c0 = Math.floor((x0 - h.ox) / h.sx), r0 = Math.floor((h.oy - yTop) / h.sy), n = Math.round(size / h.sx);
+    if (c0 + n <= 0 || r0 + n <= 0 || c0 >= h.w || r0 >= h.h) continue;
+    const out = new Uint8Array(n * n);
+    const tx0 = Math.max(0, Math.floor(c0 / h.tw)), tx1 = Math.min(h.across - 1, Math.floor((c0 + n - 1) / h.tw));
+    const ty0 = Math.max(0, Math.floor(r0 / h.th)), ty1 = Math.min(h.down - 1, Math.floor((r0 + n - 1) / h.th));
+    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
+      const d = await tiffChunk(h, r.buf, ty * h.across + tx);
+      for (let rr = 0; rr < h.th; rr++) {
+        const gy = ty * h.th + rr, R = gy - r0;
+        if (R < 0 || R >= n || gy >= h.h) continue;
+        for (let cc = 0; cc < h.tw; cc++) {
+          const gx = tx * h.tw + cc, Cc = gx - c0;
+          if (Cc < 0 || Cc >= n || gx >= h.w) continue;
+          out[R * n + Cc] = d[rr * h.tw + cc];
+        }
+      }
+    }
+    return {n, res: h.sx, data: out};
+  }
+  return null;
+}
+
+return {tiffHeader, tiffChunk, lzw, parseShp, utmOfEpsg, utmForward, ringsArea, parseSheet, splitCliente, processRasters, ringsPath, rasterCrop, BINS, CELL};
 })();
 if (typeof module !== "undefined") module.exports = Core;
 
@@ -845,7 +871,7 @@ function model() {
 }
 
 /* ---------- mapas (para tela e PDF) ---------- */
-const MAP = {field: "#E6EBE5", line: "#12303A", spot: [216, 92, 30], ramp: ["#E6EBE5", "#EA9A5C", "#D87332", "#B9541B", "#86360D"]};
+const MAP = {field: "#E6EBE5", line: "#12303A", spot: [216, 92, 30], ramp: ["#E6EBE5", "#F5CDA6", "#EFA266", "#D8692A", "#8E3A0E"]};
 const BIN_LABELS = ["Menos de 2%", "2 a 5%", "5 a 10%", "10 a 20%", "20% ou mais"];
 function drawMap(cv, kind, M) {
   const ras = M.ras, W = ras.frame.w, H = ras.frame.h, s = Math.min(1 / ras.pts.pc, 1700 / Math.max(W, H));
@@ -876,194 +902,336 @@ function drawMap(cv, kind, M) {
   return {w: W, h: H};
 }
 
+/* ---------- detalhe ampliado ---------- */
+/* Escolhe um quadrado de ~150 m com plantas daninhas espalhadas (mostra bem a aplicação localizada). */
+async function makeDetail(M) {
+  const ras = M.ras, k = Math.min(30, ras.gw, ras.gh), W = ras.gw, H = ras.gh;
+  const I = new Float64Array((W + 1) * (H + 1)), O = new Float64Array((W + 1) * (H + 1));
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const q = ras.q[y * W + x], i = (y + 1) * (W + 1) + x + 1;
+    I[i] = (q !== 255 && q >= 4 && q <= 60 ? 1 : 0) + I[i - 1] + I[i - W - 1] - I[i - W - 2];
+    O[i] = (q === 255 ? 1 : 0) + O[i - 1] + O[i - W - 1] - O[i - W - 2];
+  }
+  const sum = (A, x, y) => A[(y + k) * (W + 1) + x + k] - A[y * (W + 1) + x + k] - A[(y + k) * (W + 1) + x] + A[y * (W + 1) + x];
+  let best = -1, bx = 0, by = 0;
+  for (let y = 0; y + k <= H; y += 2) for (let x = 0; x + k <= W; x += 2) {
+    if (sum(O, x, y) > k * k * 0.02) continue;
+    const s = sum(I, x, y); if (s > best) { best = s; bx = x; by = y; }
+  }
+  if (best <= 0) return null;
+  const size = k * ras.cell, x0 = ras.frame.minX + bx * ras.cell, yTop = ras.frame.maxY - by * ras.cell;
+  const crop = await Core.rasterCrop(pool.rasters, x0, yTop, size);
+  if (!crop) return null;
+  const cv = document.createElement("canvas"); cv.width = cv.height = crop.n;
+  const ctx = cv.getContext("2d"), im = ctx.createImageData(crop.n, crop.n), d = im.data;
+  for (let i = 0; i < crop.data.length; i++) {
+    const v = crop.data[i], c = v === 0 ? [255, 255, 255] : v === 1 ? [230, 235, 229] : [216, 92, 30];
+    d[i * 4] = c[0]; d[i * 4 + 1] = c[1]; d[i * 4 + 2] = c[2]; d[i * 4 + 3] = 255;
+  }
+  ctx.putImageData(im, 0, 0);
+  let spr = 0, cov = 0; for (const v of crop.data) { if (v) cov++; if (v > 1) spr++; }
+  return {cv, size, gx: bx * ras.cell, gy: by * ras.cell, frac: cov ? spr / cov : 0};
+}
+
 /* ---------- PDF ---------- */
-function buildPDF(M, cvP, cvD) {
+function buildPDF(M, cvP, cvD, det) {
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({unit: "mm", format: "a4", compress: true});
   for (const [k, b] of Object.entries(PDF_FONTS)) { doc.addFileToVFS(k + ".ttf", b); doc.addFont(k + ".ttf", k, "normal"); }
-  const C = {petrol: "#12303A", green: "#1E9A48", green2: "#2DB34A", ink: "#1B2A30", muted: "#5E6E73", line: "#D9E2DE", soft: "#E8F5EC", soft2: "#F3F6F4", conv: "#A9B3AF", warnBg: "#FFF4D6", warn: "#7A5200", white: "#FFFFFF"};
+  const C = {petrol: "#12303A", petrol2: "#1C4350", green: "#1E9A48", green2: "#2DB34A", ink: "#1B2A30", muted: "#5E6E73", line: "#D9E2DE", soft: "#E8F5EC", soft2: "#F3F6F4", conv: "#A9B3AF", warnBg: "#FFF4D6", warn: "#7A5200", white: "#FFFFFF", orange: "#D85C1E", field: "#E6EBE5", onPetrol: "#A9C7BF"};
   const F = (f, s, c = C.ink, cs = 0) => { doc.setFont(f, "normal"); doc.setFontSize(s); doc.setTextColor(c); doc.setCharSpace(cs); };
   const T = (s, x, y, o) => {
-    if (o && o.align === "right" && doc.getCharSpace() && !Array.isArray(s)) { s = String(s); return doc.text(s, x - doc.getTextWidth(s) - doc.getCharSpace() * (s.length - 1), y); }
+    if (o && o.align && o.align !== "left" && doc.getCharSpace() && !Array.isArray(s)) {
+      s = String(s); const w = doc.getTextWidth(s) + doc.getCharSpace() * (s.length - 1);
+      return doc.text(s, o.align === "right" ? x - w : x - w / 2, y);
+    }
     return doc.text(Array.isArray(s) ? s : String(s), x, y, o);
   };
   const box = (x, y, w, h, c, r = 0) => { doc.setFillColor(c); r ? doc.roundedRect(x, y, w, h, r, r, "F") : doc.rect(x, y, w, h, "F"); };
   const wrap = (s, w) => doc.splitTextToSize(String(s), w);
-  const ML = 16, CW = 178, R = ML + CW, BOTTOM = 276;
   const lineH = pt => pt * 0.3528 * 1.38;
+  const para = (s, x, yy, w, f, size, c) => { F(f, size, c); const l = wrap(s, w); T(l, x, yy, {lineHeightFactor: 1.38}); return lineH(size) * l.length; };
+  const poly = (pts, c) => { doc.setFillColor(c); const d = []; for (let i = 1; i < pts.length; i++) d.push([pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]]); doc.lines(d, pts[0][0], pts[0][1], [1, 1], "F", true); };
+  const arc = (cx, cy, r0, r1, a0, a1, c) => {
+    if (a1 - a0 < 0.002) return;
+    const n = Math.max(6, Math.ceil((a1 - a0) / 0.04)), p = [];
+    for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n; p.push([cx + r1 * Math.cos(a), cy + r1 * Math.sin(a)]); }
+    for (let i = n; i >= 0; i--) { const a = a0 + (a1 - a0) * i / n; p.push([cx + r0 * Math.cos(a), cy + r0 * Math.sin(a)]); }
+    poly(p, c);
+  };
+  const ML = 16, CW = 178, R = ML + CW, BOTTOM = 276;
   let y = 0;
+  const nPct = v => pct(v, 1);
+  const hasRS = M.rsTot != null;
 
   const logoDims = (maxW, maxH) => { if (!LOGO) return null; const p = doc.getImageProperties(LOGO); const k = Math.min(maxW / p.width, maxH / p.height); return [p.width * k, p.height * k]; };
-  const brandMark = (x, yTop, h) => {
-    const d = logoDims(h * 3.6, h);
-    if (d) { doc.addImage(LOGO, "PNG", x, yTop + (h - d[1]) / 2, d[0], d[1], "logo"); return; }
-    F("C7", h * 2.05, C.petrol, h * 0.09); T("NADIANA", x, yTop + h * 0.68);
-    F("B6", h * 0.52, C.green, h * 0.05); T("AGROPECUÁRIA", x + 0.4, yTop + h * 1.02);
+  const wordmark = (x, yTop, h, dark) => {
+    F("C7", h * 2.05, dark ? C.white : C.petrol, h * 0.09); T("NADIANA", x, yTop + h * 0.68);
+    F("B6", h * 0.52, dark ? C.green2 : C.green, h * 0.05); T("AGROPECUÁRIA", x + 0.4, yTop + h * 1.02);
   };
-  const rule = yy => { box(0, yy, 210 * 0.22, 1.4, C.petrol); box(210 * 0.22, yy, 210 * 0.56, 1.4, C.green); box(210 * 0.78, yy, 210 * 0.22, 1.4, C.green2); };
+  const brandMark = (x, yTop, h) => { const d = logoDims(h * 3.6, h); if (d) doc.addImage(LOGO, "PNG", x, yTop + (h - d[1]) / 2, d[0], d[1], "logo"); else wordmark(x, yTop, h, false); };
+  const rule = (yy, hh = 1.4) => { box(0, yy, 210 * 0.22, hh, C.petrol); box(210 * 0.22, yy, 210 * 0.56, hh, C.green); box(210 * 0.78, yy, 210 * 0.22, hh, C.green2); };
   const ctxLine = `Fazenda ${M.fazenda} · Talhão ${M.talhao}${M.data ? " · " + M.data : ""}`;
   const newPage = () => {
     doc.addPage(); brandMark(ML, 8, 9);
     F("B4", 8.5, C.muted); T(ctxLine, R, 13.5, {align: "right"});
     F("C6", 8, C.green, 0.4); T("RELATÓRIO DE APLICAÇÃO LOCALIZADA · WEED-IT", R, 18, {align: "right"});
-    rule(21.5); y = 32;
+    rule(21.5); y = 34;
   };
   const ensure = h => { if (y + h > BOTTOM) newPage(); };
-  const section = (title, sub) => {
-    ensure(sub ? 20 : 14);
-    box(ML, y - 4.6, 1.6, 6, C.green);
-    F("C7", 15, C.petrol); T(title, ML + 4, y);
-    y += 3;
-    if (sub) { F("B4", 9, C.muted); const l = wrap(sub, CW); y += 3.6; T(l, ML, y); y += lineH(9) * (l.length - 1) + 1.5; }
+  const pageTitle = (kicker, title, sub) => {
+    F("C6", 9, C.green, 0.6); T(kicker.toUpperCase(), ML, y);
+    F("C7", 22, C.petrol); T(title, ML, y + 9);
+    y += 13;
+    if (sub) y += para(sub, ML, y + 3, CW, "B4", 10, C.muted) + 3;
     y += 4;
   };
+  const section = title => {
+    ensure(14);
+    box(ML, y - 4.6, 1.6, 6, C.green);
+    F("C7", 14, C.petrol); T(title, ML + 4, y);
+    y += 7;
+  };
+  const callout = (s, size = 10.5) => {
+    F("B6", size, C.ink); const l = wrap(s, CW - 14), h = lineH(size) * l.length + 8;
+    ensure(h); F("B6", size, C.ink);
+    box(ML, y, CW, h, C.soft, 2); box(ML, y, 2, h, C.green);
+    T(l, ML + 8, y + 6.4, {lineHeightFactor: 1.38});
+    y += h + 6;
+  };
+  const tableHead = (cols, h = 7.5) => {
+    box(ML, y, CW, h, C.petrol, 1.2);
+    F("C6", 8.4, C.white); cols.forEach(([x, t, a]) => T(t.toUpperCase(), x, y + h * 0.66, {align: a}));
+    y += h;
+  };
+  /* mapa com norte e escala; devolve a posição da imagem */
+  const mapBox = (cv, x, yy, bw, bh) => {
+    const k = Math.min((bw - 6) / M.ras.frame.w, (bh - 14) / M.ras.frame.h), iw = M.ras.frame.w * k, ih = M.ras.frame.h * k;
+    bh = ih + 14;
+    box(x, yy, bw, bh, C.soft2, 2);
+    const ox = x + (bw - iw) / 2, oy = yy + 3;
+    doc.addImage(cv.toDataURL("image/png"), "PNG", ox, oy, iw, ih, undefined, "FAST");
+    const nice = [20, 50, 100, 200, 250, 500, 1000, 2000, 5000];
+    const sb = nice.reduce((a, v) => v * k <= bw / 4 ? v : a, nice[0]), sl = sb * k, sx = x + 5, sy = yy + bh - 4.5;
+    box(sx, sy, sl, 1.2, C.petrol); box(sx + sl / 2, sy, sl / 2, 1.2, C.white);
+    doc.setDrawColor(C.petrol); doc.setLineWidth(0.2); doc.rect(sx, sy, sl, 1.2);
+    F("B4", 7, C.petrol); T("0", sx, sy - 1); T(nf(sb) + " m", sx + sl, sy - 1, {align: "right"});
+    const nx = x + bw - 7, ny = yy + 5;
+    doc.setFillColor(C.petrol); doc.triangle(nx, ny, nx - 2.3, ny + 6, nx + 2.3, ny + 6, "F");
+    F("C7", 9, C.petrol); T("N", nx, ny + 10.5, {align: "center"});
+    return {ox, oy, k, bh};
+  };
+  const legendRow = (x, yy, c, t, line) => {
+    if (line) { doc.setDrawColor(c); doc.setLineWidth(0.7); doc.line(x, yy - 1.3, x + 5, yy - 1.3); }
+    else box(x, yy - 3, 5, 3.6, c, 0.6);
+    F("B4", 8.6, C.ink); const l = wrap(t, 44); T(l, x + 7.5, yy, {lineHeightFactor: 1.3});
+    return lineH(8.6) * 0.95 * l.length + 2.6;
+  };
 
-  /* página 1: capa e resumo */
-  brandMark(ML, 11, 14);
-  F("C6", 9, C.muted, 0.5); T("RELATÓRIO DE APLICAÇÃO LOCALIZADA", R, 16.5, {align: "right"});
-  F("C7", 13, C.green, 0.3); T("WEED-IT", R, 22.5, {align: "right"});
-  rule(32);
-  F("B6", 11, C.muted); T("Fazenda " + M.fazenda, ML, 46);
-  F("C7", 32, C.petrol); T("Talhão " + M.talhao, ML, 59);
-  const info = [["Data da aplicação", M.data || "—"], ["Equipamento", M.maquina || "—"], ["Modo", M.modo || "—"], ["Área do talhão", nf(M.TOTAL, 2) + " ha"]];
-  info.forEach(([k, v], i) => {
-    const yy = 41 + i * 5.6;
-    F("B4", 8, C.muted); T(k, 128, yy);
-    F("B6", 9, C.ink); T(v, R, yy, {align: "right"});
-    doc.setDrawColor(C.line); doc.setLineWidth(0.2); doc.line(128, yy + 1.6, R, yy + 1.6);
+  /* ===== 1. Capa ===== */
+  box(0, 0, 210, 122, C.petrol);
+  for (let i = 0; i < 6; i++) poly([[150 + i * 14, 0], [164 + i * 14, 0], [104 + i * 14, 122], [90 + i * 14, 122]], i % 2 ? "#143542" : "#163947");
+  rule(122, 2);
+  const ld = logoDims(58, 20);
+  if (ld) { box(ML, 12, ld[0] + 10, ld[1] + 8, C.white, 2.5); doc.addImage(LOGO, "PNG", ML + 5, 16, ld[0], ld[1], "logo"); }
+  else wordmark(ML, 14, 13, true);
+  F("C6", 9, C.onPetrol, 0.7); T("WEED-IT · APLICAÇÃO LOCALIZADA", R, 20, {align: "right"});
+  F("C7", 36, C.white); T("Relatório de", ML, 58); T("Aplicação Localizada", ML, 72);
+  F("B4", 12, C.onPetrol); T("Quanto de água e herbicida o WEED-IT economizou neste talhão", ML, 82);
+  const chips = [["FAZENDA", M.fazenda], ["TALHÃO", M.talhao], ["DATA DA APLICAÇÃO", M.data || "—"], ["EQUIPAMENTO", M.maquina || "—"]];
+  const cwid = CW / 4;
+  chips.forEach(([k, v], i) => {
+    const x = ML + i * cwid;
+    if (i) { doc.setDrawColor("#2E5866"); doc.setLineWidth(0.3); doc.line(x - 3, 96, x - 3, 112); }
+    F("C6", 7.6, C.onPetrol, 0.5); T(k, x, 100);
+    F("C7", 15, C.white); T(wrap(v, cwid - 6)[0], x, 108.5);
   });
 
-  y = 68;
-  const head = `O WEED-IT pulverizou somente onde encontrou plantas daninhas: ${nf(M.APL, 2)} ha dos ${nf(M.TOTAL, 2)} ha do talhão (${pct(M.APL / M.TOTAL)}). Em comparação com uma aplicação convencional em área total, foram ${nf(M.saved)} litros de calda a menos${M.rsTot != null ? ` e ${brl(M.rsTot)} economizados em herbicida` : ` e ${pct(M.sp)} menos herbicida`}.`;
-  F("B6", 11.5, C.ink); const hl = wrap(head, CW - 14);
-  const hh = lineH(11.5) * hl.length + 9;
-  box(ML, y, CW, hh, C.soft, 2); box(ML, y, 2, hh, C.green);
-  T(hl, ML + 8, y + 7.2, {lineHeightFactor: 1.38});
-  y += hh + 6;
-
-  const kp = [
-    ["ÁREA APLICADA", nf(M.APL, 2), "ha", `${pct(M.APL / M.TOTAL)} do talhão recebeu produto`, C.green],
-    ["ÁGUA ECONOMIZADA", nf(M.saved), "L", `${pct(M.sp)} menos calda que a convencional`, C.petrol],
-    M.rsTot != null ? ["HERBICIDA ECONOMIZADO", nf(M.rsTot, 0), "R$", `${pct(M.sp)} menos produto${M.allPriced ? "" : " (produtos com preço)"}`, C.green, true] : ["HERBICIDA ECONOMIZADO", nf(M.sp * 100, 1), "%", "menos produto que a convencional", C.green],
-    ["ABASTECIMENTOS EVITADOS", nf(M.tk.c - M.tk.l), M.tk.c - M.tk.l === 1 ? "tanque" : "tanques", `${M.tk.c} na convencional, ${M.tk.l} com o WEED-IT (tanque de ${nf(M.tanque)} L)`, C.petrol]
+  y = 136;
+  const heroes = [
+    ["ÁGUA ECONOMIZADA", nf(M.saved) + " L", `${nPct(M.sp)} menos calda que uma aplicação convencional`, C.petrol],
+    hasRS ? ["HERBICIDA ECONOMIZADO", brl(M.rsTot), `${nPct(M.sp)} menos produto${M.prods.length > 1 ? ", somando os " + M.prods.length + " produtos" : ""}`, C.green]
+      : ["HERBICIDA ECONOMIZADO", nPct(M.sp), "menos produto que uma aplicação convencional", C.green],
+    ["ÁREA QUE RECEBEU PRODUTO", nPct(M.APL / M.TOTAL), `${nf(M.APL, 2)} ha de ${nf(M.TOTAL, 2)} ha; o resto do talhão ficou sem aplicação`, C.petrol]
   ];
-  const kw = (CW - 3 * 4) / 4, kh = 34;
-  kp.forEach(([l, v, u, s, c, pre], i) => {
-    const x = ML + i * (kw + 4);
-    box(x, y, kw, kh, C.soft2, 2); box(x, y, kw, 1.3, c);
-    F("C6", 7.4, C.muted, 0.35); T(l, x + 4, y + 7);
-    let vx = x + 4;
-    if (pre) { F("C6", 10, C.petrol); T(u, vx, y + 17.5); vx += doc.getTextWidth(u) + 1.2; }
-    F("C7", 21, C.petrol); T(v, vx, y + 17.5);
-    if (!pre) { const w = doc.getTextWidth(v); F("C6", 10, C.petrol); T(u, vx + w + 1.2, y + 17.5); }
-    F("B4", 7.4, C.muted); T(wrap(s, kw - 8).slice(0, 3), x + 4, y + 23.5, {lineHeightFactor: 1.3});
+  heroes.forEach(([l, v, s, c]) => {
+    box(ML, y, 1.6, 27, c);
+    F("C6", 9, C.muted, 0.5); T(l, ML + 6, y + 5);
+    F("C7", 30, c); T(v, ML + 6, y + 17);
+    para(s, ML + 6, y + 23, 74, "B4", 9, C.muted);
+    y += 34;
   });
-  y += kh + 11;
+  const cvx = 104, cvw = 90;
+  const k0 = Math.min((cvw - 6) / M.ras.frame.w, 100 / M.ras.frame.h), ciw = M.ras.frame.w * k0, cih = M.ras.frame.h * k0;
+  box(cvx, 132, cvw, cih + 14, C.soft2, 2.5);
+  doc.addImage(cvP.toDataURL("image/png"), "PNG", cvx + (cvw - ciw) / 2, 135, ciw, cih, "mapcover", "FAST");
+  box(cvx + 4, 135 + cih + 4.2, 4, 3, C.orange, 0.5);
+  F("B4", 8, C.muted); T("Pontos onde o WEED-IT aplicou", cvx + 10, 135 + cih + 6.8);
+  y = Math.max(y, 135 + cih + 16) + 2;
+  F("B4", 9.5, C.ink);
+  const intro = `Na aplicação localizada, um sensor no implemento identifica cada planta daninha e abre o bico só sobre ela. Este relatório compara o que foi gasto nesta aplicação com o que seria gasto em uma aplicação convencional, que pulveriza o talhão inteiro com ${nf(M.vazao, 0)} L/ha.`;
+  const il = wrap(intro, CW - 12), ih2 = lineH(9.5) * il.length + 8;
+  box(ML, y, CW, ih2, C.soft, 2);
+  T(il, ML + 6, y + 6.2, {lineHeightFactor: 1.38});
 
-  section("Localizada × convencional", "A convencional aplica a calda em toda a área do talhão, na vazão recomendada. O WEED-IT aplica só onde o sensor detecta planta daninha.");
-  const groups = [
-    ["Calda (água + produtos)", M.conv, M.VOL, v => nf(v) + " L", M.sp],
-    M.rsTot != null ? ["Custo com herbicida", M.rsConv, M.rsLoc, v => brl(v), M.sp] : ["Herbicida (quantidade de produto)", 100, M.ratio * 100, v => nf(v, 1) + "%", M.sp],
-    ["Área pulverizada", M.TOTAL, M.APL, v => nf(v, 2) + " ha", M.econArea]
+  /* ===== 2. Resumo ===== */
+  newPage();
+  pageTitle("Resumo", "O que aconteceu nesta aplicação");
+  const bullets = [
+    `O sensor do WEED-IT identificou as plantas daninhas e abriu os bicos apenas sobre elas.`,
+    `Só ${nPct(M.APL / M.TOTAL)} do talhão (${nf(M.APL, 2)} ha) recebeu produto. Os outros ${nf(M.TOTAL - M.APL, 2)} ha ficaram sem aplicação.`,
+    `Foram usados ${nf(M.VOL)} L de calda, contra ${nf(M.conv)} L que uma aplicação convencional gastaria.`,
+    `Isso evitou ${M.tk.c - M.tk.l} abastecimento${M.tk.c - M.tk.l === 1 ? "" : "s"} do tanque${hasRS ? ` e economizou ${brl(M.rsTot)} em herbicida` : ` e reduziu o herbicida em ${nPct(M.sp)}`}.`
   ];
-  const bx = ML + 34, bw = 112;
-  groups.forEach(([g, cv, lv, f, sv]) => {
-    ensure(25);
-    F("B6", 9.5, C.ink); T(g, ML, y);
-    F("C7", 13, C.green); T("−" + pct(sv), R, y + 7.6, {align: "right"});
-    F("B4", 7, C.muted); T("de economia", R, y + 11.3, {align: "right"});
-    [["Convencional", cv, C.conv], ["WEED-IT", lv, C.green]].forEach(([lab, v, c], k) => {
-      const yy = y + 3.2 + k * 6.8, w = Math.max(0.8, v / cv * bw);
-      F("B4", 8, C.muted); T(lab, ML, yy + 3.6);
-      box(bx, yy, w, 4.8, c, 0.8);
-      F("B6", 8.5, C.ink); T(f(v), bx + w + 2, yy + 3.6);
-    });
-    y += 22;
+  bullets.forEach(b => {
+    doc.setFillColor(C.green); doc.circle(ML + 3, y - 1.3, 2.8, "F");
+    doc.setDrawColor(C.white); doc.setLineWidth(0.6); doc.lines([[0.9, 1], [1.9, -2.2]], ML + 1.6, y - 1.3, [1, 1], "S", false);
+    y += para(b, ML + 9, y, CW - 9, "B4", 10.5, C.ink) + 2.6;
   });
   y += 4;
 
-  section("Economia de herbicida por produto", "Os produtos vão misturados na calda na mesma concentração, então cada um é economizado na mesma proporção da calda.");
-  const cols = [[ML + 2, "Produto", "left"], [ML + 68, "Dose/ha", "right"], [ML + 95, "Convencional", "right"], [ML + 120, "WEED-IT", "right"], [ML + 146, "Economia", "right"], [R - 2, "Economia (R$)", "right"]];
-  ensure(16);
-  box(ML, y, CW, 7.5, C.petrol, 1.2);
-  F("C6", 8.2, C.white, 0); cols.forEach(([x, t, a]) => T(t.toUpperCase(), x, y + 5, {align: a}));
-  y += 7.5;
+  /* três painéis visuais */
+  const pw = (CW - 8) / 3, ph = 70, py = y;
+  const panel = (i, title) => { const x = ML + i * (pw + 4); box(x, py, pw, ph, C.soft2, 2); F("C6", 9, C.muted, 0.5); T(title, x + 5, py + 7); return x; };
+  { // área
+    const x = panel(0, "ÁREA DO TALHÃO"), cx = x + pw / 2, cy = py + 33, f = M.APL / M.TOTAL, a0 = -Math.PI / 2, gapA = 0.05;
+    arc(cx, cy, 13, 20, a0 + 2 * Math.PI * f + gapA, a0 + 2 * Math.PI - gapA, C.field);
+    arc(cx, cy, 13, 20, a0, a0 + 2 * Math.PI * f, C.orange);
+    F("C7", 15, C.petrol); T(nPct(f), cx, cy + 2, {align: "center"});
+    box(x + 5, py + 58, 3.5, 3, C.orange, 0.5); F("B4", 8, C.ink); T(`Com aplicação: ${nf(M.APL, 2)} ha`, x + 10.5, py + 60.6);
+    box(x + 5, py + 63.5, 3.5, 3, C.field, 0.5); T(`Sem aplicação: ${nf(M.TOTAL - M.APL, 2)} ha`, x + 10.5, py + 66.1);
+  }
+  { // tanques
+    const x = panel(1, "CALDA E ABASTECIMENTOS");
+    const tank = (tx, ty, fill, c) => {
+      doc.setDrawColor(c); doc.setLineWidth(0.4); doc.roundedRect(tx, ty, 6.4, 9, 1.2, 1.2, "S");
+      box(tx + 2.2, ty - 1.3, 2, 1.3, c);
+      if (fill > 0) box(tx + 0.6, ty + 0.6 + 7.8 * (1 - fill), 5.2, 7.8 * fill, c, 0.6);
+    };
+    const row = (ty, label, vol, c) => {
+      F("B6", 9, C.ink); T(label, x + 5, ty);
+      F("C7", 13, C.petrol); T(nf(vol) + " L", x + pw - 5, ty, {align: "right"});
+      const n = Math.ceil(vol / M.tanque), rem = vol / M.tanque - Math.floor(vol / M.tanque);
+      const show = Math.min(n, 6);
+      for (let i = 0; i < show; i++) tank(x + 5 + i * 8.6, ty + 4.5, i === n - 1 && rem > 0 ? rem : 1, c);
+      if (n > 6) { F("C7", 11, C.petrol); T(`× ${n}`, x + 5 + 6 * 8.6, ty + 11.5); }
+      F("B4", 7.8, C.muted); T(`${n} abastecimento${n === 1 ? "" : "s"}`, x + 5, ty + 19.5);
+    };
+    row(py + 17, "Convencional", M.conv, C.conv);
+    row(py + 45, "WEED-IT", M.VOL, C.green);
+  }
+  { // herbicida
+    const x = panel(2, hasRS ? "CUSTO COM HERBICIDA" : "QUANTIDADE DE HERBICIDA");
+    const cvv = hasRS ? M.rsConv : 100, lv = hasRS ? M.rsLoc : M.ratio * 100, fmt = v => hasRS ? brl(v) : nf(v, 1) + "%";
+    const base = py + 56, maxH = 34, bw2 = 16;
+    [[cvv, C.conv, "Convencional", x + pw / 2 - bw2 - 4], [lv, C.green, "WEED-IT", x + pw / 2 + 4]].forEach(([v, c, lab, bx2]) => {
+      const h = Math.max(0.8, v / cvv * maxH);
+      box(bx2, base - h, bw2, h, c, 1);
+      F("B6", 8.2, C.ink); T(fmt(v), bx2 + bw2 / 2, base - h - 2, {align: "center"});
+      F("B4", 8, C.muted); T(lab, bx2 + bw2 / 2, base + 4.5, {align: "center"});
+    });
+    F("C7", 11, C.green); T(`−${nPct(M.sp)}`, x + pw / 2, py + 67, {align: "center"});
+  }
+  y = py + ph + 10;
+
+  section("Comparação lado a lado");
+  const cc = [[ML + 3, "Indicador", "left"], [ML + 92, "Convencional", "right"], [ML + 130, "WEED-IT", "right"], [R - 3, "Economia", "right"]];
+  tableHead(cc);
+  const rows = [
+    ["Área pulverizada", nf(M.TOTAL, 2) + " ha", nf(M.APL, 2) + " ha", `${nf(M.TOTAL - M.APL, 2)} ha (${nPct(M.econArea)})`],
+    ["Calda (água + produtos)", nf(M.conv) + " L", nf(M.VOL) + " L", `${nf(M.saved)} L (${nPct(M.sp)})`],
+    ["Calda por hectare do talhão", nf(M.vazao, 1) + " L/ha", nf(M.rateField, 1) + " L/ha", nPct(M.sp)],
+    ["Abastecimentos (tanque de " + nf(M.tanque) + " L)", String(M.tk.c), String(M.tk.l), `${M.tk.c - M.tk.l} a menos`]
+  ];
+  if (hasRS) rows.push(["Custo com herbicida", brl(M.rsConv), brl(M.rsLoc), `${brl(M.rsTot)} (${nPct(M.sp)})`]);
+  rows.forEach((r, i) => {
+    if (i % 2) box(ML, y, CW, 7.6, C.soft2);
+    F("B4", 9.4, C.ink); T(r[0], cc[0][0], y + 5.1);
+    T(r[1], cc[1][0], y + 5.1, {align: "right"}); T(r[2], cc[2][0], y + 5.1, {align: "right"});
+    F("B6", 9.4, C.green); T(r[3], cc[3][0], y + 5.1, {align: "right"});
+    y += 7.6;
+  });
+  y += 8;
+
+  section("Economia de herbicida por produto");
+  F("B4", 9, C.muted); T(wrap("Os produtos vão misturados na calda na mesma concentração, então cada um é economizado na mesma proporção da calda.", CW), ML, y); y += 7;
+  const pc = [[ML + 3, "Produto", "left"], [ML + 66, "Dose/ha", "right"], [ML + 94, "Convencional", "right"], [ML + 120, "WEED-IT", "right"], [ML + 146, "Economia", "right"], [R - 3, "Economia (R$)", "right"]];
+  ensure(16); tableHead(pc);
   M.prods.forEach((p, i) => {
     ensure(8);
-    if (i % 2) box(ML, y, CW, 7.5, C.soft2);
-    F("B6", 9, C.ink); T(wrap(p.n, 52)[0], cols[0][0], y + 5);
-    F("B4", 9, C.ink);
-    T(`${nf(p.d, 2)} ${p.u}`, cols[1][0], y + 5, {align: "right"});
-    T(`${nf(p.conv, 1)} ${p.u}`, cols[2][0], y + 5, {align: "right"});
-    T(`${nf(p.loc, 1)} ${p.u}`, cols[3][0], y + 5, {align: "right"});
-    F("B6", 9, C.green); T(`${nf(p.saved, 1)} ${p.u}`, cols[4][0], y + 5, {align: "right"});
-    T(p.rs != null ? brl(p.rs) : "sem preço", cols[5][0], y + 5, {align: "right"});
-    y += 7.5;
+    if (i % 2) box(ML, y, CW, 7.6, C.soft2);
+    F("B6", 9.2, C.ink); T(wrap(p.n, 48)[0], pc[0][0], y + 5.1);
+    F("B4", 9.2, C.ink);
+    T(`${nf(p.d, 2)} ${p.u}`, pc[1][0], y + 5.1, {align: "right"});
+    T(`${nf(p.conv, 1)} ${p.u}`, pc[2][0], y + 5.1, {align: "right"});
+    T(`${nf(p.loc, 1)} ${p.u}`, pc[3][0], y + 5.1, {align: "right"});
+    F("B6", 9.2, C.green); T(`${nf(p.saved, 1)} ${p.u}`, pc[4][0], y + 5.1, {align: "right"});
+    T(p.rs != null ? brl(p.rs) : "sem preço", pc[5][0], y + 5.1, {align: "right"});
+    y += 7.6;
   });
-  if (M.rsTot != null) {
-    ensure(9);
-    doc.setDrawColor(C.petrol); doc.setLineWidth(0.4); doc.line(ML, y, R, y);
-    F("C7", 10.5, C.petrol); T("TOTAL ECONOMIZADO EM HERBICIDA", ML + 2, y + 6);
-    F("C7", 12, C.green); T(brl(M.rsTot), R - 2, y + 6, {align: "right"});
-    y += 9;
+  if (hasRS) {
+    ensure(10);
+    box(ML, y + 1, CW, 9, C.soft, 1.2);
+    F("C7", 11, C.petrol, 0.2); T("TOTAL ECONOMIZADO EM HERBICIDA", ML + 3, y + 7);
+    F("C7", 13, C.green); T(brl(M.rsTot), R - 3, y + 7.2, {align: "right"});
+    y += 11;
   }
 
-  /* página 2: mapas */
+  /* ===== 3. Mapa de aplicação ===== */
   newPage();
-  section("Onde o herbicida foi aplicado", "Os mapas foram gerados a partir do registro do próprio WEED-IT. À esquerda, cada ponto laranja é um lugar onde o bico abriu porque o sensor viu uma planta daninha; o cinza não recebeu produto. À direita, o talhão dividido em quadrados de 5 × 5 m, coloridos pela parte de cada quadrado que precisou de aplicação.");
-  const gap = 6, mw = (CW - gap) / 2, mhMax = 112;
-  const fit = (w, h) => { const k = Math.min(mw / w, mhMax / h); return [w * k, h * k]; };
-  const [iw, ih] = fit(M.ras.frame.w, M.ras.frame.h);
-  const drawMapBox = (cv, x, title) => {
-    F("C6", 10.5, C.petrol); T(title, x, y);
-    const yy = y + 3, ox = x + (mw - iw) / 2;
-    box(x, yy, mw, ih + 4, C.soft2, 2);
-    doc.addImage(cv.toDataURL("image/png"), "PNG", ox, yy + 2, iw, ih, undefined, "FAST");
-    const mpm = iw / M.ras.frame.w, nice = [20, 50, 100, 200, 250, 500, 1000, 2000, 5000];
-    const sb = nice.reduce((a, v) => v * mpm <= iw / 3.2 ? v : a, nice[0]), sl = sb * mpm;
-    const sx = x + 3, sy = yy + ih + 0.6;
-    box(sx, sy, sl, 1.1, C.petrol); box(sx + sl / 2, sy, sl / 2, 1.1, C.white);
-    doc.setDrawColor(C.petrol); doc.setLineWidth(0.2); doc.rect(sx, sy, sl, 1.1);
-    F("B4", 6.5, C.petrol); T("0", sx, sy - 0.9); T(nf(sb) + " m", sx + sl, sy - 0.9, {align: "right"});
-    const nx = x + mw - 6, ny = yy + 4;
-    doc.setFillColor(C.petrol); doc.triangle(nx, ny, nx - 2, ny + 5, nx + 2, ny + 5, "F");
-    F("C7", 8, C.petrol); T("N", nx, ny + 9, {align: "center"});
-  };
-  drawMapBox(cvP, ML, "Pontos de aplicação");
-  drawMapBox(cvD, ML + mw + gap, "Densidade de plantas daninhas");
-  y += ih + 12;
-  const legend = (x, items) => { let yy = y; items.forEach(([c, t, line]) => { if (line) { doc.setDrawColor(c); doc.setLineWidth(0.6); doc.line(x, yy - 1.2, x + 4, yy - 1.2); } else { box(x, yy - 2.8, 4, 3.2, c, 0.5); } F("B4", 8, C.ink); T(t, x + 6, yy); yy += 4.6; }); return yy; };
-  const yl1 = legend(ML, [["#D85C1E", "Bico aberto (planta daninha detectada)"], [MAP.field, "Sem aplicação"], [C.petrol, "Limite do talhão", true]]);
-  const yl2 = legend(ML + mw + gap, MAP.ramp.map((c, i) => [c, BIN_LABELS[i] + (i === 4 ? " do quadrado aplicado" : "")]));
-  y = Math.max(yl1, yl2) + 6;
+  pageTitle("Mapa 1", "Onde o herbicida foi aplicado", "Este mapa foi desenhado a partir do registro do próprio WEED-IT. Cada ponto laranja é um lugar onde o bico abriu porque o sensor encontrou uma planta daninha. A parte cinza do talhão não recebeu nenhum produto.");
+  const mw = 120, mh = 168, my = y;
+  const mp = mapBox(cvP, ML, my, mw, mh);
+  const rx = ML + mw + 6, rw = R - rx;
+  let ry = my + 4;
+  F("C6", 9, C.muted, 0.5); T("LEGENDA", rx, ry); ry += 6;
+  ry += legendRow(rx, ry, C.orange, "Bico aberto: planta daninha detectada");
+  ry += legendRow(rx, ry, C.field, "Sem aplicação");
+  ry += legendRow(rx, ry, C.petrol, "Limite do talhão", true);
+  if (det) {
+    ry += 6;
+    F("C6", 9, C.muted, 0.5); T("DETALHE AMPLIADO", rx, ry); ry += 3;
+    doc.addImage(det.cv.toDataURL("image/png"), "PNG", rx, ry, rw, rw, "detail", "FAST");
+    doc.setDrawColor(C.petrol); doc.setLineWidth(0.5); doc.rect(rx, ry, rw, rw);
+    const s50 = rw / det.size * 50;
+    box(rx + 3, ry + rw - 4, s50, 1.2, C.petrol); F("B6", 7, C.petrol); T("50 m", rx + 3 + s50 + 1.5, ry + rw - 2.8);
+    ry += rw + 5;
+    ry += para(`Um quadrado de ${nf(det.size)} × ${nf(det.size)} m em resolução total. Cada mancha laranja é uma aplicação individual sobre uma planta. Nesse trecho, ${nPct(det.frac)} da área recebeu produto.`, rx, ry, rw, "B4", 8.4, C.ink);
+    const qx = mp.ox + det.gx * mp.k, qy = mp.oy + det.gy * mp.k, qs = det.size * mp.k;
+    doc.setDrawColor(C.petrol); doc.setLineWidth(0.6); doc.rect(qx, qy, qs, qs);
+    box(qx, qy - 4, 14, 4, C.petrol); F("C6", 7, C.white, 0.3); T("DETALHE", qx + 1.5, qy - 1.1);
+  }
+  y = my + Math.max(mp.bh, ry - my) + 8;
+  callout(`Resultado: os bicos abriram em ${nf(M.APL, 2)} ha, ${nPct(M.APL / M.TOTAL)} do talhão. Em uma aplicação convencional, o produto cairia sobre os ${nf(M.TOTAL, 2)} ha.`);
 
-  section("Como as plantas daninhas estavam distribuídas");
-  const lo = M.ras.dist[0], hi = M.ras.dist[4];
-  const take = `${pct(lo.field_ha / M.fT, 0)} do talhão (${nf(lo.field_ha, 1)} ha) estava praticamente limpo, com menos de 2% de área aplicada. Já as manchas mais infestadas, com 20% ou mais, somam ${nf(hi.field_ha, 1)} ha e concentraram ${pct(hi.sprayed_ha / M.sT, 0)} de todo o produto aplicado. É nessas manchas que vale reforçar o manejo.`;
-  F("B4", 10, C.ink); const tl = wrap(take, CW - 14), th = lineH(10) * tl.length + 8;
-  ensure(th); F("B4", 10, C.ink);
-  box(ML, y, CW, th, C.soft, 2); box(ML, y, 2, th, C.green);
-  T(tl, ML + 8, y + 6.3, {lineHeightFactor: 1.38});
-  y += th + 6;
-
-  const dc = [ML + 2, ML + 62, ML + 120];
-  box(ML, y, CW, 7, C.petrol, 1.2);
-  F("C6", 8.2, C.white, 0.3); T("PARTE DO QUADRADO APLICADA", dc[0], y + 4.8); T("ÁREA DO TALHÃO", dc[1], y + 4.8); T("ÁREA QUE RECEBEU PRODUTO", dc[2], y + 4.8);
-  y += 7;
+  /* ===== 4. Mapa de infestação ===== */
+  newPage();
+  pageTitle("Mapa 2", "Onde estão as plantas daninhas", "Aqui o talhão foi dividido em quadrados de 5 × 5 m. A cor de cada quadrado mostra quanto dele precisou de aplicação: quanto mais escuro, mais plantas daninhas havia naquele ponto.");
+  const my2 = y;
+  const mp2 = mapBox(cvD, ML, my2, mw, mh);
+  ry = my2 + 4;
+  F("C6", 9, C.muted, 0.5); T("PARTE DO QUADRADO APLICADA", rx, ry); ry += 6;
+  MAP.ramp.forEach((c, i) => { ry += legendRow(rx, ry, c, BIN_LABELS[i]); });
+  ry += legendRow(rx, ry, C.petrol, "Limite do talhão", true);
+  ry += 6;
+  F("C6", 9, C.muted, 0.5); T("ÁREA × PRODUTO", rx, ry); ry += 4;
+  ry += para("Barra cinza: parte do talhão. Barra verde: parte do produto aplicado.", rx, ry + 1, rw, "B4", 7.8, C.muted) + 2;
   M.ras.dist.forEach((d, i) => {
-    if (i % 2) box(ML, y, CW, 7.2, C.soft2);
-    box(dc[0], y + 2, 4, 3.2, MAP.ramp[i], 0.5);
-    F("B4", 9, C.ink); T(BIN_LABELS[i], dc[0] + 6, y + 4.9);
     const a = d.field_ha / M.fT, b = d.sprayed_ha / M.sT;
-    F("B6", 8.5, C.ink); T(`${nf(d.field_ha, 1)} ha · ${pct(a, 0)}`, dc[1], y + 4.9);
-    box(dc[1] + 27, y + 2.3, Math.max(0.5, a * 28), 2.8, C.conv, 0.4);
-    T(`${nf(d.sprayed_ha, 2)} ha · ${pct(b, 0)}`, dc[2], y + 4.9);
-    box(dc[2] + 27, y + 2.3, Math.max(0.5, b * 28), 2.8, C.green, 0.4);
-    y += 7.2;
+    box(rx, ry - 2.6, 3, 3, MAP.ramp[i], 0.4);
+    F("B6", 8, C.ink); T(BIN_LABELS[i], rx + 4.5, ry);
+    ry += 2;
+    box(rx, ry, Math.max(0.4, a * (rw - 12)), 2.2, C.conv, 0.3); F("B4", 7.2, C.muted); T(pct(a, 0), rx + Math.max(0.4, a * (rw - 12)) + 1.2, ry + 1.9);
+    box(rx, ry + 3, Math.max(0.4, b * (rw - 12)), 2.2, C.green, 0.3); T(pct(b, 0), rx + Math.max(0.4, b * (rw - 12)) + 1.2, ry + 4.9);
+    ry += 10;
   });
-  /* página 3: operação e método */
+  y = my2 + Math.max(mp2.bh, ry - my2) + 8;
+  const lo = M.ras.dist[0], hi = M.ras.dist[4];
+  callout(`${pct(lo.field_ha / M.fT, 0)} do talhão (${nf(lo.field_ha, 1)} ha) estava praticamente limpo. As manchas mais infestadas, com 20% ou mais do quadrado aplicado, somam ${nf(hi.field_ha, 1)} ha e receberam ${pct(hi.sprayed_ha / M.sT, 0)} de todo o produto. É nelas que vale concentrar o manejo.`);
+
+  /* ===== 5. Operação e método ===== */
   newPage();
-  section("Dados da operação", "Valores registrados pelo WEED-IT e informados no formulário.");
+  pageTitle("Detalhes", "Dados da operação e como calculamos");
   const s = M.sheet, hrs = s.efic ? M.TOTAL / s.efic : null;
   const ops = [
     ["Data da aplicação", M.data || "—"], ["Equipamento", M.maquina || "—"], ["Modo de aplicação", M.modo || "—"],
@@ -1074,14 +1242,14 @@ function buildPDF(M, cvP, cvD) {
     ["Margem de aplicação", s.margem != null ? nf(s.margem) + " cm" : "—"], ["Sensibilidade do sensor", s.sens != null ? nf(s.sens) : "—"],
     ["Calda aplicada (WEED-IT)", nf(M.VOL, 1) + " L"], ["Vazão recomendada", nf(M.vazao, 1) + " L/ha"], ["Capacidade do tanque", nf(M.tanque) + " L"]
   ];
-  const ow = (CW - 8) / 3, oh = 15;
+  const ow = (CW - 8) / 3, oh = 13.5;
   ops.forEach(([k, v], i) => {
     const x = ML + (i % 3) * (ow + 4), yy = y + Math.floor(i / 3) * (oh + 3);
     box(x, yy, ow, oh, C.soft2, 1.6);
-    F("B4", 7.6, C.muted); T(k, x + 3.5, yy + 5.2);
-    F("C7", 12.5, C.petrol); T(wrap(v, ow - 7)[0], x + 3.5, yy + 11.6);
+    F("B4", 7.8, C.muted); T(k, x + 3.5, yy + 4.9);
+    F("C7", 12, C.petrol); T(wrap(v, ow - 7)[0], x + 3.5, yy + 10.6);
   });
-  y += Math.ceil(ops.length / 3) * (oh + 3) + 7;
+  y += Math.ceil(ops.length / 3) * (oh + 2.5) + 7;
 
   section("Pontos de atenção");
   if (!M.alerts.length) { F("B6", 9.5, C.green); T("Os dados da planilha estão consistentes entre si.", ML, y); y += 8; }
@@ -1099,12 +1267,12 @@ function buildPDF(M, cvP, cvD) {
   section("Como os números foram calculados");
   const ex = M.prods[0];
   const steps = [
-    `Área: o talhão tem ${nf(M.TOTAL, 2)} ha. O WEED-IT abriu os bicos em ${nf(M.APL, 2)} ha, ou ${pct(M.APL / M.TOTAL)} da área.`,
+    `Área: o talhão tem ${nf(M.TOTAL, 2)} ha. O WEED-IT abriu os bicos em ${nf(M.APL, 2)} ha, ou ${nPct(M.APL / M.TOTAL)} da área.`,
     `Convencional: toda a área recebe a vazão recomendada. ${nf(M.vazao, 1)} L/ha × ${nf(M.TOTAL, 2)} ha = ${nf(M.conv)} L de calda.`,
-    `WEED-IT: o equipamento registrou ${nf(M.VOL, 2)} L aplicados. A economia é ${nf(M.conv)} − ${nf(M.VOL)} = ${nf(M.saved)} L, ou ${pct(M.sp)}.`,
+    `WEED-IT: o equipamento registrou ${nf(M.VOL, 2)} L aplicados. A economia é ${nf(M.conv)} − ${nf(M.VOL)} = ${nf(M.saved)} L, ou ${nPct(M.sp)}.`,
     `Herbicida: como o produto vai misturado na calda, ele é economizado na mesma proporção. Exemplo com ${ex.n}: convencional ${nf(ex.d, 2)} ${ex.u}/ha × ${nf(M.TOTAL, 2)} ha = ${nf(ex.conv, 1)} ${ex.u}; com o WEED-IT, ${nf(ex.loc, 1)} ${ex.u}.${ex.price ? ` A ${brl(ex.price)} por ${ex.u}, são ${brl(ex.rs)} a menos.` : ""}`,
     `Abastecimentos: com tanque de ${nf(M.tanque)} L, seriam ${M.tk.c} abastecimentos na convencional contra ${M.tk.l} com o WEED-IT.`,
-    `Mapas: o talhão foi dividido em quadrados de 5 × 5 m; a cor mostra a parte de cada quadrado em que o bico abriu.`
+    `Mapas: o mapa 1 mostra cada ponto onde o bico abriu. No mapa 2, o talhão foi dividido em quadrados de 5 × 5 m, e a cor mostra a parte de cada quadrado em que o bico abriu.`
   ];
   steps.forEach((t, i) => {
     F("B4", 9.3, C.ink); const l = wrap(t, CW - 11), h = lineH(9.3) * l.length + 3.5;
@@ -1126,8 +1294,8 @@ function buildPDF(M, cvP, cvD) {
     if (rest.length) T(rest, ML, y + lineH(8.8), {lineHeightFactor: 1.38});
     y += lineH(8.8) * (1 + rest.length) + 1;
   });
-  y += 3;
-  ensure(10);
+  y += 2;
+  ensure(7);
   F("B4", 7.2, C.muted); T(wrap(`Arquivos usados: ${[M.files.sheet, M.files.shp, ...M.files.tif].filter(Boolean).join("; ")}. Relatório gerado em ${new Date().toLocaleDateString("pt-BR")}.`, CW), ML, y, {lineHeightFactor: 1.35});
 
   const n = doc.getNumberOfPages();
@@ -1161,7 +1329,8 @@ $("gen").onclick = async () => {
   try {
     const M = model();
     drawMap($("cv-pts"), "pts", M); drawMap($("cv-dens"), "dens", M);
-    const doc = buildPDF(M, $("cv-pts"), $("cv-dens"));
+    const det = await makeDetail(M).catch(() => null);
+    const doc = buildPDF(M, $("cv-pts"), $("cv-dens"), det);
     const blob = doc.output("blob");
     LAST = {blob, name: fileName(M), M};
     window.__lastPdf = blob;
