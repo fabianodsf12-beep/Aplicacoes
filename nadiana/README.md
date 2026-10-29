@@ -12,6 +12,7 @@ A mesma base está publicada como Design System **Nadiana** no claude.ai: https:
 | `tokens.css` | Os tokens como variáveis CSS (`var(--brand)`), tema claro e escuro, e as fontes. Gerado: não edite à mão. |
 | `gerar_tokens.py` | Gera o `tokens.css` a partir do `tokens.json`. |
 | `componentes.css` | Base da página e componentes prontos, todos com prefixo `nd-`. |
+| `padrao-de-cores.png` | Imagem com todas as cores, nos temas claro e escuro. |
 | `vitrine.html` | Mostra todas as cores, textos e componentes funcionando. Abra para conferir. |
 | `modelo.html` | Página de partida para um app novo. |
 | `logos/` | Logo vertical, horizontal e símbolo (PNG, fundo branco). |
@@ -41,6 +42,8 @@ Para mudar uma cor: altere no Design System do claude.ai (ou no `tokens.json`), 
 ## Cores
 
 Use sempre a variável, nunca o código da cor solto no CSS.
+
+![Padrão de cores Nadiana](padrao-de-cores.png)
 
 - **Identidade.** `nadiana-verde` em faixas, blocos de capa, ícones e números grandes. Texto verde sobre branco: `nadiana-verde-escuro`. Sobre fundo escuro: `nadiana-verde-claro`. `nadiana-petroleo` é o escuro da marca, para títulos de capa e faixas.
 - **Interface.** Fundo `bg`, cartões `panel`, campos e linhas alternadas `panel2`. Texto `ink`; rótulos, unidades e apoio `muted`. Bordas `line`, divisões leves `line2`.
