@@ -19,7 +19,8 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 .app{max-width:640px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
 header.top{background:var(--panel);color:var(--ink);padding:10px 16px 14px;position:sticky;top:env(safe-area-inset-top,0px);z-index:10;border-bottom:1px solid var(--line2);box-shadow:var(--sombra-1)}
 .top-row{display:flex;align-items:center;gap:10px}
-.top-row .nd-logo{margin-right:2px}
+.top-row .nd-simbolo{height:32px}
+.top-row a:has(> .nd-simbolo){margin-right:2px}
 .back{display:inline-flex;align-items:center;gap:4px;color:var(--ink);text-decoration:none;font-size:15px;font-weight:500;min-height:44px;border:0;background:transparent;padding:0;cursor:pointer}
 .top h1{margin:4px 0 0;font-family:var(--font-display);font-weight:600;font-size:28px;line-height:1.05}
 .top p{margin:4px 0 0;font-size:14px;color:var(--muted)}
@@ -125,7 +126,7 @@ select.inp{appearance:auto}
 <div class="app">
 <header class="top">
   <div class="top-row">
-    <a class="nd-logo" href="./index.html" aria-label="Início"><img class="h" src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-logo.png" alt="Nadiana"><img class="s" src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.png" alt="Nadiana"></a>
+    <a href="./index.html" aria-label="Início"><img class="nd-simbolo" src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.svg" alt="Nadiana"></a>
     <button type="button" class="back" id="btnBack" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Lançamentos</button>
     <a id="brandMini" href="./index.html" style="font-size:14px;color:var(--muted);text-decoration:none;min-height:44px;display:inline-flex;align-items:center">Início · Fazenda Reata</a>
     <a class="link" href="./painel.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Painel</a>

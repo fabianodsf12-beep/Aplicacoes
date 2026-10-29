@@ -45,7 +45,7 @@ button,input,select{font:inherit;color:inherit}
 .top-inner{max-width:1440px;margin:0 auto;padding:14px 20px 10px;display:flex;flex-direction:column;gap:12px}
 .title-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
 .brand{display:flex;align-items:center;gap:12px}
-.brand .nd-logo img{height:24px}
+.brand .nd-simbolo{height:40px}
 .brand > div{padding-left:12px;border-left:1px solid var(--line)}
 .brand h1{margin:0;font-family:var(--font-display);font-weight:600;font-size:26px;line-height:1}
 .brand p{margin:2px 0 0;font-size:14px;color:var(--muted)}
@@ -238,7 +238,7 @@ tbody tr:hover td{background:var(--panel2)}
   <div class="top-inner">
     <div class="title-row">
       <a class="brand" href="./index.html" style="text-decoration:none;color:inherit" title="Página inicial">
-        <span class="nd-logo"><img class="h" src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-logo.png" alt="Nadiana"><img class="s" src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.png" alt="Nadiana"></span>
+        <img class="nd-simbolo" src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.svg" alt="Nadiana">
         <div>
           <h1>Painel de aplicações</h1>
           <p id="subtitle">Fazenda Reata, safra soja 26/27</p>
@@ -1008,7 +1008,7 @@ function logoNadiana(){
     const im = new Image();
     im.onload = () => { try { const c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight;
       c.getContext("2d").drawImage(im, 0, 0); ok({url: c.toDataURL("image/png"), w: im.naturalWidth, h: im.naturalHeight}); } catch(e) { ok(null); } };
-    im.onerror = () => ok(null); im.crossOrigin = "anonymous"; im.src = "https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-logo.png"; });
+    im.onerror = () => ok(null); im.crossOrigin = "anonymous"; im.src = "https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.png"; });
 }
 async function gerarPDF(){
   if (!S.db) { toast("Carregue os dados antes de gerar o relatório."); return; }
@@ -1039,7 +1039,7 @@ async function gerarPDF(){
       doc.setFont("helvetica","bold"); doc.setFontSize(13); doc.setTextColor(...petroleo); doc.text("NADIANA", x, y + h - 1); return doc.getTextWidth("NADIANA"); };
     /* cabeçalho claro: logo, título em petróleo, período e filtros à direita, traço verde curto embaixo */
     const cab = (secao) => { doc.setFillColor(255,255,255); doc.rect(0, 0, W, 22, "F");
-      const lw = logo(mg, 6.2, 6.6), tx = mg + lw + 7;
+      const lw = logo(mg, 5.2, 9.4), tx = mg + lw + 7;
       doc.setDrawColor(...linhaF); doc.setLineWidth(0.25); doc.line(tx - 3.5, 5.5, tx - 3.5, 16.5);
       doc.setTextColor(...petroleo); doc.setFont("helvetica","bold"); doc.setFontSize(15); doc.text("Relatório de aplicações", tx, 10.5);
       doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...cinza); doc.text(`Fazenda Reata  ·  safra soja 26/27${secao ? "  ·  " + secao : ""}`, tx, 15.6);
@@ -1135,7 +1135,7 @@ async function gerarPDF(){
     }
     const n = doc.getNumberOfPages();
     for (let i = 1; i <= n; i++) { doc.setPage(i); doc.setDrawColor(...linha); doc.setLineWidth(0.2); doc.line(mg, H - 10, W - mg, H - 10); doc.setFontSize(7); doc.setTextColor(...cinza);
-      doc.text(`Nadiana Agropecuária  ·  Gerado em ${new Date().toLocaleString("pt-BR")}  ·  Fonte: ${S.src || "planilha"}${S.modified ? " salva em " + fmtDT(S.modified) : ""}`, mg, H - 5.5); doc.text(`Página ${i} de ${n}`, W - mg, H - 5.5, {align:"right"}); }
+      doc.text(`Nadiana Agronegócios  ·  Gerado em ${new Date().toLocaleString("pt-BR")}  ·  Fonte: ${S.src || "planilha"}${S.modified ? " salva em " + fmtDT(S.modified) : ""}`, mg, H - 5.5); doc.text(`Página ${i} de ${n}`, W - mg, H - 5.5, {align:"right"}); }
     doc.save(`Relatorio_Aplicacoes_Reata_${S.ref}${M.per ? "_" + iso(M.per[0]) + "_a_" + iso(M.per[1]) : ""}.pdf`);
     toast("Relatório gerado.");
   } catch (e) { toast("Não foi possível gerar o PDF: " + (e.message || e)); console.error(e); }
