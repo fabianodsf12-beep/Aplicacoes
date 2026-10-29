@@ -28,8 +28,8 @@ for tk in T["color"]["tokens"]:
         claro.append(f"{nome(tk['name'])}:{v}")
 
 outros = []
-for fam in ("spacing", "radius"):
-    for tk in T[fam]["tokens"]:
+for fam in ("spacing", "radius", "shadow"):
+    for tk in T.get(fam, {}).get("tokens", []):
         outros.append(f"{nome(tk['name'])}:{tk['value']}")
 for k, v in T["type"]["families"].items():
     outros.append(f"--font-{k}:{v}")
@@ -68,3 +68,18 @@ css = f"""/* Nadiana — gerado de tokens.json por gerar_tokens.py. Não edite �
 """
 (PASTA / "tokens.css").write_text(css, encoding="utf-8")
 print("tokens.css gerado:", len(claro), "cores,", len(outros), "outros tokens,", len(estilos), "estilos de texto")
+
+# tokens.js: as mesmas cores para JavaScript (PDF, canvas), tema claro e escuro
+cores = {"light": {}, "dark": {}}
+for tk in T["color"]["tokens"]:
+    v = tk["value"]
+    cl = v["light"] if isinstance(v, dict) else v
+    es = (v.get("dark") or cl) if isinstance(v, dict) else v
+    cores["light"][tk["name"]] = cl
+    cores["dark"][tk["name"]] = es
+(PASTA / "tokens.js").write_text(
+    "/* Nadiana — gerado de tokens.json por gerar_tokens.py. Não edite à mão. */\nwindow.NadianaTokens = "
+    + json.dumps(cores, ensure_ascii=False) + ";\n",
+    encoding="utf-8",
+)
+print("tokens.js gerado")
