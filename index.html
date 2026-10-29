@@ -3,42 +3,40 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#21513B">
+<meta name="theme-color" content="#01252B">
 <title>Aplicações – Fazenda Reata</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600&display=swap">
+<link rel="icon" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.png">
+<link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.css">
+<link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/componentes.css">
 <style>
-:root{--bg:#EDF0EB;--panel:#FFFFFF;--ink:#17221C;--muted:#4F5C55;--line:#DCE2DA;--brand:#21513B;--soft:#E3EEE7;--warn-bg:#FDF2CF;--warn:#6B4A04;--bad-bg:#FDE7D8;--bad:#8A2D07;
-  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111814;--panel:#18211D;--ink:#E5ECE7;--muted:#A3B0A8;--line:#2C3832;--brand:#2F7553;--soft:#21362B;--warn-bg:#3A3015;--warn:#F0C65A;--bad-bg:#3B2117;--bad:#F39A6B}}
-:root[data-theme="dark"]{--bg:#111814;--panel:#18211D;--ink:#E5ECE7;--muted:#A3B0A8;--line:#2C3832;--brand:#2F7553;--soft:#21362B;--warn-bg:#3A3015;--warn:#F0C65A;--bad-bg:#3B2117;--bad:#F39A6B}
-*,*::before,*::after{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:'Barlow','Segoe UI',system-ui,sans-serif;font-size:16px;line-height:1.4;min-height:100vh}
-:focus-visible{outline:2px solid #1E6FB8;outline-offset:3px}
-header{background:var(--brand);color:#fff;padding:36px 20px 64px}
+/* Visual da base Nadiana (https://github.com/fabianodsf12-beep/nadiana-design/blob/main/v1/README.md). Tela inicial: faixa de marca em petróleo. */
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+header{background:var(--nadiana-petroleo);color:#FFFFFF;padding:var(--space-6) max(20px,env(safe-area-inset-right,0px)) 72px max(20px,env(safe-area-inset-left,0px))}
 .wrap{max-width:860px;margin:0 auto}
-.brand{display:flex;align-items:center;gap:14px}
-h1{margin:0;font-family:'Barlow Condensed','Barlow',sans-serif;font-weight:600;font-size:clamp(30px,6vw,42px);line-height:1}
-header p{margin:6px 0 0;color:#D5E6DC;font-size:15px}
-main{padding:0 20px 40px;margin-top:-40px}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px}
-a.card{display:flex;flex-direction:column;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;text-decoration:none;color:var(--ink);min-height:200px;transition:border-color .15s,transform .15s}
-a.card:hover{border-color:var(--brand);transform:translateY(-2px)}
-.ic{width:52px;height:52px;border-radius:14px;background:var(--soft);display:inline-flex;align-items:center;justify-content:center;color:var(--ink)}
-.card h2{margin:0;font-family:'Barlow Condensed','Barlow',sans-serif;font-weight:600;font-size:28px;line-height:1.05}
+.brand{display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-5)}
+.brand .nd-logo img{height:26px}
+h1{margin:0;font-family:var(--font-display);font-weight:600;font-size:clamp(32px,6vw,44px);line-height:1}
+header p{margin:var(--space-2) 0 0;color:#C8D3D0;font-size:15px}
+main{padding:0 max(20px,env(safe-area-inset-right,0px)) 40px max(20px,env(safe-area-inset-left,0px));margin-top:-44px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:var(--space-5)}
+a.card{display:flex;flex-direction:column;gap:var(--space-3_5);background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:var(--sombra-1);padding:22px;text-decoration:none;color:var(--ink);min-height:200px;transition:border-color var(--dur-media) var(--curva),box-shadow var(--dur-media) var(--curva),transform var(--dur-media) var(--curva)}
+a.card:hover{border-color:var(--line);box-shadow:var(--sombra-2);transform:translateY(-2px)}
+.ic{width:52px;height:52px;border-radius:var(--radius-2xl);background:var(--brand-soft);display:inline-flex;align-items:center;justify-content:center;color:var(--brand)}
+.card h2{margin:0;font-family:var(--font-display);font-weight:600;font-size:28px;line-height:1.05}
 .card p{margin:0;color:var(--muted);font-size:15px}
-.card .go{margin-top:auto;display:flex;align-items:center;justify-content:space-between;font-weight:600;color:var(--ink);padding-top:10px;border-top:1px solid var(--line)}
-.status{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;min-height:30px;align-items:center;font-size:14px;color:var(--muted)}
-.pill{padding:5px 12px;border-radius:999px;font-weight:600;font-size:13.5px;background:var(--panel);border:1px solid var(--line);color:var(--ink)}
+.card .go{margin-top:auto;display:flex;align-items:center;justify-content:space-between;font-weight:600;color:var(--ink);padding-top:var(--space-3);border-top:1px solid var(--line2)}
+.card .go svg{color:var(--brand);transition:transform var(--dur-media) var(--curva)}
+a.card:hover .go svg{transform:translateX(3px)}
+.status{display:flex;flex-wrap:wrap;gap:var(--space-2);margin-top:var(--space-5);min-height:30px;align-items:center;font-size:14px;color:var(--muted)}
+.pill{padding:var(--space-1) var(--space-3);border-radius:var(--radius-pill);font-weight:600;font-size:13.5px;background:var(--panel);border:1px solid var(--line2);color:var(--ink)}
 .pill.w{background:var(--warn-bg);color:var(--warn);border-color:transparent}.pill.b{background:var(--bad-bg);color:var(--bad);border-color:transparent}
-footer{font-size:13px;color:var(--muted);margin-top:28px}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+footer{font-size:12.5px;color:var(--muted);margin-top:28px}
 </style>
 </head>
 <body>
 <header>
   <div class="wrap brand">
-    <svg width="52" height="52" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="#FFFFFF" fill-opacity=".14"/><path d="M8 30 C14 22, 26 22, 32 30 M8 24 C14 16, 26 16, 32 24 M8 18 C14 10, 26 10, 32 18" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/></svg>
+    <span class="nd-logo"><img src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-logo.png" alt="Nadiana"></span>
     <div><h1>Aplicações da safra</h1><p>Fazenda Reata, soja 26/27</p></div>
   </div>
 </header>
