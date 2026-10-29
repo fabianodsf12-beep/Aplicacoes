@@ -1089,34 +1089,14 @@ function buildPDF(M, cvP, cvD, det) {
     F("C7", 12.5, C.white); T(wrap(v, cwid - 6)[0], x, 40);
   });
 
-  y = 60;
-  const heroes = [
-    ["ÁGUA ECONOMIZADA", nf(M.saved) + " L", `${nPct(M.sp)} menos calda que uma aplicação convencional`, C.petrol],
-    hasRS ? ["HERBICIDA ECONOMIZADO", brl(M.rsTot), `${nPct(M.sp)} menos produto${M.prods.length > 1 ? ", somando os " + M.prods.length + " produtos" : ""}`, C.green]
-      : ["HERBICIDA ECONOMIZADO", nPct(M.sp), "menos produto que uma aplicação convencional", C.green],
-    ["ÁREA QUE RECEBEU PRODUTO", nPct(M.APL / M.TOTAL), `${nf(M.APL, 2)} ha de ${nf(M.TOTAL, 2)} ha; o resto do talhão ficou sem aplicação`, C.petrol],
-    ["ABASTECIMENTOS EVITADOS", nf(M.tk.c - M.tk.l), `${M.tk.c} na convencional e ${M.tk.l} com o WEED-IT, com tanque de ${nf(M.tanque)} L`, C.green]
-  ];
-  heroes.forEach(([l, v, s, c]) => {
-    box(ML, y, 1.6, 28, c);
-    F("C6", 9, C.muted, 0.5); T(l, ML + 6, y + 5);
-    F("C7", 30, c); T(v, ML + 6, y + 17);
-    para(s, ML + 6, y + 23, 68, "B4", 9, C.muted);
-    y += 38;
+  y = 56;
+  const mpc = mapBox(cvP, ML, y, CW, 206, "mapP", urlP);
+  y += mpc.bh + 7;
+  let lx = ML;
+  [[C.orange, "Pontos onde o WEED-IT aplicou"], [C.field, "Sem aplicação"], [C.petrol, "Limite do talhão", true]].forEach(([c, txt, line]) => {
+    if (line) { doc.setDrawColor(c); doc.setLineWidth(0.7); doc.line(lx, y - 1.3, lx + 5, y - 1.3); } else box(lx, y - 3, 5, 3.6, c, 0.6);
+    F("B4", 9, C.ink); T(txt, lx + 7, y); lx += 7 + doc.getTextWidth(txt) + 10;
   });
-  const cvx = 96, cvw = 98, cvy = 56;
-  const k0 = Math.min((cvw - 6) / M.ras.frame.w, 150 / M.ras.frame.h), ciw = M.ras.frame.w * k0, cih = M.ras.frame.h * k0;
-  box(cvx, cvy, cvw, cih + 14, C.soft2, 2.5);
-  doc.addImage(urlP, "JPEG", cvx + (cvw - ciw) / 2, cvy + 3, ciw, cih, "mapP");
-  box(cvx + 4, cvy + 3 + cih + 4.2, 4, 3, C.orange, 0.5);
-  F("B4", 8, C.muted); T("Pontos onde o WEED-IT aplicou", cvx + 10, cvy + 3 + cih + 6.8);
-  y = Math.max(y, cvy + cih + 16) + 4;
-  F("B4", 9.5, C.ink);
-  const intro = `Na aplicação localizada, um sensor no implemento identifica cada planta daninha e abre o bico só sobre ela. Este relatório compara o que foi gasto nesta aplicação com o que seria gasto em uma aplicação convencional, que pulveriza o talhão inteiro com ${nf(M.vazao, 0)} L/ha.`;
-  const il = wrap(intro, CW - 12), ih2 = lineH(9.5) * il.length + 8;
-  y = Math.min(y, 276 - ih2);
-  box(ML, y, CW, ih2, C.soft, 2);
-  T(il, ML + 6, y + 6.2, {lineHeightFactor: 1.38});
 
   /* ===== 2. Resumo ===== */
   newPage();
@@ -1135,10 +1115,11 @@ function buildPDF(M, cvP, cvD, det) {
   }
   { // tanques
     const x = panel(1, "CALDA E ABASTECIMENTOS");
-    /* silhueta de pulverizador autopropelido (lado), u = mm por unidade */
-    /* silhueta de pulverizador autopropelido: cabine na frente, tanque no meio, barra e jato atrás */
-    const sprayer = (sx, sy, c, mist) => {
-      const u = 0.84, P = (x, y) => [sx + x * u, sy + y * u];
+    /* silhueta de pulverizador autopropelido: cabine na frente, tanque no meio, barra e jato atrás.
+       Cada ícone é um tanque cheio; a cor preenche, da esquerda para a direita, só a parte da calda usada. */
+    const U = 0.84, IH = 7.7 * U, IW = 10.1 * U;
+    const shape = (sx, sy, c, mist) => {
+      const u = U, P = (x, y) => [sx + x * u, sy + y * u];
       doc.setFillColor(mist); doc.triangle(...P(1.3, 4.0), ...P(0.15, 7.7), ...P(2.45, 7.7), "F");
       doc.setFillColor(c);
       doc.rect(...P(0.55, 1.5), 1.5 * u, 2.7 * u, "F");
@@ -1151,14 +1132,23 @@ function buildPDF(M, cvP, cvD, det) {
       doc.circle(...P(4.0, 5.9), 1.75 * u, "F"); doc.circle(...P(8.6, 5.9), 1.75 * u, "F");
       doc.setFillColor(C.soft2); doc.circle(...P(4.0, 5.9), 0.75 * u, "F"); doc.circle(...P(8.6, 5.9), 0.75 * u, "F");
     };
+    const sprayer = (sx, sy, c, mist, fill) => {
+      if (fill < 1) shape(sx, sy, "#E1E6E3", "#EAEEEC");
+      if (fill <= 0) return;
+      if (fill >= 1) return shape(sx, sy, c, mist);
+      doc.saveGraphicsState();
+      doc.rect(sx - 0.3, sy - 0.5, IW * fill + 0.3, IH + 1, null); doc.clip(); doc.discardPath();
+      shape(sx, sy, c, mist);
+      doc.restoreGraphicsState();
+    };
     const row = (ty, label, vol, c, mist) => {
       F("B6", 9, C.ink); T(label, x + 5, ty);
       F("C7", 13, C.petrol); T(nf(vol) + " L", x + pw - 5, ty, {align: "right"});
-      const n = Math.ceil(vol / M.tanque), max = 5;
-      const show = n > max ? 1 : n;
-      for (let i = 0; i < show; i++) sprayer(x + 5 + i * 9.6, ty + 3.4, c, mist);
-      if (n > max) { F("C7", 12, C.petrol); T(`× ${n}`, x + 15.5, ty + 9.6); }
-      F("B4", 7.8, C.muted); T(`${n} abastecimento${n === 1 ? "" : "s"}`, x + 5, ty + 15.5);
+      const full = vol / M.tanque, n = Math.ceil(full), rem = full - Math.floor(full), max = 5;
+      if (n > max) { sprayer(x + 5, ty + 3.4, c, mist, 1); F("C7", 12, C.petrol); T(`× ${n}`, x + 15.5, ty + 9.6); }
+      else for (let i = 0; i < n; i++) sprayer(x + 5 + i * 9.6, ty + 3.4, c, mist, i === n - 1 && rem > 0 ? rem : 1);
+      F("B4", 7.8, C.muted);
+      T(`${n} abastecimento${n === 1 ? "" : "s"}${rem > 0 ? (n === 1 ? ` · ${pct(rem, 0)} do tanque` : ` · último com ${pct(rem, 0)}`) : ""}`, x + 5, ty + 15.5);
     };
     row(py + 19, "Convencional", M.conv, C.conv, "#C4CCC8");
     row(py + 46, "WEED-IT", M.VOL, C.green, "#7FCB97");
