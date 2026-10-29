@@ -1,0 +1,869 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#3E6B2E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Experimentos">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Agenda de Campo 26/27</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: caderno de campo — cabeçalho com contadores, abas, lista de lembretes por urgência com bloco de data à esquerda */
+:root{
+  --bg:#F2F4EE; --surface:#FFFFFF; --ink:#1E2A22; --muted:#5D6A60; --line:#D7DDD1;
+  --accent:#3E6B2E; --accent-ink:#FFFFFF; --soft:#E4EDDA;
+  --warn:#9A6414; --warn-bg:#FBF0DC; --danger:#B03C2B; --danger-bg:#F9E3DF; --ok:#2C7A4B; --ok-bg:#DFF1E5;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#131915; --surface:#1B231D; --ink:#E5ECE3; --muted:#9BA89D; --line:#2D3930;
+  --accent:#8DBF6A; --accent-ink:#0F170E; --soft:#223020;
+  --warn:#E3AE55; --warn-bg:#33281A; --danger:#E77F69; --danger-bg:#3A221D; --ok:#71C391; --ok-bg:#1C3326; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#131915; --surface:#1B231D; --ink:#E5ECE3; --muted:#9BA89D; --line:#2D3930;
+  --accent:#8DBF6A; --accent-ink:#0F170E; --soft:#223020;
+  --warn:#E3AE55; --warn-bg:#33281A; --danger:#E77F69; --danger-bg:#3A221D; --ok:#71C391; --ok-bg:#1C3326; color-scheme:dark}
+*{box-sizing:border-box}
+a{color:var(--accent);font-weight:600}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:980px;margin:0 auto;padding:20px 16px 48px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0}
+h1{font-size:clamp(1.6rem,4vw,2.2rem);letter-spacing:-.01em}
+.sub{color:var(--muted);margin:4px 0 0}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:16px}
+.today{font-family:var(--f-mono);font-size:.85rem;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.stat b{display:block;font-family:var(--f-display);font-size:1.8rem;line-height:1;font-variant-numeric:tabular-nums}
+.stat span{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.stat.late b{color:var(--danger)} .stat.now b{color:var(--warn)} .stat.soon b{color:var(--accent)}
+nav{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:16px;flex-wrap:wrap}
+nav button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 12px;font:600 .95rem var(--f-body);color:var(--muted);cursor:pointer}
+nav button[aria-selected="true"]{color:var(--ink);border-color:var(--accent)}
+button,select,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:600;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--danger)}
+.btn.small{padding:4px 9px;font-size:.85rem}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.toolbar label{font-size:.85rem;color:var(--muted)}
+select,input,textarea{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:0}
+.group{margin:22px 0 8px;display:flex;align-items:baseline;gap:8px}
+.group h2{font-size:1.05rem}
+.group small{color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.item .act{display:flex;flex-direction:column;gap:6px}
+.item.late{border-left:4px solid var(--danger)} .item.now{border-left:4px solid var(--warn)} .item.done{opacity:.6}
+.date{font-family:var(--f-mono);text-align:center;line-height:1.15}
+.date .d{font-size:1.35rem;display:block}
+.date .m{font-size:.75rem;text-transform:uppercase;color:var(--muted)}
+.what{min-width:0}
+.what .t{font-weight:700}
+.meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.83rem;color:var(--muted);margin-top:2px}
+.tag{font-family:var(--f-mono);font-size:.75rem;padding:1px 7px;border-radius:5px;background:var(--soft);color:var(--ink)}
+.pill{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:99px}
+.pill.late{background:var(--danger-bg);color:var(--danger)} .pill.now{background:var(--warn-bg);color:var(--warn)} .pill.done{background:var(--ok-bg);color:var(--ok)}
+.how{font-size:.85rem;margin-top:4px}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:24px;text-align:center}
+.empty p{max-width:52ch;margin:8px auto 14px;color:var(--muted)}
+.exps{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.exp{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.exp h3{font-size:1.15rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.exp dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;margin:0;font-size:.88rem}
+.exp dt{color:var(--muted)} .exp dd{margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.bar{height:6px;background:var(--soft);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
+form{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f label{font-size:.83rem;font-weight:600}
+.f .hint{font-size:.78rem;color:var(--muted)}
+.trs{display:flex;flex-direction:column;gap:8px}
+.tr{display:grid;grid-template-columns:90px minmax(0,1fr) 110px 90px auto;gap:8px;align-items:center}
+.trh{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.tr label.chk{display:flex;gap:6px;align-items:center;font-size:.85rem}
+.msg{font-size:.9rem;padding:8px 10px;border-radius:8px}
+.msg.err{background:var(--danger-bg);color:var(--danger)} .msg.okm{background:var(--ok-bg);color:var(--ok)}
+.confirm{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:.88rem}
+.note{font-size:.85rem;color:var(--muted);margin-top:28px;max-width:70ch}
+.fx{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.fx h3{font-size:1rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.fxf{display:flex;flex-wrap:wrap;gap:10px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.9rem;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:middle}
+th{font-size:.78rem;color:var(--muted);font-weight:600}
+td input{width:100%;min-width:72px;padding:6px}
+td.num,th.num{text-align:right;white-space:nowrap}
+.up{color:var(--ok);font-weight:700} .down{color:var(--danger);font-weight:700}
+#lFaixas{display:flex;flex-direction:column;gap:12px}
+.acts{display:flex;flex-direction:column;gap:6px;align-items:stretch}
+.fila{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;border-radius:10px;padding:10px 12px;margin:0 0 14px;font-size:.9rem}
+.fila.wait{background:var(--warn-bg);color:var(--ink);border:1px solid var(--warn)} .fila.ok{background:var(--ok-bg);color:var(--ok)}
+.vh{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.foto{display:inline-block}
+.nv{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;max-width:160px} .nv img{width:44px;height:44px;object-fit:cover;border-radius:4px}
+.coord{min-width:170px!important;font-family:var(--f-mono);font-size:.82rem}
+.ths{display:flex;flex-wrap:wrap;gap:8px}
+.th{position:relative;display:block;width:84px;height:84px;border-radius:8px;overflow:hidden;border:1px solid var(--line);font-size:.75rem}
+.th img{width:100%;height:100%;object-fit:cover;display:block} .th span{position:absolute;left:4px;bottom:4px;background:var(--surface);color:var(--ink);padding:0 4px;border-radius:4px}
+.th.wait{display:flex;align-items:center;justify-content:center;text-align:center;padding:6px;color:var(--warn);background:var(--warn-bg)}
+.gal{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+#lform{gap:18px}
+.lhead h2{font-size:1.45rem;margin:2px 0 6px}
+.lhead .sub{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:0}
+.lhead .how{background:var(--soft);border-radius:8px;padding:10px 12px;margin:0;font-size:.9rem}
+.lmeta{display:grid;grid-template-columns:minmax(0,170px) minmax(0,1fr);gap:12px}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld span{font-size:.8rem;font-weight:600;color:var(--muted)}
+.fld input{font-size:1.05rem;padding:10px 12px;border-radius:10px;width:100%}
+#lFaixas .fx{gap:12px;padding:14px;background:var(--bg)}
+#lFaixas .fx.pad{border-color:var(--accent)}
+#lFaixas .fx header{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#lFaixas .fx header h3{font-size:1.05rem;display:block;flex:1 1 auto;min-width:0;text-align:left}
+.fila[hidden]{display:none}
+.pts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.pc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.pch{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pch b{font-family:var(--f-display);font-size:1rem}
+.gps{font-size:.75rem;color:var(--muted);background:var(--bg);border-radius:99px;padding:2px 8px}
+.gps.off{color:#8a5a00;background:#fbefd5}.gps button{all:unset;cursor:pointer;text-decoration:underline}
+.ccrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 0}.ccrow input{flex:1 1 100%;min-width:0}.ccrow small{color:var(--muted);flex-basis:100%}
+.gps.on{color:var(--ok);background:var(--ok-bg)} .gps a{color:inherit}
+.x{margin-left:auto;background:none;border:0;color:var(--danger);font:600 .8rem var(--f-body);cursor:pointer;padding:4px}
+.pcf{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.pcp{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pcp .nv{max-width:none;margin:0}
+.addp{align-self:flex-start;border-style:dashed}
+body.focus .wrap>header,body.focus .stats,body.focus nav{display:none}
+body.focus #v-lancar{margin-top:-4px}
+.fld select{min-height:48px}
+.fld input{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;min-height:48px;box-sizing:border-box;text-align:left}
+.fld input[type=date]{width:100%}
+.fld input::-webkit-date-and-time-value{text-align:left}
+#lform{background:none;border:0;padding:0}
+#lFaixas{gap:16px}
+#lFaixas .fx{background:var(--surface);padding:0;overflow:hidden;gap:0}
+#lFaixas .fx header{padding:12px 14px;background:var(--soft);border-bottom:1px solid var(--line)}
+#lFaixas .fx.pad header{background:var(--ok-bg)}
+#lFaixas .fx header h3{font-size:1.02rem;flex:1 1 100%}
+.pts{display:flex;flex-direction:column;gap:0}
+.pc{border:0;border-radius:0;border-bottom:1px solid var(--line);padding:14px;background:none;gap:12px}
+.pch{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:4px 10px}
+.pch .gps{grid-column:2/4;grid-row:2;justify-self:start}
+.pn{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:700 .85rem var(--f-mono)}
+.pch b{font-size:.98rem}
+.pa{margin-left:auto;display:flex;gap:6px;align-items:center}
+.pa .x{margin-left:0}
+.pcf{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.pcf .fld input{font-size:1.25rem;font-variant-numeric:tabular-nums}
+.addp{margin:12px 14px 14px;align-self:stretch;text-align:center;padding:11px}
+#lFaixas .fx>.pcf{padding:14px 14px 0}
+#lFaixas .fx>.ths{padding:0 14px 14px}
+.nv:empty{display:none}
+.lhead .how{font-size:.88rem}
+.savebar{background:var(--bg);margin:0 -16px;border-radius:0}
+.savebar{position:sticky;bottom:0;display:flex;justify-content:flex-end;gap:8px;padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line);margin:0 -16px -16px;padding-inline:16px;border-radius:0 0 12px 12px}
+.backbar{position:sticky;bottom:0;display:flex;padding:10px 0 calc(10px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line);margin:16px -16px 0;padding-left:16px;padding-right:16px;z-index:5}
+.backbar .btn{padding:11px 18px;font-size:1rem}
+.savebar .primary{flex:1;max-width:260px;padding:11px 16px;font-size:1rem}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg label{position:relative;cursor:pointer}
+.seg input{position:absolute;opacity:0}
+.seg span{display:flex;flex-direction:column;gap:2px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;height:100%}
+.seg b{font-family:var(--f-display);font-size:1.05rem}
+.seg small{color:var(--muted);font-size:.8rem}
+.seg input:checked+span{border-color:var(--accent);background:var(--soft)}
+.seg input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+#form[data-tipo=Variedade] [data-so=Produto],#form[data-tipo=Produto] [data-so=Variedade]{display:none}
+#form[data-tipo=Variedade] .lp,#form[data-tipo=Produto] .lv{display:none}
+#form .grid{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.fld select{font-size:1.05rem;padding:10px 12px;border-radius:10px;width:100%}
+.trs{gap:10px}
+.trc{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.trch{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.trch .x{margin-left:auto}
+.trcf{display:grid;grid-template-columns:110px minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:10px}
+.trtot{font-size:.9rem;font-weight:600;color:var(--accent)}
+.trtot:empty{display:none}
+@media (max-width:620px){
+  .trcf{grid-template-columns:1fr 1fr} .trcf .nome{grid-column:1/-1;order:-1}
+  .seg{grid-template-columns:1fr}
+  .lmeta{grid-template-columns:1fr}
+  .item{grid-template-columns:58px minmax(0,1fr)} .item .act{grid-column:1/-1;justify-self:end}
+  .tr{grid-template-columns:70px minmax(0,1fr)} .tr .trc{grid-column:1/2} .trh{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.cfg{max-width:460px;margin:24px auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px}
+.cfg label{display:block;font-weight:600;margin:14px 0 4px}.cfg input{width:100%;font:inherit;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.cfg .btn{margin-top:18px;width:100%}.cfg p{color:var(--muted);margin:6px 0 0}
+.sair{all:unset;cursor:pointer;color:var(--muted);text-decoration:underline;font-size:.85rem}
+</style>
+</head>
+<body>
+<div class="cfg" id="cfgBox" hidden>
+  <h2>Entrar neste aparelho</h2>
+  <p>Feito uma vez em cada celular. Depois o app abre e funciona sem sinal.</p>
+  <form id="cfgForm">
+    <label for="cfgUrl">Endereço do script da planilha</label>
+    <input id="cfgUrl" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec" required>
+    <label for="cfgChave">Chave de acesso</label>
+    <input id="cfgChave" autocomplete="off" required>
+    <button class="btn primary" type="submit" id="cfgOk">Entrar</button>
+    <div id="cfgMsg"></div>
+  </form>
+</div>
+<div class="wrap" id="app">
+  <header>
+    <div>
+      <h1>Agenda de Campo 26/27</h1>
+      <p class="sub">Experimentos de soja comparados ao padrão da fazenda. Cadastre o experimento e as datas das avaliações aparecem aqui.</p>
+    </div>
+    <div class="today" id="today"></div>
+  </header>
+
+  <div class="stats" id="stats">
+    <div class="stat late"><b id="sLate">0</b><span>Atrasadas</span></div>
+    <div class="stat now"><b id="sNow">0</b><span>Janela aberta</span></div>
+    <div class="stat soon"><b id="sSoon">0</b><span>Próximos 5 dias</span></div>
+  </div>
+
+  <div class="fila" id="fila" hidden role="status"></div>
+  <nav role="tablist">
+    <button role="tab" id="tab-lembretes" aria-selected="true" data-tab="lembretes">Lembretes</button>
+    <button role="tab" id="tab-experimentos" aria-selected="false" data-tab="experimentos">Experimentos</button>
+    <button role="tab" id="tab-resultados" aria-selected="false" data-tab="resultados">Resultados</button>
+    <button role="tab" id="tab-novo" aria-selected="false" data-tab="novo">+ Novo experimento</button>
+  </nav>
+
+  <section id="v-lembretes">
+    <div class="toolbar">
+      <label for="fExp">Experimento</label>
+      <select id="fExp"><option value="">Todos</option></select>
+      <label><input type="checkbox" id="fDone"> mostrar feitas</label>
+    </div>
+    <div id="lembretes"></div>
+  </section>
+
+  <section id="v-experimentos" hidden><div id="exps"></div></section>
+
+  <section id="v-resultados" hidden>
+    <div class="toolbar"><label for="rExp">Experimento</label><select id="rExp"></select></div>
+    <div id="resultados"></div>
+  </section>
+
+  <section id="v-lancar" hidden>
+    <form id="lform" novalidate>
+      <div class="lhead"><p class="sub" id="lSub"></p><h2 id="lTitle">Lançar avaliação</h2><p class="how" id="lHow"></p></div>
+      <div class="lmeta">
+        <label class="fld"><span>Data</span><input type="date" id="lData"></label>
+        <label class="fld"><span>Avaliador</span><input id="lAval" placeholder="Nome de quem avaliou" autocomplete="name"></label>
+      </div>
+      <div id="lFaixas"></div>
+      <div class="f"><label for="lObs">Observações de campo</label><textarea id="lObs" rows="2" placeholder="Chuva, falha, mancha de solo, pisoteio..."></textarea></div>
+      <div id="lMsg"></div>
+      <div class="savebar"><button type="button" class="btn" id="lCancel">← Voltar</button><button type="submit" class="btn primary" id="lSave">Salvar avaliação</button></div>
+    </form>
+  </section>
+
+  <section id="v-novo" hidden>
+    <form id="form" novalidate>
+      <h2 id="formTitle">Novo experimento</h2>
+      <div class="seg" role="radiogroup" aria-label="Tipo de experimento">
+        <label><input type="radio" name="tipoR" value="Variedade" id="tipoVar"><span><b>Variedade</b><small>Conhecer ou comparar cultivares</small></span></label>
+        <label><input type="radio" name="tipoR" value="Produto" id="tipoProd" checked><span><b>Produto</b><small>Fertilizante, corretivo, herbicida, fungicida...</small></span></label>
+      </div>
+      <input type="hidden" id="tipo" value="Produto">
+      <div class="grid">
+        <label class="fld" data-so="Produto"><span>Categoria do produto</span><select id="categoria"><option>Fertilizante</option><option>Corretivo</option><option>Herbicida</option><option>Fungicida</option><option>Inseticida</option><option>Bioestimulante</option><option>Adjuvante</option><option>Outro</option></select></label>
+        <label class="fld"><span>Código</span><input id="codigo" placeholder="ex.: GES-BT06" maxlength="20"></label>
+        <label class="fld"><span>Talhão / local</span><input id="talhao" placeholder="ex.: BT-06"></label>
+        <label class="fld"><span>Data de plantio</span><input id="plantio" type="date"></label>
+        <label class="fld"><span>Ciclo previsto (dias)</span><input id="ciclo" type="number" inputmode="numeric" min="60" max="180" value="120"></label>
+        <label class="fld" data-so="Produto"><span>Aplicação (dias após o plantio)</span><input id="aplicDap" type="number" inputmode="numeric" placeholder="ex.: 30 · antes do plantio: -20"></label>
+      </div>
+      <div class="grid">
+        <label class="fld"><span>O que está sendo testado</span><input id="testado" placeholder="ex.: 2 doses de gesso acima do padrão"></label>
+        <label class="fld"><span>O que é o padrão</span><input id="padrao" placeholder="ex.: dose padrão da fazenda"></label>
+      </div>
+      <div class="f">
+        <label>Faixas</label>
+        <span class="hint" id="trHint"></span>
+        <div class="trs" id="trs"></div>
+        <div class="trtot" id="trTot"></div>
+        <button type="button" class="btn addp" id="addTr">+ Adicionar faixa</button>
+      </div>
+      <div class="f"><label for="obs">Observações</label><textarea id="obs" rows="2"></textarea></div>
+      <div id="formMsg"></div>
+      <div class="row"><button type="submit" class="btn primary" id="save">Salvar experimento</button></div>
+    </form>
+  </section>
+
+  <div class="backbar" id="backbar" hidden><button type="button" class="btn" id="voltar">← Voltar</button></div>
+  <p class="note" id="note">As datas são de referência para soja. Confirme sempre pelo estágio da planta no campo. A janela de cada avaliação vai de 3 dias antes a 3 dias depois da data.</p>
+</div>
+
+<script>
+const catOf=x=>!x?null:x.tipo==='Gesso'?'Corretivo':x.categoria||null;
+const isProd=x=>x.tipo!=='Variedade';
+const temApl=x=>x.aplicDap!==null&&x.aplicDap!==undefined&&x.aplicDap!==''&&isFinite(Number(x.aplicDap));
+const temDoenca=x=>x.tipo==='Variedade'||catOf(x)==='Fungicida';
+const EV=[
+ {k:'emerg',d:5,e:'VE',t:'Emergência',f:'Ficha 1',o:'Anotar a data em que 50% das plantas emergiram em cada faixa e dar nota de uniformidade (1 desuniforme a 5 uniforme). Comparar com o padrão no mesmo dia.'},
+ {k:'estande',d:7,e:'VE–VC',t:'Estande inicial',f:'Ficha 1',o:'Contar plantas em 2 m de linha em cada ponto. Estacar os 3 pontos fixos de cada faixa.'},
+ {k:'vig1',d:18,e:'V2–V3',t:'Vigor 1ª + Altura 1ª',f:'Fichas 1 e 4',o:'Marcar 5 plantas por ponto com fita numerada. Avaliar o padrão no mesmo dia.'},
+ {k:'raiz1',d:28,e:'V4–V5',t:'Raízes: 1ª escavação',f:'Ficha 2',o:'1 planta por ponto, fora das marcadas. Comprimento, barreira e nódulos.'},
+ {k:'aplic',fixo:1,e:'Aplicação',t:'Aplicação do produto',f:'Painel',o:'Anotar dose real, hora, vento e umidade. Proteger a faixa padrão para o operador não passar por cima.',when:x=>isProd(x)&&temApl(x)},
+ {k:'h7',daa:7,e:'7 DAA',t:'Herbicida: controle 7 dias',f:'Painel',o:'Nota de controle das plantas daninhas (0% sem controle a 100% controle total) e fitotoxicidade na soja (0% a 100%), comparando com a faixa padrão.',when:x=>catOf(x)==='Herbicida'&&temApl(x)},
+ {k:'h14',daa:14,e:'14 DAA',t:'Herbicida: controle 14 dias',f:'Painel',o:'Controle (%) e fitotoxicidade (%). Anote rebrota e escapes.',when:x=>catOf(x)==='Herbicida'&&temApl(x)},
+ {k:'h28',daa:28,e:'28 DAA',t:'Herbicida: controle 28 dias',f:'Painel',o:'Controle final (%), fitotoxicidade (%) e novos fluxos de emergência.',when:x=>catOf(x)==='Herbicida'&&temApl(x)},
+ {k:'i3',daa:3,e:'3 DAA',t:'Inseticida: pragas 3 dias',f:'Painel',o:'Pano de batida em cada ponto: lagartas e percevejos por pano. Comparar com a faixa padrão no mesmo dia.',when:x=>catOf(x)==='Inseticida'&&temApl(x)},
+ {k:'i7',daa:7,e:'7 DAA',t:'Inseticida: pragas 7 dias',f:'Painel',o:'Pano de batida: lagartas e percevejos por pano, % de desfolha.',when:x=>catOf(x)==='Inseticida'&&temApl(x)},
+ {k:'i14',daa:14,e:'14 DAA',t:'Inseticida: pragas 14 dias',f:'Painel',o:'Pano de batida: lagartas e percevejos por pano, % de desfolha. Mostra o residual do produto.',when:x=>catOf(x)==='Inseticida'&&temApl(x)},
+ {k:'vig2',d:40,e:'V6–R1',t:'Vigor 2ª + Altura 2ª',f:'Fichas 1 e 4',o:'Mesmas plantas marcadas. Anotar nº de nós e cobertura do solo.'},
+ {k:'flor1',d:50,e:'R1–R2',t:'Pegamento de flores: contagem + Vigor/Altura 3ª',f:'Fichas 3, 1 e 4',o:'Fita em 2 hastes por planta marcada; contar flores e botões.'},
+ {k:'flor2',d:65,e:'R3–R4',t:'Pegamento: recontagem + Raízes 2ª',f:'Fichas 3 e 2',o:'Contar legumes nas mesmas hastes. Nova escavação por ponto.'},
+ {k:'vagens',d:80,e:'R5',t:'Nº de vagens + Altura final',f:'Fichas 5 e 4',o:'Vagens por planta por nº de grãos. Inserção da 1ª vagem e acamamento.'},
+ {k:'sanid',d:90,e:'R6',t:'Sanidade e retenção foliar',f:'Ficha 1',o:'Nota de doença 0–4 e presença de percevejo.',when:x=>!temDoenca(x)},
+ {k:'doen1',d:40,e:'V6–R1',t:'Doenças 1ª: início do ciclo',f:'Painel',o:'Oídio, mancha-alvo e crestamento bacteriano nas folhas; contar plantas mortas ou murchas (podridão de raiz, Phytophthora) e anotar reboleiras. Severidade = % da área foliar com sintoma, estimada em 10 folíolos do terço inferior e médio das plantas marcadas de cada ponto (escala de referência para ferrugem: 0,6 / 2 / 7 / 18 / 42 / 78%). Avalie a faixa padrão no mesmo dia.',when:temDoenca},
+ {k:'doen2',d:60,e:'R2–R3',t:'Doenças 2ª: floração',f:'Painel',o:'Ferrugem (procure pústulas no verso da folha com lupa), mancha-alvo, oídio, antracnose e mofo-branco (plantas com sintoma em 10). Anote a data do primeiro sintoma de ferrugem. Severidade = % da área foliar com sintoma, estimada em 10 folíolos do terço inferior e médio das plantas marcadas de cada ponto (escala de referência para ferrugem: 0,6 / 2 / 7 / 18 / 42 / 78%). Avalie a faixa padrão no mesmo dia.',when:temDoenca},
+ {k:'doen3',d:82,e:'R5.1–R5.3',t:'Doenças 3ª: enchimento de grãos',f:'Painel',o:'Ferrugem, mancha-alvo e DFC (septoriose e cercospora), antracnose nas hastes e vagens, mofo-branco. É a avaliação que mais separa as variedades. Severidade = % da área foliar com sintoma, estimada em 10 folíolos do terço inferior e médio das plantas marcadas de cada ponto (escala de referência para ferrugem: 0,6 / 2 / 7 / 18 / 42 / 78%). Avalie a faixa padrão no mesmo dia.',when:temDoenca},
+ {k:'doen4',d:97,e:'R6–R7',t:'Doenças 4ª: desfolha final',f:'Painel',o:'Ferrugem, mancha-alvo e DFC no terço médio e superior, mais a % de desfolha da faixa (olhando a linha de lado). Variedade que segura folha até R7 enche melhor o grão.',when:temDoenca},
+ {k:'r7',d:105,e:'R7',t:'Conferência de vagens e data de colheita',f:'Ficha 5',o:'Recontar vagens; abrir 10 vagens por ponto; definir o dia de colher.'},
+ {k:'colheita',d:120,e:'R8',t:'Colheita: produtividade + qualidade',f:'Fichas 7 e 6',o:'Grão entre 13% e 15% de umidade. Área medida com trena, pesar na hora.'}
+];
+const CAMPOS={
+ emerg:[{k:'data_emerg',l:'Data de 50% emergidas',t:'date',fx:1},{k:'unif',l:'Uniformidade (1-5)'}],
+ estande:[{k:'estande',l:'Plantas em 2 m'}],
+ vig1:[{k:'vigor',l:'Vigor médio (1-5)'},{k:'altura',l:'Altura média (cm)'}],
+ raiz1:[{k:'raiz',l:'Raiz principal (cm)'},{k:'barreira',l:'Barreira (cm)'},{k:'nodulos',l:'Nódulos (nº)'}],
+ aplic:[{k:'dose',l:'Dose aplicada',t:'text',fx:1},{k:'cond',l:'Hora e clima',t:'text',fx:1}],
+ h7:[{k:'controle',l:'Controle (%)'},{k:'fito',l:'Fitotoxicidade (%)'},{k:'daninhas',l:'Plantas daninhas principais',t:'text',fx:1}],
+ h14:[{k:'controle',l:'Controle (%)'},{k:'fito',l:'Fitotoxicidade (%)'}],
+ h28:[{k:'controle',l:'Controle (%)'},{k:'fito',l:'Fitotoxicidade (%)'}],
+ i3:[{k:'lagartas',l:'Lagartas por pano'},{k:'percevejos',l:'Percevejos por pano'}],
+ i7:[{k:'lagartas',l:'Lagartas por pano'},{k:'percevejos',l:'Percevejos por pano'},{k:'desfolha',l:'Desfolha (%)'}],
+ i14:[{k:'lagartas',l:'Lagartas por pano'},{k:'percevejos',l:'Percevejos por pano'},{k:'desfolha',l:'Desfolha (%)'}],
+ vig2:[{k:'vigor',l:'Vigor médio (1-5)'},{k:'altura',l:'Altura média (cm)'},{k:'nos',l:'Nº de nós'}],
+ flor1:[{k:'data_r1',l:'Início da floração (R1)',t:'date',fx:1},{k:'flores',l:'Flores + botões (hastes marcadas)'},{k:'vigor',l:'Vigor médio (1-5)'},{k:'altura',l:'Altura média (cm)'}],
+ flor2:[{k:'legumes',l:'Legumes formados (mesmas hastes)'},{k:'raiz',l:'Raiz principal (cm)'},{k:'barreira',l:'Barreira (cm)'}],
+ vagens:[{k:'vagens',l:'Vagens por planta'},{k:'graos_vagem',l:'Grãos por vagem'},{k:'altura',l:'Altura final (cm)'},{k:'insercao',l:'Inserção 1ª vagem (cm)'},{k:'acam',l:'Acamamento (1-5)'}],
+ sanid:[{k:'doenca',l:'Doença (0-4)'},{k:'percevejo',l:'Percevejos no pano'}],
+ doen1:[{k:'oidio',l:'Oídio (% sev.)'},{k:'malvo',l:'Mancha-alvo (% sev.)'},{k:'bact',l:'Crestamento bacteriano (% sev.)'},{k:'mortas',l:'Plantas mortas/murchas em 2 m'},{k:'outras',l:'Outras doenças / reboleiras',t:'text',fx:1}],
+ doen2:[{k:'ferrugem',l:'Ferrugem (% sev.)'},{k:'malvo',l:'Mancha-alvo (% sev.)'},{k:'oidio',l:'Oídio (% sev.)'},{k:'antrac',l:'Antracnose (% plantas)'},{k:'mofo',l:'Mofo-branco (plantas em 10)'},{k:'ferr_data',l:'1º sintoma de ferrugem',t:'date',fx:1},{k:'outras',l:'Outras doenças',t:'text',fx:1}],
+ doen3:[{k:'ferrugem',l:'Ferrugem (% sev.)'},{k:'malvo',l:'Mancha-alvo (% sev.)'},{k:'dfc',l:'DFC (% sev.)'},{k:'antrac',l:'Antracnose (% plantas)'},{k:'mofo',l:'Mofo-branco (plantas em 10)'},{k:'ferr_data',l:'1º sintoma de ferrugem',t:'date',fx:1},{k:'outras',l:'Outras doenças',t:'text',fx:1}],
+ doen4:[{k:'ferrugem',l:'Ferrugem (% sev.)'},{k:'malvo',l:'Mancha-alvo (% sev.)'},{k:'dfc',l:'DFC (% sev.)'},{k:'desfolha',l:'Desfolha (%)'},{k:'outras',l:'Outras doenças',t:'text',fx:1}],
+ r7:[{k:'vagens',l:'Vagens cheias por planta'},{k:'graos_vagem',l:'Grãos por vagem'}],
+ colheita:[{k:'data_r8',l:'Maturação (R8): 95% das vagens maduras',t:'date',fx:1},{k:'area',l:'Área colhida (m²)'},{k:'peso',l:'Peso de campo (kg)'},{k:'umid',l:'Umidade (%)'},{k:'imp',l:'Impureza (%)'},{k:'pmg',l:'Peso 1000 grãos (g)'},{k:'bons',l:'Grãos bons (%)'}]
+};
+const ESTADIOS=['VE','VC','V1','V2','V3','V4','V5','V6','V7','V8','V9','V10 ou mais','R1','R2','R3','R4','R5.1','R5.2','R5.3','R5.4','R5.5','R6','R7.1','R7.2','R7.3','R8.1','R8.2'];
+Object.values(CAMPOS).forEach(a=>a.unshift({k:'estadio',l:'Estádio observado',t:'estadio',fx:1}));
+
+const IND=[['Controle de daninhas 7 DAA (%)','h7','controle'],['Controle 14 DAA (%)','h14','controle'],['Controle 28 DAA (%)','h28','controle'],['Fitotoxicidade 7 DAA (%)','h7','fito'],['Fitotoxicidade 14 DAA (%)','h14','fito'],
+ ['Lagartas por pano 3 DAA','i3','lagartas'],['Lagartas por pano 7 DAA','i7','lagartas'],['Lagartas por pano 14 DAA','i14','lagartas'],['Percevejos por pano 7 DAA','i7','percevejos'],['Percevejos por pano 14 DAA','i14','percevejos'],['Dias até a floração (R1)','dr1'],['Ciclo real até a maturação (dias)','dr8'],['Uniformidade da emergência (1-5)','emerg','unif'],['Estande (plantas em 2 m)','estande','estande'],['Vigor 1ª','vig1','vigor'],['Altura 1ª (cm)','vig1','altura'],
+ ['Raiz 1ª (cm)','raiz1','raiz'],['Barreira 1ª (cm)','raiz1','barreira'],['Nódulos','raiz1','nodulos'],['Vigor 2ª','vig2','vigor'],['Altura 2ª (cm)','vig2','altura'],
+ ['Vigor 3ª','flor1','vigor'],['Altura 3ª (cm)','flor1','altura'],['Pegamento de flores (%)','peg'],['Raiz 2ª (cm)','flor2','raiz'],['Barreira 2ª (cm)','flor2','barreira'],
+ ['Vagens por planta (R5)','vagens','vagens'],['Grãos por vagem (R5)','vagens','graos_vagem'],['Altura final (cm)','vagens','altura'],['Inserção 1ª vagem (cm)','vagens','insercao'],
+ ['Acamamento (1-5)','vagens','acam'],['Doença (0-4)','sanid','doenca'],
+ ['Oídio 1ª (% sev.)','doen1','oidio'],['Mancha-alvo 1ª (% sev.)','doen1','malvo'],['Plantas mortas em 2 m','doen1','mortas'],
+ ['Ferrugem 2ª (% sev.)','doen2','ferrugem'],['Mancha-alvo 2ª (% sev.)','doen2','malvo'],['Oídio 2ª (% sev.)','doen2','oidio'],['Mofo-branco 2ª (plantas em 10)','doen2','mofo'],
+ ['Ferrugem 3ª (% sev.)','doen3','ferrugem'],['Mancha-alvo 3ª (% sev.)','doen3','malvo'],['DFC 3ª (% sev.)','doen3','dfc'],['Antracnose 3ª (% plantas)','doen3','antrac'],['Mofo-branco 3ª (plantas em 10)','doen3','mofo'],
+ ['Ferrugem 4ª (% sev.)','doen4','ferrugem'],['Mancha-alvo 4ª (% sev.)','doen4','malvo'],['DFC 4ª (% sev.)','doen4','dfc'],['Desfolha R6–R7 (%)','doen4','desfolha'],['Vagens cheias (R7)','r7','vagens'],['Peso de 1000 grãos (g)','colheita','pmg'],['Grãos bons (%)','colheita','bons'],['PRODUTIVIDADE (sc/ha)','sc']];
+const PONTOS=[1,2,3];
+const INV=new Set(['fito','lagartas','percevejos','ferrugem','malvo','oidio','bact','mortas','dfc','antrac','mofo','desfolha','doenca','acam']);
+let avals={}, lanc=null;
+const num=v=>{if(v===''||v==null)return null;const n=Number(String(v).replace(',','.'));return isFinite(n)?n:null};
+const mean=a=>{a=a.filter(v=>v!=null);return a.length?a.reduce((x,y)=>x+y,0)/a.length:null};
+const MES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const SEM=['dom','seg','ter','qua','qui','sex','sáb'];
+let db=null, canWrite=true, exps=[], editing=null;
+const $=id=>document.getElementById(id);
+const pd=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const today=()=>{const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate())};
+const days=(a,b)=>Math.round((a-b)/864e5);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function groups(x){
+  const base=Number(x.ciclo)||120, trs=x.tratamentos||[];
+  if(x.tipo!=='Variedade') return [{ciclo:base,label:'todas as faixas'}];
+  const m=new Map();
+  trs.forEach(t=>{const c=Number(t.ciclo)||base;(m.get(c)||m.set(c,[]).get(c)).push(t.cod)});
+  if(!m.size) return [{ciclo:base,label:'todas as faixas'}];
+  return [...m].sort((a,b)=>a[0]-b[0]).map(([c,cods])=>({ciclo:c,label:cods.join(', ')+(m.size>1?' · ciclo '+c+' d':'')}));
+}
+function eventos(){
+  const out=[], t0=today();
+  exps.forEach(x=>{
+    if(!x.plantio) return;
+    const p=pd(x.plantio), gs=groups(x);
+    EV.forEach(ev=>{
+      if(ev.when && !ev.when(x)) return;
+      gs.forEach(g=>{
+        const dap=ev.daa!=null?Number(x.aplicDap)+ev.daa:ev.fixo?Number(x.aplicDap):Math.round(ev.d*g.ciclo/120), dt=new Date(p); dt.setDate(dt.getDate()+dap);
+        const key=ev.k+'@'+g.ciclo, done=(x.feitas||{})[key];
+        const delta=days(dt,t0);
+        const st=done?'done':delta< -3?'late':delta<=3?'now':delta<=5?'soon':'later';
+        out.push({x,ev,g,dap,dt,key,done,delta,st});
+      });
+    });
+  });
+  return out.sort((a,b)=>a.dt-b.dt);
+}
+
+function renderStats(evs){
+  $('sLate').textContent=evs.filter(e=>e.st==='late').length;
+  $('sNow').textContent=evs.filter(e=>e.st==='now').length;
+  $('sSoon').textContent=evs.filter(e=>e.st==='soon').length;
+}
+function itemHTML(e){
+  const pill=e.st==='late'?'<span class="pill late">Atrasada '+(-e.delta)+' d</span>':e.st==='now'?'<span class="pill now">'+(e.delta===0?'Hoje':e.delta>0?'em '+e.delta+' d':'há '+(-e.delta)+' d')+'</span>':e.st==='done'?'<span class="pill done">Feita '+esc(e.done.split('-').reverse().slice(0,2).join('/'))+'</span>':'';
+  const lb=canWrite&&CAMPOS[e.ev.k]?`<button class="btn small" data-lancar="${esc(e.x.codigo)}|${e.ev.k}">${avals[e.x.codigo+'__'+e.ev.k]?'Ver / editar dados':'Lançar dados'}</button>`:'';
+  const act=lb+(!canWrite?'':e.done?`<button class="btn small" data-undo="${esc(e.x.codigo)}|${e.key}">Desfazer</button>`:`<button class="btn small primary" data-done="${esc(e.x.codigo)}|${e.key}">Marcar feita</button>`);
+  return `<div class="item ${e.st}">
+    <div class="date"><span class="m">${SEM[e.dt.getDay()]}</span><span class="d">${String(e.dt.getDate()).padStart(2,'0')}</span><span class="m">${MES[e.dt.getMonth()]}</span></div>
+    <div class="what"><div class="t">${esc(e.ev.t)}</div>
+      <div class="meta"><span class="tag">${esc(e.x.codigo)}</span><span>${esc(catOf(e.x)||e.x.tipo)}${e.x.talhao?' · '+esc(e.x.talhao):''}</span><span>${e.ev.e}${/DAA|Aplica/.test(e.ev.e)?'':' · '+e.dap+' DAP'}</span><span>${esc(e.g.label)}</span>${pill}</div>
+      <div class="how">${esc(e.ev.o)} <span style="color:var(--muted)">(${e.ev.f})</span></div></div>
+    <div class="act">${act}</div></div>`;
+}
+function renderLembretes(){
+  const all=eventos(); renderStats(all);
+  const f=$('fExp').value, showDone=$('fDone').checked;
+  const evs=all.filter(e=>(!f||e.x.codigo===f)&&(showDone||!e.done));
+  const box=$('lembretes');
+  if(!exps.length){
+    box.innerHTML=`<div class="empty"><h2>Nenhum experimento cadastrado</h2><p>Cadastre o primeiro experimento com a data de plantio. Cada avaliação vira um lembrete com data, estágio, o que fazer e a ficha a usar.</p><button class="btn primary" id="goNew">Cadastrar experimento</button></div>`;
+    $('goNew').onclick=()=>show('novo'); return;
+  }
+  const sec=[['late','Atrasadas','passou a janela de 3 dias'],['now','Janela aberta','fazer nestes dias'],['soon','Próximos 5 dias',''],['later','Mais adiante',''],['done','Feitas','']];
+  let h='';
+  sec.forEach(([s,n,sub])=>{if(s==='later'&&!f)return;const l=evs.filter(e=>e.st===s);if(!l.length)return;
+    h+=`<div class="group"><h2>${n}</h2><small>${l.length}${sub?' · '+sub:''}</small></div><div class="list">${(s==='later'&&!f?l.slice(0,12):l).map(itemHTML).join('')}</div>`;
+    if(s==='later'&&!f&&l.length>12) h+=`<p class="sub">+ ${l.length-12} avaliações mais adiante. Filtre por experimento para ver todas.</p>`;});
+  const ad=f?0:evs.filter(e=>e.st==='later').length;
+  box.innerHTML=(h||'<div class="empty"><p>Nada para fazer nos próximos 5 dias.</p></div>')+(ad?`<p class="sub" style="margin-top:14px">${ad} avaliações mais adiante não aparecem aqui. Para ver a agenda completa de um experimento, escolha-o no filtro acima.</p>`:'');
+}
+function renderExps(){
+  const sel=$('fExp'), cur=sel.value;
+  sel.innerHTML='<option value="">Todos</option>'+exps.map(x=>`<option value="${esc(x.codigo)}">${esc(x.codigo)}</option>`).join('');
+  sel.value=exps.some(x=>x.codigo===cur)?cur:'';
+  const box=$('exps'), evs=eventos();
+  if(!exps.length){box.innerHTML='<div class="empty"><h2>Sem experimentos ainda</h2><p>Use a aba “+ Novo experimento”.</p></div>';return;}
+  box.innerHTML='<div class="exps">'+exps.map(x=>{
+    const mine=evs.filter(e=>e.x===x), done=mine.filter(e=>e.done).length;
+    return `<div class="exp"><h3><span class="tag">${esc(x.codigo)}</span>${x.tipo==='Variedade'?'Variedade':'Produto'}</h3>
+      <dl>${catOf(x)?`<dt>Categoria</dt><dd>${esc(catOf(x))}${temApl(x)?' · aplicação aos '+esc(x.aplicDap)+' DAP':''}</dd>`:''}<dt>Local</dt><dd>${esc(x.talhao)||'—'}</dd>${(x.tratamentos||[]).some(t=>t.area!=null)?`<dt>Área</dt><dd>${(x.tratamentos||[]).reduce((a,t)=>a+(Number(t.area)||0),0).toFixed(2).replace('.',',')} ha medidos</dd>`:''}<dt>Testa</dt><dd>${esc(x.testado)||'—'}</dd><dt>Padrão</dt><dd>${esc(x.padrao)||'—'}</dd>
+      <dt>Plantio</dt><dd>${x.plantio?esc(x.plantio.split('-').reverse().join('/')):'—'} · ciclo ${esc(x.ciclo)} d</dd></dl>
+      <div class="chips">${(x.tratamentos||[]).map(t=>`<span class="tag" title="${esc(t.desc)}">${esc(t.cod)}${t.padrao?' (padrão)':''}${t.area!=null?' · '+String(t.area).replace('.',',')+' ha':''}</span>`).join('')}</div>
+      <div><div class="bar"><i style="width:${mine.length?Math.round(done/mine.length*100):0}%"></i></div><small class="sub">${done} de ${mine.length} avaliações feitas</small></div>
+      ${canWrite?`<div class="row" id="r-${esc(x.codigo)}"><button class="btn small" data-res="${esc(x.codigo)}">Resultados</button><button class="btn small" data-edit="${esc(x.codigo)}">Editar</button><button class="btn small danger" data-del="${esc(x.codigo)}">Excluir</button></div>`:''}</div>`;}).join('')+'</div>';
+}
+function render(){renderExps();renderLembretes();renderRes();}
+function vals(cod,evk,trat){const a=avals[cod+'__'+evk];return a?.valores?.[trat]||null}
+function indicador(x,ind,trat){
+  const [,k,f]=ind;
+  if(k==='peg'){const a=vals(x.codigo,'flor1',trat),b=vals(x.codigo,'flor2',trat);if(!a||!b)return null;
+    return mean(pk(b).map(p=>{const fl=num(a[p]?.flores),lg=num(b[p]?.legumes);return fl&&lg!=null?lg/fl*100:null}))}
+  if(k==='dr1'||k==='dr8'){const v=vals(x.codigo,k==='dr1'?'flor1':'colheita',trat)?.[1]?.[k==='dr1'?'data_r1':'data_r8'];
+    return v&&x.plantio?days(pd(v),pd(x.plantio)):null}
+  if(k==='sc'){const c=vals(x.codigo,'colheita',trat);if(!c)return null;
+    const l=pk(c).map(p=>{const v=c[p]||{},ar=num(v.area),ps=num(v.peso);if(!ar||ps==null)return null;
+      const u=num(v.umid)??13,im=num(v.imp)??0;return ps*(100-u)/87*(100-im)/100/ar*10000/60}).filter(v=>v!=null);
+    return l.length?{v:mean(l),min:Math.min(...l),max:Math.max(...l)}:null}
+  const v=vals(x.codigo,k,trat);if(!v)return null;return mean(pk(v).map(p=>num(v[p]?.[f])));
+}
+function renderRes(){
+  const sel=$('rExp'),cur=sel.value;
+  sel.innerHTML=exps.map(x=>`<option value="${esc(x.codigo)}">${esc(x.codigo)} · ${esc(x.tipo)}</option>`).join('');
+  if(exps.some(x=>x.codigo===cur))sel.value=cur;
+  const box=$('resultados'),x=exps.find(z=>z.codigo===sel.value);
+  if(!x){box.innerHTML='<div class="empty"><p>Cadastre um experimento e lance as avaliações para ver os resultados aqui.</p></div>';return;}
+  const trs=[...(x.tratamentos||[])].sort((a,b)=>(b.padrao?1:0)-(a.padrao?1:0)), pad=trs.find(t=>t.padrao);
+  const fmt=v=>v==null?'—':(Math.abs(v)>=100||Number.isInteger(v)?v.toFixed(0):v.toFixed(1)).replace('.',',');
+  let rows='';
+  IND.forEach(ind=>{
+    const vs=trs.map(t=>indicador(x,ind,t.cod));if(vs.every(v=>v==null))return;
+    const val=v=>v==null?null:(typeof v==='object'?v.v:v), pv=pad?val(vs[0]):null;
+    rows+=`<tr><td>${ind[0]}</td>`+vs.map((v,i)=>{const n=val(v);let d='';
+      if(i>0&&n!=null&&pv){const pc=(n/pv-1)*100;const inv=INV.has(ind[2]),neu=/^dr/.test(ind[1]);d=` <small class="${neu?'':(inv?-pc:pc)>0?'up':(inv?-pc:pc)<0?'down':''}">${pc>0?'+':''}${pc.toFixed(1).replace('.',',')}%</small>`}
+      const rg=v&&typeof v==='object'&&v.max!==v.min?`<br><small class="sub">${fmt(v.min)} a ${fmt(v.max)}</small>`:'';
+      return `<td class="num">${fmt(n)}${d}${rg}</td>`}).join('')+'</tr>';
+  });
+  const notas=[];['doen1','doen2','doen3','doen4'].forEach(k=>trs.forEach(t=>{const v=vals(x.codigo,k,t.cod)?.[1];if(!v)return;
+    const ev=EV.find(e=>e.k===k),it=[];if(v.ferr_data)it.push('1º sintoma de ferrugem em '+v.ferr_data.split('-').reverse().join('/'));if(v.outras)it.push(v.outras);
+    if(it.length)notas.push(`<li><b>${esc(t.cod)}</b> · ${esc(ev.t)}: ${esc(it.join('; '))}</li>`)}));
+  const feitas=EV.filter(e=>avals[x.codigo+'__'+e.k]).map(e=>e.t);
+  box.innerHTML=`<p class="sub">Média dos pontos de cada faixa. ${pad?`A porcentagem compara com o padrão (${esc(pad.cod)}). Verde é melhor que o padrão e vermelho é pior (em doenças, menos é melhor).`:'Experimento sem faixa padrão: aparecem os valores de cada faixa, sem comparação.'} Em produtividade aparece também o menor e o maior ponto.</p>`+
+   (rows?`<div class="tbl"><table><thead><tr><th>Indicador</th>${trs.map(t=>`<th class="num">${esc(t.cod)}${t.padrao?' (padrão)':''}<br><small>${esc(t.desc)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`
+        :'<div class="empty"><p>Nenhuma avaliação lançada ainda para este experimento. Use “Lançar dados” na aba Lembretes.</p></div>')+
+   galeria(x,trs)+
+   (notas.length?`<h3 style="margin-top:16px;font-size:1rem">Anotações de doenças</h3><ul class="sub">${notas.join('')}</ul>`:'')+
+   (feitas.length?`<p class="sub">Avaliações com dados: ${feitas.map(esc).join(', ')}.</p>`:'');
+}
+function galeria(x,trs){
+  const bl=trs.map(t=>{const pts=x.pontos?.[t.cod]||{},cs=pk(pts);
+    const fs=[];let pend=0;EV.forEach(ev=>{const a=avals[x.codigo+'__'+ev.k];if(!a)return;(a.fotos||[]).filter(f=>f.trat===t.cod).forEach(f=>fs.push({...f,ev:ev.t}));pend+=(a.pendentes||[]).filter(f=>f.trat===t.cod).length});
+    if(!cs.length&&!fs.length&&!pend)return'';
+    return `<div><b>${esc(t.cod)}</b>${cs.length?' · pontos: '+cs.map(p=>`<a href="${mapa(pts[p])}" target="_blank" rel="noopener">P${p}</a>`).join(' '):''}
+      ${fs.length||pend?`<div class="ths" style="margin-top:6px">${fs.map(f=>`<a class="th" href="${esc(fotoLink(f))}" target="_blank" rel="noopener" title="${esc(f.ev)} · ponto ${f.ponto}"><img src="${esc(fotoSrc(f))}" alt="${esc(f.ev)} ponto ${f.ponto}" loading="lazy"><span>P${f.ponto}</span></a>`).join('')}${pend?`<span class="th wait">${pend} aguardando envio</span>`:''}</div>`:''}</div>`}).join('');
+  return bl?`<h3 style="margin-top:16px;font-size:1rem">Fotos e pontos no mapa</h3><div class="gal">${bl}</div>`:'';
+}
+$('rExp').onchange=renderRes;
+/* ---------- armazenamento local: fila offline, cache e fotos ---------- */
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
+const memFotos=new Map();
+const idb=(()=>{let p=null;
+  function open(){return p||(p=new Promise((res,rej)=>{try{const r=indexedDB.open('agenda-campo',1);r.onupgradeneeded=()=>r.result.createObjectStore('fotos');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}}))}
+  function tx(mode,fn){return open().then(d=>new Promise((res,rej)=>{const t=d.transaction('fotos',mode),r=fn(t.objectStore('fotos'));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error)}))}
+  return{put:(k,v)=>tx('readwrite',s=>s.put(v,k)).catch(()=>{memFotos.set(k,v)}),
+         get:k=>memFotos.has(k)?Promise.resolve(memFotos.get(k)):tx('readonly',s=>s.get(k)).catch(()=>null),
+         del:k=>{memFotos.delete(k);return tx('readwrite',s=>s.delete(k)).catch(()=>{})}};
+})();
+let fila=LS.get('fila_v1',[]), sExps=[], sAvals={}, assets=null, sincronizando=false, ultimoEnvio=LS.get('ultimo_envio',null), erroEnvio='';
+const salvaFila=()=>LS.set('fila_v1',fila);
+function aplicarFila(){
+  const ex=JSON.parse(JSON.stringify(sExps)), av=JSON.parse(JSON.stringify(sAvals));
+  fila.forEach(op=>{
+    if(op.tipo==='exp'){const i=ex.findIndex(z=>z.codigo===op.codigo);if(i>=0)ex[i]={...op.data,feitas:ex[i].feitas,pontos:ex[i].pontos};else ex.push(op.data);return;}
+    if(op.tipo==='feitas'){const x=ex.find(z=>z.codigo===op.codigo);if(x){x.feitas={...(x.feitas||{})};Object.entries(op.set).forEach(([k,v])=>{if(v)x.feitas[k]=v;else delete x.feitas[k]})}return;}
+    let x=ex.find(z=>z.codigo===op.codigo);
+    if(x){x.feitas={...(x.feitas||{}),...op.feitas};x.pontos=x.pontos||{};
+      Object.entries(op.pontos||{}).forEach(([t,ps])=>{x.pontos[t]={...(x.pontos[t]||{}),...ps}})}
+    const base=av[op.docId]||{};av[op.docId]={...op.aval,fotos:base.fotos||[],pendentes:[...(base.pendentes||[]),...op.fotos]};
+  });
+  exps=ex;avals=av;
+}
+function atualizarTudo(){aplicarFila();render();renderFila();}
+function renderFila(){
+  const b=$('fila');const n=fila.length, nf=fila.reduce((a,o)=>a+o.fotos.length,0);
+  if(!n){b.hidden=!ultimoEnvio&&!erroEnvio;b.className='fila ok';b.innerHTML=ultimoEnvio?`Tudo enviado. Último envio: ${esc(new Date(ultimoEnvio).toLocaleString('pt-BR'))}`:'';return;}
+  b.hidden=false;b.className='fila wait';
+  b.innerHTML=`<span><b>${n} lançamento${n>1?'s':''}${nf?' e '+nf+' foto'+(nf>1?'s':''):''} guardado${n>1?'s':''} no celular</b>, aguardando sinal para enviar.${erroEnvio?' '+esc(erroEnvio):''}</span><button class="btn small primary" id="enviarAgora" ${sincronizando?'disabled':''}>${sincronizando?'Enviando...':'Enviar agora'}</button>`;
+  $('enviarAgora').onclick=()=>sync();
+}
+const ate=(p,ms=window.__ATE||20000)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r({code:'timeout'}),ms))]);
+async function sync(){
+  if(!db&&navigator.onLine!==false)await conectar();
+  if(sincronizando||!fila.length||!db)return;
+  sincronizando=true;erroEnvio='';renderFila();
+  try{
+    while(fila.length){
+      const op=fila[0];
+      if(op.tipo==='exp'){const r=db.collection('experimentos').doc(op.codigo),c=await ate(r.get()),cur=c.exists?c.data():{};
+        await ate(r.set({...op.data,feitas:{...(cur.feitas||{}),...(op.data.feitas||{})},pontos:{...(op.data.pontos||{}),...(cur.pontos||{})}}));
+        fila.shift();salvaFila();ultimoEnvio=new Date().toISOString();LS.set('ultimo_envio',ultimoEnvio);continue;}
+      if(op.tipo==='feitas'){const r=db.collection('experimentos').doc(op.codigo),c=await ate(r.get());
+        if(c.exists){const x=JSON.parse(JSON.stringify(c.data()));x.feitas=x.feitas||{};Object.entries(op.set).forEach(([k,v])=>{if(v)x.feitas[k]=v;else delete x.feitas[k]});await ate(r.set(x));}
+        fila.shift();salvaFila();ultimoEnvio=new Date().toISOString();LS.set('ultimo_envio',ultimoEnvio);continue;}
+            const prontas=op.prontas||(op.prontas=[]);
+      while(op.fotos.length){
+        const f=op.fotos[0],blob=await idb.get(f.tmp);
+        if(blob){const r=await ate(subirFoto(blob,f,op),120000);prontas.push({id:r.id,url:r.url,trat:f.trat,ponto:f.ponto,lat:f.lat??null,lon:f.lon??null,data:f.data});}
+        await idb.del(f.tmp);op.fotos.shift();salvaFila();
+      }
+      const ref=db.collection('avaliacoes').doc(op.docId),cur=await ate(ref.get()),fotos=[...((cur.exists&&cur.data().fotos)||[]),...prontas];
+      await ate(ref.set({...op.aval,fotos}));
+      const xr=db.collection('experimentos').doc(op.codigo),xc=await ate(xr.get());
+      if(xc.exists){const x=JSON.parse(JSON.stringify(xc.data())),pontos=x.pontos||{};
+        Object.entries(op.pontos||{}).forEach(([t,ps])=>{pontos[t]={...(pontos[t]||{}),...ps}});
+        await ate(xr.set({...x,feitas:{...(x.feitas||{}),...op.feitas},pontos}));}
+      fila.shift();salvaFila();ultimoEnvio=new Date().toISOString();LS.set('ultimo_envio',ultimoEnvio);
+    }
+  }catch(err){erroEnvio=err?.code==='chave'?'Chave de acesso recusada pela planilha. Toque em Trocar acesso no rodapé.':err?.code==='servidor'?('A planilha recusou: '+(err.msg||'erro')+'. Tento de novo sozinho.'):'Sem conexão no momento; tento de novo sozinho.';}
+  finally{sincronizando=false;atualizarTudo();}
+}
+window.addEventListener('online',()=>{conectar().then(()=>sync())});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
+setInterval(()=>{if(!db)conectar();if(fila.length)sync()},45000);
+
+/* ---------- GPS gravado na foto (EXIF) ---------- */
+function gpsDaFoto(buf){
+  try{const v=new DataView(buf);if(v.getUint16(0)!==0xFFD8)return null;let o=2;
+    while(o<v.byteLength-4){const m=v.getUint16(o),len=v.getUint16(o+2);
+      if(m===0xFFE1&&v.getUint32(o+4)===0x45786966){const t=o+10,le=v.getUint16(t)===0x4949,u16=a=>v.getUint16(a,le),u32=a=>v.getUint32(a,le);
+        const ifd=(a,tag)=>{const n=u16(a);for(let i=0;i<n;i++){const e=a+2+i*12;if(u16(e)===tag)return e}return null};
+        const g=ifd(t+u32(t+4),0x8825);if(g==null)return null;const ga=t+u32(g+8);
+        const rat=e=>{const a=t+u32(e+8);return[0,1,2].map(i=>u32(a+i*8)/u32(a+i*8+4))};
+        const dms=r=>r[0]+r[1]/60+r[2]/3600,ref=e=>String.fromCharCode(v.getUint8(e+8));
+        const la=ifd(ga,2),lr=ifd(ga,1),lo=ifd(ga,4),lor=ifd(ga,3);if(la==null||lo==null)return null;
+        let lat=dms(rat(la)),lon=dms(rat(lo));if(lr!=null&&ref(lr)==='S')lat=-lat;if(lor!=null&&ref(lor)==='W')lon=-lon;
+        return isFinite(lat)&&isFinite(lon)&&(lat||lon)?{lat:+lat.toFixed(6),lon:+lon.toFixed(6)}:null}
+      if((m&0xFF00)!==0xFF00)break;o+=2+len}
+  }catch(e){}return null;
+}
+async function reduzir(file){
+  try{const bmp=await createImageBitmap(file),k=Math.min(1,1600/Math.max(bmp.width,bmp.height)),c=document.createElement('canvas');
+    c.width=Math.round(bmp.width*k);c.height=Math.round(bmp.height*k);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+    return await new Promise(r=>c.toBlob(r,'image/jpeg',0.78));}
+  catch(e){return file.type==='image/jpeg'?file:null}
+}
+const parseCoord=s=>{const m=String(s||'').replace(/;/g,',').match(/(-?\d+(?:[.,]\d+)?)\s*[, ]\s*(-?\d+(?:[.,]\d+)?)/);if(!m)return null;
+  const a=Number(m[1].replace(',','.')),b=Number(m[2].replace(',','.'));return Math.abs(a)<=90&&Math.abs(b)<=180?{lat:a,lon:b}:null};
+const fmtCoord=c=>c?`${c.lat.toFixed(6)}, ${c.lon.toFixed(6)}`:'';
+const mapa=c=>`https://www.google.com/maps?q=${c.lat},${c.lon}`;
+
+/* ---------- lançamento ---------- */
+let novas={}, nPts={};
+const pk=o=>Object.keys(o||{}).filter(k=>/^\d+$/.test(k)).map(Number).sort((a,b)=>a-b);
+function thumbs(lista,pend){return (lista||[]).map(f=>`<a class="th" href="${esc(fotoLink(f))}" target="_blank" rel="noopener"><img src="${esc(fotoSrc(f))}" alt="Foto ponto ${f.ponto}" loading="lazy"><span>P${f.ponto}</span></a>`).join('')+
+  (pend?`<span class="th wait">${pend} aguardando envio</span>`:'')}
+function pontoHTML(ti,p,cs,v,coord){
+  return `<div class="pc" id="pc-${ti}-${p}" data-ti="${ti}" data-p="${p}">
+    <div class="pch"><span class="pn">${p}</span><b>Ponto ${p}</b><span class="gps ${coord?'on':''}" id="gs-${ti}-${p}" ${coord?'':'hidden'}>${coord?`<a href="${mapa(coord)}" target="_blank" rel="noopener">GPS salvo</a>`:''}</span>
+      <span class="pa"><label class="btn small foto" for="lp-${ti}-${p}">+ Foto</label>${p>1?`<button type="button" class="x" data-rm="${ti}-${p}" aria-label="Remover ponto ${p}">Remover</button>`:''}</span></div>
+    <input type="hidden" id="lg-${ti}-${p}" value="${esc(fmtCoord(coord))}">
+    <div class="ccrow" id="cc-${ti}-${p}" hidden><input id="ci-${ti}-${p}" placeholder="Cole aqui: -12.345678, -45.678901" inputmode="text" autocomplete="off"><button type="button" class="btn small" data-paste="${ti}-${p}">Colar</button><a class="btn small" href="https://www.google.com/maps" target="_blank" rel="noopener">Abrir Maps</a><small>No Maps, toque na bolinha azul, copie as coordenadas e cole aqui.</small></div>
+    <div class="pcf">${cs.map(c=>`<label class="fld"><span>${c.l}</span><input id="lv-${ti}-${p}-${c.k}" ${c.t?`type="${c.t}"`:'inputmode="decimal"'} value="${esc(v?.[c.k]??'')}"></label>`).join('')}</div>
+    <input type="file" accept="image/*" multiple id="lp-${ti}-${p}" data-ti="${ti}" data-p="${p}" class="vh"><div class="nv" id="nv-${ti}-${p}"></div>
+  </div>`;
+}
+function abrirLanc(cod,evk){
+  const x=exps.find(z=>z.codigo===cod),ev=EV.find(e=>e.k===evk);if(!x||!ev)return;
+  limparNovas();nPts={};lanc={x,ev};const a=avals[cod+'__'+evk]||{};
+  $('lTitle').textContent=ev.t;$('lSub').innerHTML=`<span class="tag">${esc(x.codigo)}</span> ${esc(x.tipo)}${x.talhao?' · '+esc(x.talhao):''}`;
+  $('lHow').textContent=ev.o;$('lAval').value=a.avaliador||LS.get('avaliador','');$('lObs').value=a.obs||'';$('lMsg').innerHTML='';
+  const datas=Object.values(a.valores||{}).map(v=>v.data).filter(Boolean);$('lData').value=datas[0]||iso(today());
+  const cs=CAMPOS[evk],pf=cs.filter(c=>!c.fx),ff=cs.filter(c=>c.fx);
+  $('lFaixas').innerHTML=(x.tratamentos||[]).map((t,ti)=>{const v=a.valores?.[t.cod]||{},pts=x.pontos?.[t.cod]||{};
+    const ps=pk(v);if(!ps.length)ps.push(1);nPts[ti]=Math.max(...ps);
+    const fts=(a.fotos||[]).filter(f=>f.trat===t.cod),pend=(a.pendentes||[]).filter(f=>f.trat===t.cod).length;
+    return `<section class="fx ${t.padrao?'pad':''}"><header><h3>${esc(t.desc)}</h3><span class="tag">${esc(t.cod)}</span>${t.padrao?'<span class="pill done">padrão</span>':''}</header>
+     ${ff.length?`<div class="pcf">${ff.map(c=>c.t==='estadio'?`<label class="fld"><span>${c.l}</span><select id="lf-${ti}-${c.k}"><option value="">Escolha</option>${ESTADIOS.map(o=>`<option${v[1]?.[c.k]===o?' selected':''}>${o}</option>`).join('')}</select></label>`:`<label class="fld"><span>${c.l}</span><input id="lf-${ti}-${c.k}" type="${c.t||'text'}" value="${esc(v[1]?.[c.k]??'')}"></label>`).join('')}</div>`:''}
+     <div class="pts" id="pts-${ti}">${ps.map(p=>pontoHTML(ti,p,pf,v[p],pts[p])).join('')}</div>
+     <button type="button" class="btn addp" data-addp="${ti}">+ Adicionar ponto</button>
+     ${fts.length||pend?`<div class="ths">${thumbs(fts,pend)}</div>`:''}</section>`}).join('');
+  show('lancar');
+}
+function pedirGPS(ti,p){
+  const h=$('lg-'+ti+'-'+p),s=$('gs-'+ti+'-'+p);if(!h||h.value||h.dataset.tent)return;h.dataset.tent='1';
+  s.hidden=false;
+  if(!navigator.geolocation){semGPS(ti,p);return;}
+  s.textContent='Buscando GPS...';
+  navigator.geolocation.getCurrentPosition(pos=>{const c={lat:+pos.coords.latitude.toFixed(6),lon:+pos.coords.longitude.toFixed(6)};
+      if(!h.value){h.value=fmtCoord(c);s.className='gps on';s.innerHTML=`<a href="${mapa(c)}" target="_blank" rel="noopener">GPS salvo</a>`}},
+    ()=>{if(!h.value)semGPS(ti,p)},{enableHighAccuracy:true,timeout:30000,maximumAge:120000});
+}
+function semGPS(ti,p){const s=$('gs-'+ti+'-'+p);if(!s)return;s.hidden=false;s.className='gps off';s.innerHTML=`<button type="button" data-cc="${ti}-${p}">Sem GPS: toque para colar a coordenada</button>`}
+function aplicarCoordTxt(ti,p,txt){const c=parseCoord(txt),h=$('lg-'+ti+'-'+p),s=$('gs-'+ti+'-'+p);
+  if(!c||Math.abs(c.lat)>90||Math.abs(c.lon)>180){s.hidden=false;s.className='gps off';s.textContent='Coordenada não reconhecida';return false}
+  h.value=fmtCoord(c);s.hidden=false;s.className='gps on';s.innerHTML=`<a href="${mapa(c)}" target="_blank" rel="noopener">GPS salvo</a>`;$('cc-'+ti+'-'+p).hidden=true;return true}
+function marcarGPS(ti,p,c){const h=$('lg-'+ti+'-'+p),s=$('gs-'+ti+'-'+p);if(!h||h.value)return;h.value=fmtCoord(c);s.hidden=false;s.className='gps on';s.innerHTML=`<a href="${mapa(c)}" target="_blank" rel="noopener">GPS salvo (foto)</a>`}
+function limparNovas(){Object.values(novas).flat().forEach(f=>{idb.del(f.tmp);URL.revokeObjectURL(f.url)});novas={};}
+$('lFaixas').addEventListener('click',async e=>{
+  const b=e.target.closest('button');if(!b||!lanc)return;
+  if(b.dataset.addp!=null){const ti=+b.dataset.addp,p=++nPts[ti],pf=CAMPOS[lanc.ev.k].filter(c=>!c.fx);
+    $('pts-'+ti).insertAdjacentHTML('beforeend',pontoHTML(ti,p,pf,null,lanc.x.pontos?.[lanc.x.tratamentos[ti].cod]?.[p]));pedirGPS(ti,p);
+    $('pc-'+ti+'-'+p).querySelector('input:not([type=hidden])')?.focus();}
+  if(b.dataset.cc){const [ti,p]=b.dataset.cc.split('-');const r=$('cc-'+ti+'-'+p);r.hidden=false;$('ci-'+ti+'-'+p).focus();return;}
+  if(b.dataset.paste){const [ti,p]=b.dataset.paste.split('-');const inp=$('ci-'+ti+'-'+p);
+    try{const t=await navigator.clipboard.readText();inp.value=t;aplicarCoordTxt(ti,p,t)}catch(_){inp.focus();inp.placeholder='Toque e segure aqui e escolha Colar'}return;}
+  if(b.dataset.rm){const [ti,p]=b.dataset.rm.split('-');(novas[ti+'-'+p]||[]).forEach(f=>idb.del(f.tmp));delete novas[ti+'-'+p];$('pc-'+ti+'-'+p).remove();}
+});
+$('lFaixas').addEventListener('input',e=>{const c=e.target.closest('.pc');if(!c)return;if(e.target.id.startsWith('ci-')){if(parseCoord(e.target.value))aplicarCoordTxt(c.dataset.ti,c.dataset.p,e.target.value);return}pedirGPS(c.dataset.ti,c.dataset.p)});
+$('lFaixas').addEventListener('change',async e=>{
+  const inp=e.target;if(inp.type!=='file'||!lanc)return;
+  const ti=+inp.dataset.ti,p=+inp.dataset.p,k=ti+'-'+p,files=[...inp.files];inp.value='';
+  for(const file of files){
+    const gps=gpsDaFoto(await file.arrayBuffer().catch(()=>new ArrayBuffer(0))),blob=await reduzir(file);
+    if(!blob){$('lMsg').innerHTML='<div class="msg err">Não consegui ler essa foto. Tire a foto em JPG pela câmera e tente de novo.</div>';continue;}
+    const tmp='f'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);await idb.put(tmp,blob);
+    (novas[k]=novas[k]||[]).push({tmp,url:URL.createObjectURL(blob),gps});
+    if(gps)marcarGPS(ti,p,gps);else pedirGPS(ti,p);
+  }
+  $('nv-'+k).innerHTML=(novas[k]||[]).map(f=>`<img src="${f.url}" alt="Nova foto">`).join('');
+});
+$('lCancel').onclick=()=>{limparNovas();lanc=null;voltar()};
+$('lform').onsubmit=async e=>{
+  e.preventDefault();if(!lanc)return;
+  const {x,ev}=lanc,cs=CAMPOS[ev.k],data=$('lData').value||iso(today()),valores={},feitas={},pontos={},fotos=[];let algum=false;
+  (x.tratamentos||[]).forEach((t,ti)=>{const v={data};let tem=false;
+    const ff=cs.filter(c=>c.fx),o1={};ff.forEach(c=>{const el=$('lf-'+ti+'-'+c.k);const raw=el?.value.trim();if(raw){o1[c.k]=raw;tem=true}});
+    [...document.querySelectorAll('#pts-'+ti+' .pc')].forEach(card=>{const p=+card.dataset.p,o=p===1?{...o1}:{};
+      cs.filter(c=>!c.fx).forEach(c=>{const raw=$('lv-'+ti+'-'+p+'-'+c.k).value.trim();if(raw==='')return;o[c.k]=c.t?raw:(num(raw)??raw);tem=true});
+      if(Object.keys(o).length)v[p]=o;
+      const cc=parseCoord($('lg-'+ti+'-'+p).value);
+      if(cc&&fmtCoord(cc)!==fmtCoord(x.pontos?.[t.cod]?.[p]))(pontos[t.cod]=pontos[t.cod]||{})[p]=cc;
+      (novas[ti+'-'+p]||[]).forEach(f=>{fotos.push({tmp:f.tmp,trat:t.cod,ponto:p,lat:f.gps?.lat??cc?.lat,lon:f.gps?.lon??cc?.lon,data});tem=true});
+    });
+    if(!pk(v).length&&Object.keys(o1).length)v[1]=o1;
+    if(tem){valores[t.cod]=v;algum=true;
+      const c=x.tipo==='Variedade'?(Number(t.ciclo)||Number(x.ciclo)||120):(Number(x.ciclo)||120);
+      if(!(x.feitas||{})[ev.k+'@'+c])feitas[ev.k+'@'+c]=data;}
+  });
+  if(!algum&&!Object.keys(pontos).length){$('lMsg').innerHTML='<div class="msg err">Preencha pelo menos um valor ou adicione uma foto antes de salvar.</div>';return;}
+  const av=$('lAval').value.trim();LS.set('avaliador',av);
+  const docId=x.codigo+'__'+ev.k,prev=avals[docId]?.valores||{};
+  const op={id:Date.now(),codigo:x.codigo,docId,feitas,pontos,fotos,
+    aval:{codigo:x.codigo,ev:ev.k,avaliacao:ev.t,avaliador:av,obs:$('lObs').value.trim(),valores:{...prev,...valores},atualizado:new Date().toISOString()}};
+  fila.push(op);
+  if(!salvaFila()){fila.pop();$('lMsg').innerHTML='<div class="msg err">O celular não deixou guardar os dados neste navegador. Libere o armazenamento do site ou lance com sinal.</div>';return;}
+  novas={};lanc=null;$('rExp').value=x.codigo;atualizarTudo();show('resultados');sync();
+};
+
+let hist=[],atual='lembretes';
+function show(tab,back){
+  if(!back&&tab!==atual){hist.push(atual);if(hist.length>20)hist.shift()}
+  if(tab==='lembretes'&&!back)hist=[];
+  atual=tab;
+  $('backbar').hidden=tab==='lancar'||(tab==='lembretes'&&!hist.length);
+  ['lembretes','experimentos','resultados','novo','lancar'].forEach(t=>{$('v-'+t).hidden=t!==tab;const b=$('tab-'+t);if(b)b.setAttribute('aria-selected',t===tab)});
+  if(tab==='resultados') renderRes();
+  document.body.classList.toggle('focus',tab==='lancar');
+  window.scrollTo(0,0);
+  if(tab==='novo'&&!editing) fillForm(null);
+}
+document.querySelector('nav').onclick=e=>{const t=e.target.dataset.tab;if(t){if(t==='novo')editing=null;show(t)}};
+$('fExp').onchange=renderLembretes; $('fDone').onchange=renderLembretes;
+
+function trRow(t={},i){
+  const d=document.createElement('div');d.className='trc';
+  d.innerHTML=`<div class="trch"><b>Faixa</b><label class="chk"><input type="checkbox" class="trp" id="trp-${i}" ${t.padrao?'checked':''}> É o padrão</label><button type="button" class="x" aria-label="Remover faixa">Remover</button></div>
+   <div class="trcf">
+    <label class="fld cod"><span>Código</span><input class="t-cod" id="trc-${i}" placeholder="PAD" value="${esc(t.cod)}"></label>
+    <label class="fld nome"><span class="lv">Variedade</span><span class="lp">Produto / descrição</span><input class="t-desc" id="trd-${i}" value="${esc(t.desc)}"></label>
+    <label class="fld" data-so="Produto"><span>Dose</span><input class="t-dose" id="trdo-${i}" placeholder="ex.: 900 kg/ha" value="${esc(t.dose)}"></label>
+    <label class="fld" data-so="Variedade"><span>Ciclo (dias)</span><input class="t-ciclo" id="trci-${i}" type="number" inputmode="numeric" value="${esc(t.ciclo)}"></label>
+    <label class="fld"><span>Área medida (ha)</span><input class="t-area" id="tra-${i}" inputmode="decimal" placeholder="ex.: 2,5" value="${esc(t.area??'')}"></label>
+   </div>`;
+  d.querySelector('.x').onclick=()=>{d.remove();totArea()};
+  d.querySelector('.trp').onchange=e=>{if(e.target.checked)document.querySelectorAll('#trs .trp').forEach(c=>{if(c!==e.target)c.checked=false})};
+  d.querySelector('.t-area').oninput=totArea;
+  return d;
+}
+function totArea(){const v=[...document.querySelectorAll('#trs .t-area')].map(i=>num(i.value)).filter(n=>n!=null);
+  $('trTot').textContent=v.length?'Área total medida: '+v.reduce((a,b)=>a+b,0).toFixed(2).replace('.',',')+' ha':'';}
+function setTipo(t){$('tipo').value=t;$('tipoVar').checked=t==='Variedade';$('tipoProd').checked=t!=='Variedade';$('form').dataset.tipo=t;
+  $('trHint').textContent=t==='Variedade'?'Uma faixa por variedade. Marcar um padrão é opcional; o ciclo de cada uma ajusta as datas.':'Uma faixa por dose ou produto. Marque a faixa padrão (o manejo normal da fazenda).';}
+document.querySelectorAll('[name=tipoR]').forEach(r=>r.onchange=()=>setTipo(r.value));
+let trN=0;
+function fillForm(x){
+  $('formTitle').textContent=x?'Editar '+x.codigo:'Novo experimento';
+  $('codigo').value=x?.codigo||''; $('codigo').disabled=!!x;
+  setTipo(x?.tipo==='Variedade'?'Variedade':'Produto'); $('categoria').value=catOf(x)||'Fertilizante'; $('aplicDap').value=x?.aplicDap??'';
+  $('talhao').value=x?.talhao||''; $('plantio').value=x?.plantio||'';
+  $('ciclo').value=x?.ciclo||120; $('padrao').value=x?.padrao||''; $('testado').value=x?.testado||''; $('obs').value=x?.obs||'';
+  $('formMsg').innerHTML=''; const trs=$('trs'); trs.innerHTML='';
+  (x?.tratamentos?.length?x.tratamentos:[{cod:'PAD',padrao:true},{cod:''}]).forEach(t=>trs.appendChild(trRow(t,trN++)));totArea();
+}
+$('addTr').onclick=()=>{const r=trRow({},trN++);$('trs').appendChild(r);r.querySelector('.t-cod').focus()};
+function voltar(){
+  if(atual==='novo')editing=null;
+  let t=hist.pop();while(t&&(t===atual||t==='lancar'))t=hist.pop();
+  show(t||'lembretes',true);
+}
+$('voltar').onclick=voltar;
+$('form').onsubmit=async e=>{
+  e.preventDefault();
+  const msg=t=>$('formMsg').innerHTML=`<div class="msg err">${esc(t)}</div>`;
+  const codigo=$('codigo').value.trim().toUpperCase().replace(/\s+/g,'-');
+  if(!/^[A-Z0-9_\-.]{1,20}$/.test(codigo)) return msg('Informe um código curto com letras, números ou hífen (ex.: GES-BT06).');
+  if(!editing && exps.some(x=>x.codigo===codigo)) return msg('Já existe um experimento com o código '+codigo+'.');
+  if(!$('plantio').value) return msg('Informe a data de plantio. Sem ela não dá para calcular os lembretes.');
+  const tipo=$('tipo').value;
+  const tratamentos=[...$('trs').children].map(r=>{const g=c=>r.querySelector(c).value.trim();
+    return{cod:g('.t-cod').toUpperCase(),desc:g('.t-desc'),padrao:r.querySelector('.trp').checked,dose:tipo==='Produto'?g('.t-dose'):'',ciclo:tipo==='Variedade'&&g('.t-ciclo')?Number(g('.t-ciclo')):null,area:num(g('.t-area'))}}).filter(t=>t.cod);
+  const apl=$('aplicDap').value.trim();
+  if(!tratamentos.length) return msg('Cadastre pelo menos uma faixa.');
+  if(tipo!=='Variedade'&&!tratamentos.some(t=>t.padrao)) return msg('Marque qual faixa é o padrão da fazenda. Só nos experimentos de variedade o padrão é opcional.');
+  const old=exps.find(x=>x.codigo===(editing||codigo));
+  const data={codigo,tipo,categoria:tipo==='Produto'?$('categoria').value:null,aplicDap:tipo==='Produto'&&apl!==''?Number(apl):null,talhao:$('talhao').value.trim(),plantio:$('plantio').value,ciclo:Number($('ciclo').value)||120,
+    padrao:$('padrao').value.trim(),testado:$('testado').value.trim(),obs:$('obs').value.trim(),tratamentos,feitas:old?.feitas||{},pontos:old?.pontos||{},atualizado:new Date().toISOString()};
+  fila.push({id:Date.now(),tipo:'exp',codigo,data,fotos:[]});
+  if(!salvaFila()){fila.pop();return msg('O celular não deixou guardar os dados neste navegador. Tente de novo com sinal.');}
+  editing=null;atualizarTudo();show('lembretes');sync();
+};
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.done||b.dataset.undo){
+    const [cod,key]=(b.dataset.done||b.dataset.undo).split('|'), x=exps.find(z=>z.codigo===cod);if(!x)return;
+    const feitas={...(x.feitas||{})}; if(b.dataset.done) feitas[key]=iso(today()); else delete feitas[key];
+    fila.push({id:Date.now(),tipo:'feitas',codigo:cod,set:{[key]:b.dataset.done?iso(today()):null},fotos:[]});salvaFila();atualizarTudo();sync();
+  }
+  if(b.dataset.res){$('rExp').value=b.dataset.res;show('resultados');}
+  if(b.dataset.lancar){const [c,k]=b.dataset.lancar.split('|');abrirLanc(c,k);}
+  if(b.dataset.edit){editing=b.dataset.edit;fillForm(exps.find(x=>x.codigo===editing));show('novo');}
+  if(b.dataset.del){const r=$('r-'+b.dataset.del);r.innerHTML=`<span class="confirm">Excluir ${esc(b.dataset.del)} e todos os lembretes? <button class="btn small danger" data-delok="${esc(b.dataset.del)}">Excluir</button><button class="btn small" data-delno="1">Manter</button></span>`;}
+  if(b.dataset.delno) renderExps();
+  if(b.dataset.delok){if(!db||navigator.onLine===false){$('r-'+b.dataset.delok).textContent='Para excluir, abra o app com sinal.';return;}try{await db.collection('experimentos').doc(b.dataset.delok).delete();await puxar();}catch(err){$('r-'+b.dataset.delok).textContent='Não consegui excluir agora. Tente de novo com sinal.';}}
+});
+
+const t=today(); $('today').textContent='Hoje: '+SEM[t.getDay()]+', '+String(t.getDate()).padStart(2,'0')+' '+MES[t.getMonth()]+' '+t.getFullYear();
+sExps=LS.get('cache_exps',[]);sAvals=LS.get('cache_avals',{});atualizarTudo();
+/* ---------- planilha Google (Apps Script): leitura, gravação e fotos ---------- */
+const SCRIPT_URL=''; // endereço /exec do Apps Script, preenchido na instalação
+let cfg=LS.get('cfg_v1',null), conectando=null;
+const NOTA=$('note').textContent;
+async function api(acao,dados,ms){
+  if(!cfg)throw{code:'config'};
+  let r;
+  try{r=await ate(fetch(cfg.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({acao,chave:cfg.chave,...dados}),redirect:'follow'}),ms);}
+  catch(e){throw{code:'rede'}}
+  let j;try{j=await r.json()}catch(e){throw{code:'rede'}}
+  if(!j.ok)throw /chave/i.test(j.error||'')?{code:'chave'}:{code:'servidor',msg:j.error};
+  return j;
+}
+function criarDb(){
+  const col=n=>({doc:id=>({
+    get:async()=>{const j=await api('get',{col:n,id});return{exists:!!j.data,data:()=>j.data}},
+    set:data=>api('set',{col:n,id,data}),
+    delete:()=>api('del',{col:n,id})})});
+  return{collection:col};
+}
+function blobB64(b){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=()=>rej(r.error);r.readAsDataURL(b)})}
+async function subirFoto(blob,f,op){
+  const j=await api('foto',{nome:f.tmp,codigo:op.codigo,ev:op.aval.ev,trat:f.trat,ponto:f.ponto,lat:f.lat??null,lon:f.lon??null,data:f.data,b64:await blobB64(blob)},120000);
+  return{id:j.id,url:j.url};
+}
+const fotoSrc=f=>f.id?'https://drive.google.com/thumbnail?id='+encodeURIComponent(f.id)+'&sz=w600':'';
+const fotoLink=f=>f.url||(f.id?'https://drive.google.com/file/d/'+encodeURIComponent(f.id)+'/view':'#');
+async function puxar(){
+  const j=await api('tudo',{});
+  sExps=(j.experimentos||[]).filter(Boolean);sAvals=j.avaliacoes||{};
+  LS.set('cache_exps',sExps);LS.set('cache_avals',sAvals);
+  $('note').textContent=NOTA;atualizarTudo();
+}
+function conectar(){
+  if(!cfg)return Promise.resolve();
+  db=db||criarDb();
+  if(!conectando)conectando=(async()=>{
+    try{await puxar();}
+    catch(e){$('note').textContent=e?.code==='chave'?'A planilha recusou a chave de acesso. Toque em Trocar acesso.':'Sem sinal agora. O app mostra os dados guardados no celular e você pode lançar avaliações; elas sobem sozinhas quando o sinal voltar.';return;}
+    await sync();
+  })().finally(()=>{conectando=null});
+  return conectando;
+}
+setInterval(()=>{if(cfg&&!document.hidden&&!fila.length)conectar()},5*60000);
+function telaConfig(abrir){
+  $('cfgBox').hidden=!abrir;$('app').hidden=abrir;
+  if(abrir){$('cfgUrl').value=cfg?.url||SCRIPT_URL||'';$('cfgChave').value=cfg?.chave||'';}
+}
+$('cfgForm').onsubmit=async e=>{
+  e.preventDefault();
+  const novo={url:$('cfgUrl').value.trim(),chave:$('cfgChave').value.trim()};
+  if(!/^https:\/\/script\.google\.com\/.+\/exec$/.test(novo.url)){$('cfgMsg').innerHTML='<div class="msg err">O endereço precisa começar com https://script.google.com e terminar em /exec.</div>';return;}
+  const ant=cfg;cfg=novo;$('cfgOk').disabled=true;$('cfgMsg').innerHTML='<div class="msg">Conferindo com a planilha...</div>';
+  try{await api('tudo',{});}
+  catch(err){cfg=ant;$('cfgOk').disabled=false;$('cfgMsg').innerHTML=`<div class="msg err">${err?.code==='chave'?'Chave de acesso errada.':err?.code==='servidor'?'O script respondeu com erro: '+esc(err.msg||''):'Não consegui falar com a planilha. Confira o endereço e o sinal.'}</div>`;return;}
+  LS.set('cfg_v1',cfg);$('cfgOk').disabled=false;$('cfgMsg').innerHTML='';db=null;telaConfig(false);conectar();
+};
+$('note').insertAdjacentHTML('afterend','<p class="note"><button type="button" class="sair" id="trocar">Trocar acesso</button></p>');
+$('trocar').onclick=()=>telaConfig(true);
+if(navigator.storage?.persist)navigator.storage.persist().catch(()=>{});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+if(cfg)conectar();else telaConfig(true);
+</script>
+</body>
+</html>
