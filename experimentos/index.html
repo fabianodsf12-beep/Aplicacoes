@@ -3,33 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#3E6B2E">
+<meta name="theme-color" content="#FFFFFF">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Experimentos">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Agenda de Campo 26/27</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<title>Experimentos 26/27 | Nadiana Agropecuária</title>
+<link rel="stylesheet" href="nd/tokens.css">
+<link rel="stylesheet" href="nd/componentes.css">
+<script src="nd/icones.js"></script>
+<script src="nd/nadiana.js" defer></script>
 <style>
 /* Layout: caderno de campo — cabeçalho com contadores, abas, lista de lembretes por urgência com bloco de data à esquerda */
-:root{
-  --bg:#F2F4EE; --surface:#FFFFFF; --ink:#1E2A22; --muted:#5D6A60; --line:#D7DDD1;
-  --accent:#3E6B2E; --accent-ink:#FFFFFF; --soft:#E4EDDA;
-  --warn:#9A6414; --warn-bg:#FBF0DC; --danger:#B03C2B; --danger-bg:#F9E3DF; --ok:#2C7A4B; --ok-bg:#DFF1E5;
-  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --f-body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
-  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
-}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#131915; --surface:#1B231D; --ink:#E5ECE3; --muted:#9BA89D; --line:#2D3930;
-  --accent:#8DBF6A; --accent-ink:#0F170E; --soft:#223020;
-  --warn:#E3AE55; --warn-bg:#33281A; --danger:#E77F69; --danger-bg:#3A221D; --ok:#71C391; --ok-bg:#1C3326; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#131915; --surface:#1B231D; --ink:#E5ECE3; --muted:#9BA89D; --line:#2D3930;
-  --accent:#8DBF6A; --accent-ink:#0F170E; --soft:#223020;
-  --warn:#E3AE55; --warn-bg:#33281A; --danger:#E77F69; --danger-bg:#3A221D; --ok:#71C391; --ok-bg:#1C3326; color-scheme:dark}
 *{box-sizing:border-box}
 a{color:var(--accent);font-weight:600}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
@@ -37,16 +23,12 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:1
 h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0}
 h1{font-size:clamp(1.6rem,4vw,2.2rem);letter-spacing:-.01em}
 .sub{color:var(--muted);margin:4px 0 0}
-header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:16px}
 .today{font-family:var(--f-mono);font-size:.85rem;color:var(--muted)}
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .stat b{display:block;font-family:var(--f-display);font-size:1.8rem;line-height:1;font-variant-numeric:tabular-nums}
 .stat span{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .stat.late b{color:var(--danger)} .stat.now b{color:var(--warn)} .stat.soon b{color:var(--accent)}
-nav{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:16px;flex-wrap:wrap}
-nav button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 12px;font:600 .95rem var(--f-body);color:var(--muted);cursor:pointer}
-nav button[aria-selected="true"]{color:var(--ink);border-color:var(--accent)}
 button,select,input,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:600;white-space:nowrap}
@@ -147,7 +129,8 @@ td.num,th.num{text-align:right;white-space:nowrap}
 .pcp{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .pcp .nv{max-width:none;margin:0}
 .addp{align-self:flex-start;border-style:dashed}
-body.focus .wrap>header,body.focus .stats,body.focus nav{display:none}
+body.focus .nd-topo,body.focus .stats,body.focus .nd-nav{display:none}
+body.focus .nd-conteudo{padding-bottom:0}
 body.focus #v-lancar{margin-top:-4px}
 .fld select{min-height:48px}
 .fld input{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;min-height:48px;box-sizing:border-box;text-align:left}
@@ -210,10 +193,117 @@ body.focus #v-lancar{margin-top:-4px}
 .cfg label{display:block;font-weight:600;margin:14px 0 4px}.cfg input{width:100%;font:inherit;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
 .cfg .btn{margin-top:18px;width:100%}.cfg p{color:var(--muted);margin:6px 0 0}
 .sair{all:unset;cursor:pointer;color:var(--muted);text-decoration:underline;font-size:.85rem}
+/* ---- Base de design Nadiana: apelidos das cores antigas e ajustes das telas ---- */
+[hidden]{display:none!important}
+:root{--surface:var(--panel);--accent:var(--brand);--accent-ink:var(--brand-ink);--soft:var(--brand-soft);--danger:var(--bad);--danger-bg:var(--bad-bg);--ok-bg:var(--brand-soft);--f-display:var(--font-display);--f-body:var(--font-body);--f-mono:var(--font-display)}
+body{font-size:16px;line-height:1.4;margin:0}
+a{color:inherit}
+.wrap a,.cfg a{color:var(--nadiana-verde-escuro)}
+:root[data-theme="dark"] .wrap a{color:var(--nadiana-verde-claro)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .wrap a{color:var(--nadiana-verde-claro)}}
+.wrap a.th{color:var(--ink)}
+.wrap{max-width:980px;padding:var(--space-5) var(--space-4) var(--space-6)}
+h1,h2,h3{font-weight:600;letter-spacing:0}
+:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.nd-topo .nd-wrap{max-width:980px}
+.nd-topo p{font-variant-numeric:tabular-nums}
+/* números do topo como Numero (nd-kpi) */
+.stats{gap:var(--space-3);margin:0 0 var(--space-5)}
+.stat{background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius-xl);box-shadow:var(--sombra-1);padding:var(--space-3) var(--space-4);display:flex;flex-direction:column-reverse;gap:2px}
+.stat b{font-family:var(--font-display);font-weight:600;font-size:32px;line-height:1.05}
+.stat span{font-size:13px;font-weight:600;letter-spacing:.05em;color:var(--muted)}
+.stat.late b{color:var(--bad)} .stat.now b{color:var(--warn)} .stat.soon b{color:var(--ink)}
+/* botões como Botao */
+.btn{min-height:44px;padding:0 var(--space-4);border:1px solid var(--line);border-radius:var(--radius-md);background:var(--panel);color:var(--ink);font-size:15px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);transition:background var(--dur-rapida) var(--curva),border-color var(--dur-rapida) var(--curva)}
+.btn:hover{border-color:var(--muted);background:var(--panel2)}
+.btn.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand);font-weight:600}
+.btn.primary:hover{filter:brightness(1.1);background:var(--brand)}
+.btn.danger{color:var(--bad)}
+.btn.small{min-height:40px;padding:0 var(--space-3);font-size:14px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+/* campos como Campo */
+select,input,textarea{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:0 var(--space-3_5);min-height:44px;font-size:16px;color:var(--ink)}
+textarea{padding:var(--space-3) var(--space-3_5)}
+select:focus,input:focus,textarea:focus{border-color:var(--brand);outline:none;box-shadow:0 0 0 3px var(--brand-soft)}
+input[type=checkbox],input[type=radio]{min-height:0;accent-color:var(--brand)}
+.fld input,.fld select{min-height:48px;border-radius:var(--radius-lg);font-size:16px;padding:0 var(--space-3_5)}
+.pcf .fld input{font-family:var(--font-display);font-size:22px;font-weight:600}
+.fld span,.f label{font-size:14px;font-weight:500;color:var(--ink)}
+.f .hint{font-size:13.5px;color:var(--muted)}
+.toolbar label{font-size:14px}
+/* cartões como Cartao */
+.item,.exp,.empty,form,.pc,.trc,.cfg,#lFaixas .fx{border-color:var(--line2)}
+.item{border:1px solid var(--line2);border-radius:var(--radius-xl);box-shadow:var(--sombra-1);padding:var(--space-3) var(--space-4)}
+.item.late,.item.now{border-left-width:1px;border-left-color:var(--line2)}
+.item.late .date .d{color:var(--bad)} .item.now .date .d{color:var(--warn)}
+.date{font-family:var(--font-display)}
+.date .d{font-size:28px;font-weight:600}
+.date .m{font-size:13px;font-weight:600;letter-spacing:.05em}
+.what .t{font-weight:600;font-size:16px}
+.meta{font-size:13.5px}
+.group{margin:var(--space-6) 0 var(--space-3)}
+.group h2{font-size:22px}
+.exp{border-radius:var(--radius-2xl);box-shadow:var(--sombra-1);padding:var(--space-4);gap:var(--space-3)}
+.exp h3{font-size:20px}
+.exps{gap:var(--space-5)}
+.empty{background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:var(--sombra-1);padding:var(--space-6) var(--space-4)}
+.empty h2{font-size:20px}
+form{border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:var(--sombra-1);padding:var(--space-4)}
+#lform{box-shadow:none;border:0;padding:0}
+#lFaixas .fx{border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:var(--sombra-1)}
+#lFaixas .fx header{background:var(--panel2);border-bottom:1px solid var(--line2)}
+#lFaixas .fx.pad header{background:var(--brand-soft)}
+#lFaixas .fx header h3{font-size:18px}
+.pc{border-bottom:1px solid var(--line2)}
+.pn{background:var(--brand);color:var(--brand-ink);font-family:var(--font-display);font-size:14px;width:28px;height:28px}
+.pch b{font-family:var(--font-display);font-size:17px;font-weight:600}
+.trc{border-radius:var(--radius-xl);background:var(--panel2)}
+.lhead h2{font-size:28px}
+.lhead .how{background:var(--brand-soft);border-radius:var(--radius-lg);font-size:15px}
+/* etiquetas como Etiqueta */
+.tag{font-family:var(--font-body);font-size:13px;font-weight:600;padding:2px 10px;border-radius:var(--radius-pill);background:var(--panel2);border:1px solid var(--line2);color:var(--ink)}
+.pill{font-size:13px;font-weight:600;text-transform:none;letter-spacing:0;padding:3px 10px;border-radius:var(--radius-pill)}
+.pill.done{background:var(--brand-soft);color:var(--ok)}
+.gps{font-size:13px;font-weight:500;border-radius:var(--radius-pill);padding:2px 10px}
+.gps.off{color:var(--warn);background:var(--warn-bg)}
+.gps.on{color:var(--ok);background:var(--brand-soft)}
+.bar{background:var(--line2);border-radius:var(--radius-pill)}
+.bar i{background:var(--nadiana-verde);border-radius:inherit}
+/* mensagens como Mensagem */
+.fila{border-radius:var(--radius-lg);padding:var(--space-3) var(--space-3_5);font-size:15px;border:0}
+.fila.wait{background:var(--warn-bg);color:var(--warn);border:0}
+.fila.ok{background:var(--brand-soft);color:var(--ok)}
+.msg{border-radius:var(--radius-lg);padding:var(--space-3) var(--space-3_5);font-size:15px}
+.msg.okm{background:var(--brand-soft);color:var(--ok)}
+/* tabela de resultados como Tabela */
+.tbl{border:1px solid var(--line2);border-radius:var(--radius-xl);background:var(--panel);box-shadow:var(--sombra-1)}
+.tbl table{font-size:14px}
+.tbl th{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;background:var(--panel2);padding:var(--space-3) var(--space-3_5);border-bottom:1px solid var(--line)}
+.tbl td{padding:var(--space-3) var(--space-3_5);border-bottom:1px solid var(--line2)}
+.up{color:var(--ok)} .down{color:var(--bad)}
+.th{border-radius:var(--radius-md);border-color:var(--line2)}
+/* barras de baixo: acima da navegação do celular */
+.backbar,.savebar{background:var(--panel);border-top:1px solid var(--line2);box-shadow:var(--sombra-3)}
+.backbar{bottom:calc(var(--nav-altura) + env(safe-area-inset-bottom,0px))}
+@media (min-width:900px){.backbar{bottom:0}}
+.backbar .btn,.savebar .btn{min-height:48px}
+.note{font-size:13.5px}
+.seg span{border-radius:var(--radius-xl);border-color:var(--line)}
+.seg b{font-size:18px;font-weight:600}
+.seg input:checked+span{border-color:var(--brand);background:var(--brand-soft)}
+.trtot{color:var(--ok)}
+/* tela de acesso */
+.cfg{border-radius:var(--radius-2xl);box-shadow:var(--sombra-1);padding:var(--space-6) var(--space-4)}
+.cfg h2{font-size:24px}
+.cfg input{min-height:48px;border-radius:var(--radius-lg);background:var(--panel)}
+.cfg .btn{min-height:52px;font-size:17px;border-radius:var(--radius-lg)}
+#cfgBox{margin:var(--space-6) var(--space-4)}
+@media (min-width:500px){#cfgBox{margin:var(--space-6) auto}}
 </style>
 </head>
 <body>
 <div class="cfg" id="cfgBox" hidden>
+  <span class="nd-logo" style="margin-bottom:12px"><img src="nd/nadiana-logo.png" alt="Nadiana" style="height:26px"></span>
   <h2>Entrar neste aparelho</h2>
   <p>Feito uma vez em cada celular. Depois o app abre e funciona sem sinal.</p>
   <form id="cfgForm">
@@ -225,14 +315,21 @@ body.focus #v-lancar{margin-top:-4px}
     <div id="cfgMsg"></div>
   </form>
 </div>
-<div class="wrap" id="app">
-  <header>
-    <div>
-      <h1>Agenda de Campo 26/27</h1>
-      <p class="sub">Experimentos de soja comparados ao padrão da fazenda. Cadastre o experimento e as datas das avaliações aparecem aqui.</p>
-    </div>
-    <div class="today" id="today"></div>
-  </header>
+<div class="nd-app" id="app">
+<nav class="nd-nav" aria-label="Principal" role="tablist">
+  <div class="marca"><span class="nd-logo"><img src="nd/nadiana-logo.png" alt="Nadiana"></span></div>
+  <a href="#" role="tab" id="tab-lembretes" aria-selected="true" aria-current="page" data-tab="lembretes"><svg class="nd-ic" aria-hidden="true"><use href="#i-bell"/></svg>Lembretes</a>
+  <a href="#" role="tab" id="tab-experimentos" aria-selected="false" data-tab="experimentos"><svg class="nd-ic" aria-hidden="true"><use href="#i-sprout"/></svg>Experimentos</a>
+  <a href="#" role="tab" id="tab-resultados" aria-selected="false" data-tab="resultados"><svg class="nd-ic" aria-hidden="true"><use href="#i-chart-column"/></svg>Resultados</a>
+  <a href="#" role="tab" id="tab-novo" aria-selected="false" data-tab="novo"><svg class="nd-ic" aria-hidden="true"><use href="#i-plus"/></svg>Novo</a>
+</nav>
+<div class="nd-conteudo">
+<header class="nd-topo"><div class="nd-wrap">
+  <span class="nd-logo"><img class="h" src="nd/nadiana-logo.png" alt="Nadiana"><img class="s" src="nd/nadiana-simbolo.png" alt="Nadiana"></span>
+  <div class="app"><h1>Experimentos 26/27</h1><p id="today"></p></div>
+  <div class="acoes"><span class="nd-net" id="net"><i></i><span>Conectado</span></span><button type="button" class="nd-btn icone leve" data-nd-tema aria-label="Trocar tema claro ou escuro"><svg class="nd-ic" aria-hidden="true"><use href="#i-moon" id="temaIc"/></svg></button></div>
+</div></header>
+<div class="wrap">
 
   <div class="stats" id="stats">
     <div class="stat late"><b id="sLate">0</b><span>Atrasadas</span></div>
@@ -241,12 +338,6 @@ body.focus #v-lancar{margin-top:-4px}
   </div>
 
   <div class="fila" id="fila" hidden role="status"></div>
-  <nav role="tablist">
-    <button role="tab" id="tab-lembretes" aria-selected="true" data-tab="lembretes">Lembretes</button>
-    <button role="tab" id="tab-experimentos" aria-selected="false" data-tab="experimentos">Experimentos</button>
-    <button role="tab" id="tab-resultados" aria-selected="false" data-tab="resultados">Resultados</button>
-    <button role="tab" id="tab-novo" aria-selected="false" data-tab="novo">+ Novo experimento</button>
-  </nav>
 
   <section id="v-lembretes">
     <div class="toolbar">
@@ -313,6 +404,8 @@ body.focus #v-lancar{margin-top:-4px}
 
   <div class="backbar" id="backbar" hidden><button type="button" class="btn" id="voltar">← Voltar</button></div>
   <p class="note" id="note">As datas são de referência para soja. Confirme sempre pelo estágio da planta no campo. A janela de cada avaliação vai de 3 dias antes a 3 dias depois da data.</p>
+</div>
+</div>
 </div>
 
 <script>
@@ -548,6 +641,7 @@ function aplicarFila(){
 }
 function atualizarTudo(){aplicarFila();render();renderFila();}
 function renderFila(){
+  setTimeout(netStatus,0);
   const b=$('fila');const n=fila.length, nf=fila.reduce((a,o)=>a+o.fotos.length,0);
   if(!n){b.hidden=!ultimoEnvio&&!erroEnvio;b.className='fila ok';b.innerHTML=ultimoEnvio?`Tudo enviado. Último envio: ${esc(new Date(ultimoEnvio).toLocaleString('pt-BR'))}`:'';return;}
   b.hidden=false;b.className='fila wait';
@@ -719,13 +813,13 @@ function show(tab,back){
   if(tab==='lembretes'&&!back)hist=[];
   atual=tab;
   $('backbar').hidden=tab==='lancar'||(tab==='lembretes'&&!hist.length);
-  ['lembretes','experimentos','resultados','novo','lancar'].forEach(t=>{$('v-'+t).hidden=t!==tab;const b=$('tab-'+t);if(b)b.setAttribute('aria-selected',t===tab)});
+  ['lembretes','experimentos','resultados','novo','lancar'].forEach(t=>{$('v-'+t).hidden=t!==tab;const b=$('tab-'+t);if(b){b.setAttribute('aria-selected',t===tab);if(t===tab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')}});
   if(tab==='resultados') renderRes();
   document.body.classList.toggle('focus',tab==='lancar');
   window.scrollTo(0,0);
   if(tab==='novo'&&!editing) fillForm(null);
 }
-document.querySelector('nav').onclick=e=>{const t=e.target.dataset.tab;if(t){if(t==='novo')editing=null;show(t)}};
+document.querySelector('.nd-nav').onclick=e=>{const a=e.target.closest('[data-tab]');if(!a)return;e.preventDefault();const t=a.dataset.tab;if(t==='novo')editing=null;show(t)};
 $('fExp').onchange=renderLembretes; $('fDone').onchange=renderLembretes;
 
 function trRow(t={},i){
@@ -800,8 +894,15 @@ document.addEventListener('click',async e=>{
   if(b.dataset.delok){if(!db||navigator.onLine===false){$('r-'+b.dataset.delok).textContent='Para excluir, abra o app com sinal.';return;}try{await db.collection('experimentos').doc(b.dataset.delok).delete();await puxar();}catch(err){$('r-'+b.dataset.delok).textContent='Não consegui excluir agora. Tente de novo com sinal.';}}
 });
 
-const t=today(); $('today').textContent='Hoje: '+SEM[t.getDay()]+', '+String(t.getDate()).padStart(2,'0')+' '+MES[t.getMonth()]+' '+t.getFullYear();
+const t=today(); $('today').textContent='Hoje, '+SEM[t.getDay()]+', '+String(t.getDate()).padStart(2,'0')+' '+MES[t.getMonth()]+' '+t.getFullYear();
 sExps=LS.get('cache_exps',[]);sAvals=LS.get('cache_avals',{});atualizarTudo();
+
+/* ---------- indicador de conexão (base Nadiana) ---------- */
+function netStatus(){const n=$('net');if(!n)return;const off=navigator.onLine===false,pend=fila.length;
+  n.className='nd-net'+(off?' erro':pend?' ocupado':'');n.lastChild.textContent=off?'Sem sinal':pend?(pend+' na fila'):'Conectado';}
+['online','offline'].forEach(ev=>window.addEventListener(ev,netStatus));setInterval(netStatus,3000);
+function iconeTema(){const d=(window.Nadiana?Nadiana.tema():(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))==='dark';$('temaIc').setAttribute('href',d?'#i-sun':'#i-moon');}
+document.addEventListener('nd-tema',iconeTema);window.addEventListener('load',iconeTema);
 /* ---------- planilha Google (Apps Script): leitura, gravação e fotos ---------- */
 const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxDf57BRoIl8qrrU8MmTz6632FtEA_yg8qoBK_98K7dXLL1h9KlZcoA8gvhJvEqZRD4kQ/exec'; // endereço /exec do Apps Script, preenchido na instalação
 let cfg=LS.get('cfg_v1',null), conectando=null;

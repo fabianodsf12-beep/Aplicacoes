@@ -1,7 +1,7 @@
 // Guarda o app no celular para abrir sem sinal. Mude VERSAO a cada publicação.
-const VERSAO='v2';
+const VERSAO='v3';
 const CACHE='agenda-campo-'+VERSAO;
-const BASE=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+const BASE=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./nd/tokens.css','./nd/componentes.css','./nd/icones.js','./nd/nadiana.js','./nd/nadiana-logo.png','./nd/nadiana-simbolo.png','./nd/fonts/Barlow-400.woff2','./nd/fonts/Barlow-500.woff2','./nd/fonts/Barlow-600.woff2','./nd/fonts/BarlowCondensed-500.woff2','./nd/fonts/BarlowCondensed-600.woff2','./nd/fonts/BarlowCondensed-700.woff2'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(BASE)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('agenda-campo-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 const comPrazo=(p,ms)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r(new Error('prazo')),ms))]);
