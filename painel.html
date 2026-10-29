@@ -6,10 +6,10 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#18211D" media="(prefers-color-scheme: dark)">
 <title>Painel de aplicações – Fazenda Reata, Soja 26/27</title>
-<link rel="icon" href="nadiana/logos/nadiana-simbolo.png">
-<link rel="stylesheet" href="nadiana/tokens.css">
-<link rel="stylesheet" href="nadiana/componentes.css">
-<script src="nadiana/tokens.js"></script>
+<link rel="icon" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.png">
+<link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.css">
+<link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/componentes.css">
+<script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -17,7 +17,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
-/* Visual da base Nadiana (nadiana/README.md): cores e fontes vêm de nadiana/tokens.css.
+/* Visual da base Nadiana (https://github.com/fabianodsf12-beep/nadiana-design/blob/main/v1/README.md): cores e fontes vêm de tokens.css da base.
    Ficam aqui só os dois status de execução que são do Painel. */
 :root{
   --s-exec_atraso:#9A5A1C;--s-exec_prazo:#1E4E79;
@@ -238,7 +238,7 @@ tbody tr:hover td{background:var(--panel2)}
   <div class="top-inner">
     <div class="title-row">
       <a class="brand" href="./index.html" style="text-decoration:none;color:inherit" title="Página inicial">
-        <span class="nd-logo"><img class="h" src="nadiana/logos/nadiana-logo.png" alt="Nadiana"><img class="s" src="nadiana/logos/nadiana-simbolo.png" alt="Nadiana"></span>
+        <span class="nd-logo"><img class="h" src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-logo.png" alt="Nadiana"><img class="s" src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.png" alt="Nadiana"></span>
         <div>
           <h1>Painel de aplicações</h1>
           <p id="subtitle">Fazenda Reata, safra soja 26/27</p>
@@ -1008,7 +1008,7 @@ function logoNadiana(){
     const im = new Image();
     im.onload = () => { try { const c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight;
       c.getContext("2d").drawImage(im, 0, 0); ok({url: c.toDataURL("image/png"), w: im.naturalWidth, h: im.naturalHeight}); } catch(e) { ok(null); } };
-    im.onerror = () => ok(null); im.src = "nadiana/logos/nadiana-logo.png"; });
+    im.onerror = () => ok(null); im.crossOrigin = "anonymous"; im.src = "https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-logo.png"; });
 }
 async function gerarPDF(){
   if (!S.db) { toast("Carregue os dados antes de gerar o relatório."); return; }
@@ -1029,7 +1029,7 @@ async function gerarPDF(){
     const kf = (id) => { const el = $(id); return el ? [el.querySelector("b")?.textContent || "", el.querySelector("span")?.textContent || ""] : ["", ""]; };
     const M = build();
     const {jsPDF} = window.jspdf, doc = new jsPDF({orientation:"landscape", unit:"mm", format:"a4", compress:true});
-    /* cores da base Nadiana (tema claro de nadiana/tokens.json) */
+    /* cores da base Nadiana (tema claro de tokens.json da base) */
     const TK = (window.NadianaTokens || {}).light || {}, tk = (n, f) => rgb(TK[n] || f);
     const W = 297, H = 210, mg = 12, verde = tk("nadiana-verde", "#04954D"), verdeE = tk("nadiana-verde-escuro", "#007637"), petroleo = tk("nadiana-petroleo", "#01252B"),
       fundo2 = tk("panel2", "#F6F8F5"), suave = tk("brand-soft", "#E3EEE7"), tinta = tk("ink", "#17221C"), cinza = tk("muted", "#4F5C55"), linha = tk("line2", "#E3E8E1"), linhaF = tk("line", "#C9D1C7");
