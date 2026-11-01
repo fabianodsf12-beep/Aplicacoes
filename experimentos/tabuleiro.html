@@ -684,7 +684,7 @@ function aneisDaZona(ti){
     return ll;
   });
 }
-const CAMPOS_ZONA = () => [{nome:"ZONA", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, {nome:"DOSE", tipo:"N", tam:12, dec:3}, {nome:"UNIDADE", tipo:"C", tam:6},
+const CAMPOS_ZONA = () => [{nome:"ZONA", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, ...(S.modo === "doses" ? [{nome:"DOSE", tipo:"N", tam:12, dec:3}] : []), {nome:"UNIDADE", tipo:"C", tam:6},
   ...S.trats.filter(t => !ehTest(t)).map(t => ({nome:("D_" + semAcento(t.cod).replace(/[^A-Za-z0-9]/g, "")).slice(0, 10), tipo:"N", tam:12, dec:3})),
   {nome:"QUADRADOS", tipo:"N", tam:5}, {nome:"AREA_HA", tipo:"N", tam:10, dec:2}];
 function baixarZonas(){
@@ -699,7 +699,7 @@ function baixarZonas(){
   const b = nomeBase() + "_zonas";
   baixar(zipShp(shapefile(fe, CAMPOS_ZONA()), b), b + ".zip");
   const semDose = S.trats.some(t => !isFinite(num(t.dose)));
-  arqMsg("", `<b>Zonas baixadas</b>${fe.length} zonas (${fe.map(f => esc(f.props.ZONA)).join(", ")}), uma por tratamento, coluna ZONA. ${semDose ? "Sem dose ainda: defina a dose de cada zona no Operations Center." : "As colunas D_ trazem a dose de cada produto por zona."}`);
+  arqMsg("", `<b>Zonas baixadas</b>${fe.length} zonas (${fe.map(f => esc(f.props.ZONA)).join(", ")}), uma por tratamento, coluna ZONA. ${semDose ? "Sem dose ainda: defina a dose de cada zona no Operations Center." : "As colunas D_ trazem a dose de cada produto por zona."}${S.modo === "produtos" ? " Cada passada usa uma coluna: D_A na passada do produto A, D_B na do B, e assim por diante." : ""}`);
 }
 function renderRxBtns(){
   const ic = '<svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>';
