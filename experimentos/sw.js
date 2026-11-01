@@ -1,5 +1,5 @@
 // Guarda o app no celular para abrir sem sinal. Mude VERSAO a cada publicação.
-const VERSAO='v4';
+const VERSAO='v5';
 const CACHE='agenda-campo-'+VERSAO;
 // A base de design Nadiana vem do endereço publicado e também fica guardada aqui.
 const BASE=["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.css", "https://fabianodsf12-beep.github.io/nadiana-design/v1/componentes.css", "https://fabianodsf12-beep.github.io/nadiana-design/v1/icones.js", "https://fabianodsf12-beep.github.io/nadiana-design/v1/nadiana.js", "https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.svg", "https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-logo-vertical.svg", "https://fabianodsf12-beep.github.io/nadiana-design/v1/fonts/Barlow-400.woff2", "https://fabianodsf12-beep.github.io/nadiana-design/v1/fonts/Barlow-500.woff2", "https://fabianodsf12-beep.github.io/nadiana-design/v1/fonts/Barlow-600.woff2", "https://fabianodsf12-beep.github.io/nadiana-design/v1/fonts/BarlowCondensed-500.woff2", "https://fabianodsf12-beep.github.io/nadiana-design/v1/fonts/BarlowCondensed-600.woff2", "https://fabianodsf12-beep.github.io/nadiana-design/v1/fonts/BarlowCondensed-700.woff2"];

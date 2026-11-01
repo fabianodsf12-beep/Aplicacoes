@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.css">
 <link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/componentes.css">
 <script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.js"></script>
+<script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/nadiana.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -216,7 +217,8 @@ tbody tr:hover td{background:var(--panel2)}
 
 .dline{display:flex;align-items:center;gap:6px;margin:4px 0 0;font-size:12.5px;color:var(--muted)}
 .sdot{width:8px;height:8px;border-radius:50%;background:var(--s-programada);flex-shrink:0}
-.dline.ok .sdot{background:var(--ok)}.dline.busy .sdot{background:var(--s-janela)}.dline.err .sdot{background:var(--s-atrasada)}
+.dline.ok .sdot{background:var(--ok);position:relative}
+.dline.ok .sdot::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;animation:nd-ping 1.8s var(--curva) infinite}.dline.busy .sdot{background:var(--s-janela)}.dline.err .sdot{background:var(--s-atrasada)}
 .dline.err{color:var(--s-atrasada)}
 .spin svg{animation:sp 1s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
 .ptbl{width:100%;min-width:640px}
@@ -246,12 +248,12 @@ tbody tr:hover td{background:var(--panel2)}
         </div>
       </a>
       <div class="acoes">
-        <a class="btn primary" href="./lancar.html" style="text-decoration:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Lançar</a>
-        <button type="button" class="btn" id="btnPdf" title="Baixar o relatório em PDF com os filtros e o período atuais"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Baixar PDF</button>
-        <button type="button" class="icon-btn" id="btnSync" title="Atualizar: buscar a versão mais recente da planilha no Drive" aria-label="Atualizar dados"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg></button>
-        <label class="icon-btn" for="file" title="Carregar planilha do computador" aria-label="Carregar planilha do computador" style="cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg></label>
+        <a class="btn nd-onda primary" href="./lancar.html" style="text-decoration:none"><svg class="gira" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Lançar</a>
+        <button type="button" class="btn nd-onda" id="btnPdf" title="Baixar o relatório em PDF com os filtros e o período atuais"><svg class="desce" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Baixar PDF</button>
+        <button type="button" class="icon-btn nd-onda" id="btnSync" title="Atualizar: buscar a versão mais recente da planilha no Drive" aria-label="Atualizar dados"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg></button>
+        <label class="icon-btn nd-onda" for="file" title="Carregar planilha do computador" aria-label="Carregar planilha do computador" style="cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg></label>
         <input type="file" id="file" accept=".xlsx,.xlsm" hidden>
-        <button type="button" class="icon-btn" id="themeBtn" title="Tema claro ou escuro" aria-label="Alternar tema claro/escuro"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+        <button type="button" class="icon-btn nd-onda" id="themeBtn" title="Tema claro ou escuro" aria-label="Alternar tema claro/escuro"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
       </div>
     </div>
   </div>
@@ -260,7 +262,7 @@ tbody tr:hover td{background:var(--panel2)}
   <div class="barra-inner">
     <div class="filtros">
       <div class="ctl">Modalidade
-        <div class="seg" role="group" aria-label="Modalidade" id="modoSeg">
+        <div class="seg nd-desliza" role="group" aria-label="Modalidade" id="modoSeg">
           <button type="button" data-v="todas" aria-pressed="true">Todas</button>
           <button type="button" data-v="T" aria-pressed="false">Terrestre</button>
           <button type="button" data-v="A" aria-pressed="false">Aérea</button>
@@ -336,7 +338,7 @@ tbody tr:hover td{background:var(--panel2)}
       </div>
       <div class="card">
         <div class="card-head"><div><h2>Aplicação × chuva</h2><p class="sub">Chuva (mm), chuva acumulada no período e área aplicada.</p></div>
-          <div class="seg" role="group" aria-label="Agrupar chuva" id="segChuva" style="margin-left:auto"><button type="button" data-v="d" aria-pressed="true">Diário</button><button type="button" data-v="w" aria-pressed="false">Semanal</button></div>
+          <div class="seg nd-desliza" role="group" aria-label="Agrupar chuva" id="segChuva" style="margin-left:auto"><button type="button" data-v="d" aria-pressed="true">Diário</button><button type="button" data-v="w" aria-pressed="false">Semanal</button></div>
           <div class="kfig" id="kfChuva" style="margin-left:14px"></div></div>
         <div class="chart-box tall" style="height:310px"><canvas id="chChuva" aria-label="Aplicação e pluviometria"></canvas></div>
         <div class="cap-msg" id="chuvaMsg"></div>
@@ -357,7 +359,7 @@ tbody tr:hover td{background:var(--panel2)}
       <div class="card-head">
         <div><h2>Cronograma por talhão</h2><p class="sub">Programado contra executado, ancorado na data de plantio. Passe o mouse nos marcadores para ver detalhes.</p></div>
         <div class="gantt-tools">
-          <div class="seg" role="group" aria-label="Período" id="zoomSeg">
+          <div class="seg nd-desliza" role="group" aria-label="Período" id="zoomSeg">
             <button type="button" data-v="15" aria-pressed="false">15 dias</button>
             <button type="button" data-v="30" aria-pressed="true">30 dias</button>
             <button type="button" data-v="60" aria-pressed="false">60 dias</button>
@@ -379,7 +381,7 @@ tbody tr:hover td{background:var(--panel2)}
       <div class="card-head">
         <div><h2>Mapa dos talhões</h2><p class="sub">Contornos sobre imagem de satélite, coloridos pela situação. Os filtros e o período valem aqui também. Clique num talhão para ver os detalhes.</p></div>
         <div class="tm-tools">
-          <div class="seg" role="group" aria-label="Colorir mapa por" id="geoSeg">
+          <div class="seg nd-desliza" role="group" aria-label="Colorir mapa por" id="geoSeg">
             <button type="button" data-v="sit" aria-pressed="true">Situação crítica</button>
             <button type="button" data-v="dap" aria-pressed="false">Dias após plantio</button>
             <button type="button" data-v="exec" aria-pressed="false">% executado</button>
@@ -398,7 +400,7 @@ tbody tr:hover td{background:var(--panel2)}
       <div class="card-head">
         <div><h2>Talhões por área</h2><p class="sub">Cada bloco é um talhão, proporcional à área. Clique para ver o histórico.</p></div>
         <div class="tm-tools">
-          <div class="seg" role="group" aria-label="Colorir por" id="tmSeg">
+          <div class="seg nd-desliza" role="group" aria-label="Colorir por" id="tmSeg">
             <button type="button" data-v="sit" aria-pressed="true">Situação crítica</button>
             <button type="button" data-v="dap" aria-pressed="false">Dias após plantio</button>
             <button type="button" data-v="exec" aria-pressed="false">% executado</button>
@@ -427,7 +429,7 @@ tbody tr:hover td{background:var(--panel2)}
 <aside class="drawer" id="drawer" aria-hidden="true" aria-labelledby="drTitle">
   <div class="dr-head">
     <div><h3 id="drTitle"></h3><p class="muted" id="drSub" style="margin:6px 0 0;font-size:14px"></p></div>
-    <button type="button" class="icon-btn" id="drClose" aria-label="Fechar detalhes">
+    <button type="button" class="icon-btn nd-onda" id="drClose" aria-label="Fechar detalhes">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
   </div>
@@ -622,7 +624,7 @@ function renderFilters(){
   if (PER) parts.push(["per", perLabel(PER), null]);
   if (!parts.length) { f.innerHTML = '<span class="muted">Sem filtros. Clique em indicadores, gráficos ou use os controles acima para filtrar.</span>'; return; }
   f.innerHTML = parts.map(([k, t, c]) => `<span class="chip">${c ? `<span class="dot" style="background:${c}"></span>` : ""}${esc(t)}<button type="button" data-clear="${k}" aria-label="Remover filtro ${esc(t)}">×</button></span>`).join("") +
-    (parts.length > 1 ? '<button type="button" class="btn" data-clear="all" style="height:32px">Limpar tudo</button>' : "");
+    (parts.length > 1 ? '<button type="button" class="btn nd-onda" data-clear="all" style="height:32px">Limpar tudo</button>' : "");
 }
 function setFilter(k, v){
   if (k === "status") S.status = (S.status === v ? "todas" : v);
@@ -649,12 +651,14 @@ function renderKPIs(M){
   ];
   $("kpis").innerHTML = grp.map((g) => {
     const pct = g.k === "todas" ? 100 : Math.round(g.arr.length / n * 100);
-    return `<button type="button" class="kpi" data-st="${g.k}" aria-pressed="${S.status===g.k}" style="--k:${g.c}">
+    return `<button type="button" class="kpi nd-onda" data-st="${g.k}" aria-pressed="${S.status===g.k}" style="--k:${g.c}">
       <span class="lab"><span class="dot" style="background:${g.c}"></span>${g.lab}</span>
-      <span class="val">${g.arr.length}${g.k!=="todas"?`<small>${pct}%</small>`:""}</span>
+      <span class="val"><span data-k="${g.k}" data-nd-conta="${g.arr.length}">${g.arr.length}</span>${g.k!=="todas"?`<small>${pct}%</small>`:""}</span>
       <span class="bar"><i style="width:${pct}%"></i></span>
       <span class="foot">${g.foot(g.arr)}</span></button>`;
   }).join("");
+  const ant = (renderKPIs.ant ||= {});   // valor anterior de cada indicador, para contar do anterior até o novo
+  $("kpis").querySelectorAll("[data-nd-conta]").forEach((el) => { el._ndValor = ant[el.dataset.k] || 0; ant[el.dataset.k] = +el.dataset.ndConta; if (window.Nadiana) Nadiana.contar(el); });
 }
 function mk(id, cfg){ if (charts[id]) charts[id].destroy(); charts[id] = new Chart($(id), cfg); }
 /* ---- estilo comum dos gráficos ---- */
