@@ -213,16 +213,17 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
             </div>
             <div id="arqMsg"></div>
             <p class="dica" id="rxDica"></p>
-            <p class="dica">O arquivo de zonas tem uma linha por tratamento (todos os quadrados dele juntos); as prescrições prontas têm um polígono por quadrado, com TRAT, DOSE, ID e PISTA. Tudo em coordenadas geográficas WGS84. O KML e a planilha servem para a equipe achar os quadrados no campo e para a análise depois da colheita.</p>
+            <p class="dica">Cada arquivo de zona tem uma linha com todos os quadrados daquele teste juntos (ZONA, NOME, DOSE, QUADRADOS, AREA_HA); as prescrições prontas têm um polígono por quadrado, com TRAT, DOSE, ID e PISTA. Tudo em coordenadas geográficas WGS84. O KML e a planilha servem para a equipe achar os quadrados no campo e para a análise depois da colheita.</p>
           </section>
 
           <section class="nd-cartao">
             <h2>Como levar para o M4030</h2>
             <ol class="passos-jd">
-              <li>Baixe as zonas. Não descompacte o .zip.</li>
-              <li>No Operations Center, envie o arquivo em Arquivos. Ele entra como zonas do RT-40, uma por tratamento (coluna ZONA).</li>
-              <li>Crie a prescrição por zonas e informe a dose de cada zona. Produtos diferentes: uma prescrição por produto, com a dose na zona dele e 0 nas outras (as colunas D_ já trazem esses valores). Testemunha sempre 0.</li>
-              <li>Mande para o monitor pela transferência de dados, ou leve por pendrive. Fora das zonas: desligado nas passadas de produto em teste; dose padrão no ensaio de doses. Lave o tanque entre um produto e outro.</li>
+              <li>Produtos diferentes: baixe um arquivo por teste (Zona A, Zona B…). Cada arquivo tem só os quadrados sorteados para aquele teste. Não descompacte o .zip.</li>
+              <li>No Operations Center, envie cada arquivo em Arquivos e crie a prescrição daquele teste, com a dose do produto na zona. Fora da zona, bicos fechados.</li>
+              <li>Cada teste é uma aplicação separada, com o seu produto no tanque. A testemunha não tem arquivo: fica fora de todas as zonas. Lave o tanque entre um produto e outro.</li>
+              <li>Doses de um mesmo produto (vazão): um arquivo só com todas as zonas e a coluna DOSE, numa aplicação só.</li>
+              <li>Mande para o monitor pela transferência de dados, ou leve por pendrive.</li>
               <li>Ligue o desligamento bico a bico (Section Control) e trabalhe com sinal RTK.</li>
               <li>Antes do produto, faça um teste só com água em 3 ou 4 quadrados e confira o mapa do aplicado: a testemunha tem que sair sem aplicação.</li>
               <li>Se o monitor não fechar os bicos com dose 0, use o arquivo "Testemunhas como limite" como limites internos do talhão; o Section Control fecha os bicos dentro deles.</li>
@@ -685,7 +686,7 @@ function aneisDaZona(ti){
   });
 }
 const CAMPOS_ZONA = () => [{nome:"ZONA", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, ...(S.modo === "doses" ? [{nome:"DOSE", tipo:"N", tam:12, dec:3}] : []), {nome:"UNIDADE", tipo:"C", tam:6},
-  ...S.trats.filter(t => !ehTest(t)).map(t => ({nome:("D_" + semAcento(t.cod).replace(/[^A-Za-z0-9]/g, "")).slice(0, 10), tipo:"N", tam:12, dec:3})),
+  ...S.trats.filter(t => S.modo === "produtos" && !ehTest(t)).map(t => ({nome:("D_" + semAcento(t.cod).replace(/[^A-Za-z0-9]/g, "")).slice(0, 10), tipo:"N", tam:12, dec:3})),
   {nome:"QUADRADOS", tipo:"N", tam:5}, {nome:"AREA_HA", tipo:"N", tam:10, dec:2}];
 function baixarZonas(){
   if (!exigirGrade()) return;
@@ -701,19 +702,34 @@ function baixarZonas(){
   const semDose = S.trats.some(t => !isFinite(num(t.dose)));
   arqMsg("", `<b>Zonas baixadas</b>${fe.length} zonas (${fe.map(f => esc(f.props.ZONA)).join(", ")}), uma por tratamento, coluna ZONA. ${semDose ? "Sem dose ainda: defina a dose de cada zona no Operations Center." : "As colunas D_ trazem a dose de cada produto por zona."}${S.modo === "produtos" ? " Cada passada usa uma coluna: D_A na passada do produto A, D_B na do B, e assim por diante." : ""}`);
 }
+/* Produtos diferentes: um arquivo por teste, só com a zona dele (os quadrados sorteados para aquele teste) */
+function baixarZonaTeste(ti){
+  if (!exigirGrade()) return;
+  const t = S.trats[ti], nq = GRADE.quads.filter(q => q.ok && q.ti === ti).length;
+  if (!t || !nq) { arqMsg("erro", "<b>Zona vazia</b>Esse teste não tem quadrados dentro do talhão."); return; }
+  const d = num(t.dose), cod = semAcento(t.cod).replace(/[^A-Za-z0-9]/g, "");
+  const fe = [{aneis:aneisDaZona(ti), props:{ZONA:t.cod, NOME:t.nome || t.cod, DOSE:isFinite(d) ? d : null, UNIDADE:S.unid, QUADRADOS:nq, AREA_HA:nq * GRADE.areaQ}}];
+  const campos = [{nome:"ZONA", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, {nome:"DOSE", tipo:"N", tam:12, dec:3}, {nome:"UNIDADE", tipo:"C", tam:6}, {nome:"QUADRADOS", tipo:"N", tam:5}, {nome:"AREA_HA", tipo:"N", tam:10, dec:2}];
+  const b = nomeBase() + "_zona_" + cod;
+  baixar(zipShp(shapefile(fe, campos), b), b + ".zip");
+  arqMsg("", `<b>Zona ${esc(t.cod)} baixada</b>${fmt(nq)} quadrados, ${fmt(nq * GRADE.areaQ, 2)} ha, só do ${esc(t.nome || t.cod)}. ${isFinite(d) ? "Dose " + fmt(d, 2) + " " + esc(S.unid) + " na coluna DOSE." : "Sem dose ainda: informe a dose no Operations Center."} Fora da zona, bicos fechados.`);
+}
 function renderRxBtns(){
   const ic = '<svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>';
-  const zonas = `<button class="nd-btn primario grande nd-onda" type="button" data-zonas>${ic}Zonas para o Operations Center (shapefile)</button>`;
   if (S.modo === "doses") {
-    $("rxBtns").innerHTML = zonas + `<button class="nd-btn grande nd-onda" type="button" data-rx="">${ic}Prescrição por quadrado (shapefile)</button>`;
-    $("rxDica").textContent = `Zonas: ${S.trats.length} zonas, uma por tratamento (coluna ZONA), para criar a prescrição por zonas no Operations Center. Uma passada só, com a dose de cada zona. A prescrição por quadrado é a alternativa pronta, com a coluna DOSE.`;
+    $("rxBtns").innerHTML = `<button class="nd-btn primario grande nd-onda" type="button" data-zonas>${ic}Zonas de todas as doses (shapefile)</button>`
+      + `<details class="alt"><summary>Ou uma prescrição pronta por quadrado</summary><div class="trs"><button class="nd-btn grande nd-onda" type="button" data-rx="">${ic}Prescrição por quadrado (shapefile)</button></div></details>`;
+    $("rxDica").textContent = `Doses de um produto: tudo num arquivo só, com ${S.trats.length} zonas (uma por dose, coluna ZONA e coluna DOSE). Uma passada só, com a vazão mudando de zona para zona.`;
   } else {
     const prods = S.trats.map((t, i) => [t, i]).filter(([t]) => !ehTest(t));
-    $("rxBtns").innerHTML = zonas + `<details class="alt"><summary>Ou uma prescrição pronta por passada</summary><div class="trs">` + prods.map(([t, i], k) => `<button class="nd-btn grande nd-onda" type="button" data-rx="${i}">${ic}Prescrição ${esc(t.cod)}${t.nome ? " · " + esc(t.nome) : ""} (passada ${k + 1})</button>`).join("") + `</div></details>`;
-    $("rxDica").textContent = `Zonas: ${S.trats.length} zonas, uma por tratamento (coluna ZONA, e colunas D_ com a dose de cada produto por zona). No Operations Center, crie a prescrição por zonas: em cada passada, dose do produto na zona dele e 0 nas outras. As prescrições por passada são a alternativa pronta, uma por produto.`;
+    $("rxBtns").innerHTML = prods.map(([t, i], k) => `<button class="nd-btn ${k ? "" : "primario"} grande nd-onda" type="button" data-zona="${i}">${ic}Zona ${esc(t.cod)}${t.nome ? " · " + esc(t.nome) : ""} (aplicação ${k + 1})</button>`).join("")
+      + `<details class="alt"><summary>Outros formatos</summary><div class="trs"><button class="nd-btn grande nd-onda" type="button" data-zonas>${ic}Todas as zonas num arquivo (para conferir)</button>`
+      + prods.map(([t, i], k) => `<button class="nd-btn grande nd-onda" type="button" data-rx="${i}">${ic}Prescrição por quadrado ${esc(t.cod)}</button>`).join("") + `</div></details>`;
+    const nT = S.trats.length - prods.length;
+    $("rxDica").textContent = `Produtos diferentes: ${prods.length} arquivos, um por teste, cada um só com a zona daquele teste (os quadrados sorteados para ele). Cada arquivo é uma aplicação, com o produto do teste no tanque. ${nT ? "A testemunha não tem arquivo: ela fica fora de todas as zonas e não recebe nada." : ""}`;
   }
 }
-$("rxBtns").addEventListener("click", e => { if (e.target.closest("[data-zonas]")) { baixarZonas(); return; } const b = e.target.closest("[data-rx]"); if (!b) return; if (S.modo === "doses") baixarRxDoses(); else baixarRxProduto(+b.dataset.rx); });
+$("rxBtns").addEventListener("click", e => { const z = e.target.closest("[data-zona]"); if (z) { baixarZonaTeste(+z.dataset.zona); return; } if (e.target.closest("[data-zonas]")) { baixarZonas(); return; } const b = e.target.closest("[data-rx]"); if (!b) return; if (S.modo === "doses") baixarRxDoses(); else baixarRxProduto(+b.dataset.rx); });
 const CAMPOS_RX = [{nome:"ID", tipo:"N", tam:6}, {nome:"TRAT", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, {nome:"DOSE", tipo:"N", tam:12, dec:3}, {nome:"COLUNA", tipo:"N", tam:4}, {nome:"LINHA", tipo:"N", tam:4}, {nome:"PISTA", tipo:"N", tam:5}];
 const zipShp = (s, b) => zip([{nome:b + ".shp", dados:s.shp}, {nome:b + ".shx", dados:s.shx}, {nome:b + ".dbf", dados:s.dbf}, {nome:b + ".prj", dados:s.prj}]);
 function baixarRxProduto(i){
