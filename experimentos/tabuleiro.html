@@ -44,6 +44,8 @@
 .leg i{width:14px;height:14px;border-radius:var(--radius-xs);background:var(--c);border:1px solid var(--line)}
 .leg i.fora{background:transparent;border:1.5px dashed var(--muted)}
 .leg i.ab,.ctl.legmap i.ab{height:0;border:0;border-top:2px dashed var(--muted);border-radius:0;background:transparent}
+details.alt summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:500;color:var(--muted)}
+details.alt .trs{padding-top:var(--space-2)}
 .passos-jd{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:var(--space-2);font-size:15px}
 .mapmsg{font-size:14px;color:var(--muted);margin:0;min-height:20px}
 .modo{display:none}
@@ -211,16 +213,16 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
             </div>
             <div id="arqMsg"></div>
             <p class="dica" id="rxDica"></p>
-            <p class="dica">Cada prescrição traz um polígono por quadrado com as colunas TRAT (código), DOSE, ID e PISTA, em coordenadas geográficas WGS84. O KML e a planilha servem para a equipe achar os quadrados no campo e para a análise depois da colheita.</p>
+            <p class="dica">O arquivo de zonas tem uma linha por tratamento (todos os quadrados dele juntos); as prescrições prontas têm um polígono por quadrado, com TRAT, DOSE, ID e PISTA. Tudo em coordenadas geográficas WGS84. O KML e a planilha servem para a equipe achar os quadrados no campo e para a análise depois da colheita.</p>
           </section>
 
           <section class="nd-cartao">
             <h2>Como levar para o M4030</h2>
             <ol class="passos-jd">
-              <li>Baixe a prescrição. Não descompacte o .zip.</li>
-              <li>No Operations Center, envie o arquivo em Arquivos e mande para o monitor pela transferência de dados, ou leve por pendrive.</li>
-              <li>No monitor, escolha a prescrição no controle de dose e a coluna DOSE, na mesma unidade do ensaio. Fora da prescrição: desligado nas passadas de produto em teste; dose padrão no ensaio de doses.</li>
-              <li>Produtos diferentes: uma passada por produto, cada uma com a sua prescrição. Lave o tanque entre um produto e outro.</li>
+              <li>Baixe as zonas. Não descompacte o .zip.</li>
+              <li>No Operations Center, envie o arquivo em Arquivos. Ele entra como zonas do RT-40, uma por tratamento (coluna ZONA).</li>
+              <li>Crie a prescrição por zonas e informe a dose de cada zona. Produtos diferentes: uma prescrição por produto, com a dose na zona dele e 0 nas outras (as colunas D_ já trazem esses valores). Testemunha sempre 0.</li>
+              <li>Mande para o monitor pela transferência de dados, ou leve por pendrive. Fora das zonas: desligado nas passadas de produto em teste; dose padrão no ensaio de doses. Lave o tanque entre um produto e outro.</li>
               <li>Ligue o desligamento bico a bico (Section Control) e trabalhe com sinal RTK.</li>
               <li>Antes do produto, faça um teste só com água em 3 ou 4 quadrados e confira o mapa do aplicado: a testemunha tem que sair sem aplicação.</li>
               <li>Se o monitor não fechar os bicos com dose 0, use o arquivo "Testemunhas como limite" como limites internos do talhão; o Section Control fecha os bicos dentro deles.</li>
@@ -369,7 +371,7 @@ function calcular(){
       ll: [toLL(ua, va), toLL(ub, va), toLL(ub, vb), toLL(ua, vb)], centro: toLL((ua + ub) / 2, (va + vb) / 2)});
   }
   const uvs = ringsUV.flat();
-  GRADE = {quads, vA, areaQ: W * L / 1e4, areaTal: areaRings(ringsXY) / 1e4,
+  GRADE = {quads, vA, toLL, u0, v0, areaQ: W * L / 1e4, areaTal: areaRings(ringsXY) / 1e4,
     extU: Math.max(...uvs.map(q => q[0])) - Math.min(...uvs.map(q => q[0])), extV: Math.max(...uvs.map(q => q[1])) - Math.min(...uvs.map(q => q[1]))};
 }
 function ajustarAoTalhao(){
@@ -605,21 +607,25 @@ function zip(arqs){ // [{nome, dados:Uint8Array}] sem compressão
 const semAcento = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\x20-\x7E]/g, "");
 function shapefile(feicoes, campos){ // feicoes: [{anel:[[lon,lat]...] fechado, props}] ; campos: [{nome, tipo:'C'|'N', tam, dec}]
   const n = feicoes.length;
-  const aneis = feicoes.map(f => { let r = f.anel.slice(); if (areaAssinada(r) > 0) r.reverse(); return r; }); // externo no sentido horário (shapefile); areaAssinada > 0 = anti-horário
-  const tamReg = aneis.map(r => 44 + 4 + 16 * r.length);
+  // cada feição: um anel (quadrado, vira horário) ou vários anéis já orientados (zona: externos horários, buracos anti-horários)
+  const partes = feicoes.map(f => f.aneis ? f.aneis : [(r => areaAssinada(r) > 0 ? r.reverse() : r)(f.anel.slice())]);
+  const aneis = partes.flat();
+  const tamReg = partes.map(ps => 44 + 4 * ps.length + 16 * ps.reduce((t, r) => t + r.length, 0));
   const shpLen = 100 + tamReg.reduce((s, t) => s + 8 + t, 0), shxLen = 100 + 8 * n;
   const shp = new DataView(new ArrayBuffer(shpLen)), shx = new DataView(new ArrayBuffer(shxLen));
   const all = aneis.flat(), bb = [Math.min(...all.map(p => p[0])), Math.min(...all.map(p => p[1])), Math.max(...all.map(p => p[0])), Math.max(...all.map(p => p[1]))];
   const cab = (v, len) => { v.setInt32(0, 9994); v.setInt32(24, len / 2); v.setInt32(28, 1000, true); v.setInt32(32, 5, true); bb.forEach((x, i) => v.setFloat64(36 + 8 * i, x, true)); };
   cab(shp, shpLen); cab(shx, shxLen);
   let o = 100;
-  aneis.forEach((r, i) => {
+  partes.forEach((ps, i) => {
     shx.setInt32(100 + 8 * i, o / 2); shx.setInt32(104 + 8 * i, tamReg[i] / 2);
     shp.setInt32(o, i + 1); shp.setInt32(o + 4, tamReg[i] / 2); o += 8;
-    const xs = r.map(p => p[0]), ys = r.map(p => p[1]);
+    const pts = ps.flat(), xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
     shp.setInt32(o, 5, true); [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)].forEach((x, k) => shp.setFloat64(o + 4 + 8 * k, x, true));
-    shp.setInt32(o + 36, 1, true); shp.setInt32(o + 40, r.length, true); shp.setInt32(o + 44, 0, true);
-    r.forEach((p, k) => { shp.setFloat64(o + 48 + 16 * k, p[0], true); shp.setFloat64(o + 56 + 16 * k, p[1], true); });
+    shp.setInt32(o + 36, ps.length, true); shp.setInt32(o + 40, pts.length, true);
+    let ini = 0; ps.forEach((r, k) => { shp.setInt32(o + 44 + 4 * k, ini, true); ini += r.length; });
+    const b = o + 44 + 4 * ps.length;
+    pts.forEach((p, k) => { shp.setFloat64(b + 16 * k, p[0], true); shp.setFloat64(b + 8 + 16 * k, p[1], true); });
     o += tamReg[i];
   });
   // DBF (dBASE III), texto sem acento para o monitor ler
@@ -646,18 +652,68 @@ const nomeBase = () => semAcento(S.codigo || `TAB ${S.talhao} 26-27`).replace(/[
 const fechado = q => [...q.ll, q.ll[0]];
 function arqMsg(tipo, texto){ $("arqMsg").innerHTML = texto ? `<div class="nd-msg ${tipo}"><svg class="nd-ic" aria-hidden="true"><use href="#i-${tipo === "erro" ? "circle-x" : "circle-check"}"/></svg><div>${texto}</div></div>` : ""; }
 function exigirGrade(){ if (!GRADE || !GRADE.quads.some(q => q.ok)) { arqMsg("erro", "<b>Nada para baixar</b>Escolha o talhão e coloque o ensaio dentro dele."); return false; } return true; }
+/* Zonas: os quadrados de cada tratamento viram uma zona só (polígono de várias partes, sem linhas internas) */
+function aneisDaZona(ti){
+  const cel = new Set(GRADE.quads.filter(q => q.ok && q.ti === ti).map(q => (q.c - 1) + "," + (q.r - 1)));
+  const tem = (c, r) => cel.has(c + "," + r), arestas = new Map(), add = (a, b) => { const k = a.join(","); if (!arestas.has(k)) arestas.set(k, []); arestas.get(k).push({a, b, usada:false}); };
+  cel.forEach(k => { const [c, r] = k.split(",").map(Number); // vértices (i = passada, j = posição); interior à esquerda
+    if (!tem(c, r - 1)) add([c, r], [c + 1, r]);
+    if (!tem(c + 1, r)) add([c + 1, r], [c + 1, r + 1]);
+    if (!tem(c, r + 1)) add([c + 1, r + 1], [c, r + 1]);
+    if (!tem(c - 1, r)) add([c, r + 1], [c, r]); });
+  const aneisIJ = [];
+  for (const lista of arestas.values()) for (const e0 of lista) {
+    if (e0.usada) continue;
+    const anel = [e0.a]; let e = e0;
+    while (true) {
+      e.usada = true; anel.push(e.b);
+      const op = (arestas.get(e.b.join(",")) || []).filter(x => !x.usada);
+      if (!op.length) break;
+      const d0 = [e.b[0] - e.a[0], e.b[1] - e.a[1]], giro = x => { const d1 = [x.b[0] - x.a[0], x.b[1] - x.a[1]]; return d0[0] * d1[1] - d0[1] * d1[0]; };
+      op.sort((x, y) => giro(y) - giro(x)); // nos cantos que se tocam, vira para dentro (esquerda) e mantém as partes separadas
+      e = op[0];
+    }
+    const lim = anel.filter((p, i) => { if (i === 0 || i === anel.length - 1) return true; const a = anel[i - 1], b = anel[i + 1]; return (p[0] - a[0]) * (b[1] - p[1]) - (p[1] - a[1]) * (b[0] - p[0]) !== 0; });
+    aneisIJ.push(lim);
+  }
+  return aneisIJ.map(r => {
+    const externo = areaAssinada(r) > 0; // na grade, externo anti-horário e buraco horário
+    let ll = r.map(([i, j]) => GRADE.toLL(GRADE.u0 + j * S.L, GRADE.v0 + i * S.W));
+    const anti = areaAssinada(ll) > 0;
+    if (externo === anti) ll.reverse(); // shapefile: externo horário, buraco anti-horário
+    return ll;
+  });
+}
+const CAMPOS_ZONA = () => [{nome:"ZONA", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, {nome:"DOSE", tipo:"N", tam:12, dec:3}, {nome:"UNIDADE", tipo:"C", tam:6},
+  ...S.trats.filter(t => !ehTest(t)).map(t => ({nome:("D_" + semAcento(t.cod).replace(/[^A-Za-z0-9]/g, "")).slice(0, 10), tipo:"N", tam:12, dec:3})),
+  {nome:"QUADRADOS", tipo:"N", tam:5}, {nome:"AREA_HA", tipo:"N", tam:10, dec:2}];
+function baixarZonas(){
+  if (!exigirGrade()) return;
+  const prods = S.trats.filter(t => !ehTest(t));
+  const fe = S.trats.map((t, ti) => {
+    const nq = GRADE.quads.filter(q => q.ok && q.ti === ti).length; if (!nq) return null;
+    const d = num(t.dose), props = {ZONA:t.cod, NOME:t.nome || t.cod, DOSE:isFinite(d) ? d : null, UNIDADE:S.unid, QUADRADOS:nq, AREA_HA:nq * GRADE.areaQ};
+    prods.forEach(pt => { const dp = num(pt.dose); props[("D_" + semAcento(pt.cod).replace(/[^A-Za-z0-9]/g, "")).slice(0, 10)] = pt === t ? (isFinite(dp) ? dp : null) : 0; });
+    return {aneis:aneisDaZona(ti), props};
+  }).filter(Boolean);
+  const b = nomeBase() + "_zonas";
+  baixar(zipShp(shapefile(fe, CAMPOS_ZONA()), b), b + ".zip");
+  const semDose = S.trats.some(t => !isFinite(num(t.dose)));
+  arqMsg("", `<b>Zonas baixadas</b>${fe.length} zonas (${fe.map(f => esc(f.props.ZONA)).join(", ")}), uma por tratamento, coluna ZONA. ${semDose ? "Sem dose ainda: defina a dose de cada zona no Operations Center." : "As colunas D_ trazem a dose de cada produto por zona."}`);
+}
 function renderRxBtns(){
   const ic = '<svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>';
+  const zonas = `<button class="nd-btn primario grande nd-onda" type="button" data-zonas>${ic}Zonas para o Operations Center (shapefile)</button>`;
   if (S.modo === "doses") {
-    $("rxBtns").innerHTML = `<button class="nd-btn primario grande nd-onda" type="button" data-rx="">${ic}Baixar prescrição (shapefile)</button>`;
-    $("rxDica").textContent = "Uma passada só: a coluna DOSE muda por quadrado (0 na testemunha). Fora da prescrição, use a dose padrão da fazenda.";
+    $("rxBtns").innerHTML = zonas + `<button class="nd-btn grande nd-onda" type="button" data-rx="">${ic}Prescrição por quadrado (shapefile)</button>`;
+    $("rxDica").textContent = `Zonas: ${S.trats.length} zonas, uma por tratamento (coluna ZONA), para criar a prescrição por zonas no Operations Center. Uma passada só, com a dose de cada zona. A prescrição por quadrado é a alternativa pronta, com a coluna DOSE.`;
   } else {
     const prods = S.trats.map((t, i) => [t, i]).filter(([t]) => !ehTest(t));
-    $("rxBtns").innerHTML = prods.map(([t, i], k) => `<button class="nd-btn ${k ? "" : "primario"} grande nd-onda" type="button" data-rx="${i}">${ic}Prescrição ${esc(t.cod)}${t.nome ? " · " + esc(t.nome) : ""} (passada ${k + 1})</button>`).join("");
-    $("rxDica").textContent = `Produtos diferentes: ${prods.length} passadas, uma por produto, cada uma com a sua prescrição. Em cada arquivo, DOSE é a dose do produto nos quadrados dele e 0 no resto do ensaio. Configure a dose fora da prescrição como desligado.`;
+    $("rxBtns").innerHTML = zonas + `<details class="alt"><summary>Ou uma prescrição pronta por passada</summary><div class="trs">` + prods.map(([t, i], k) => `<button class="nd-btn grande nd-onda" type="button" data-rx="${i}">${ic}Prescrição ${esc(t.cod)}${t.nome ? " · " + esc(t.nome) : ""} (passada ${k + 1})</button>`).join("") + `</div></details>`;
+    $("rxDica").textContent = `Zonas: ${S.trats.length} zonas, uma por tratamento (coluna ZONA, e colunas D_ com a dose de cada produto por zona). No Operations Center, crie a prescrição por zonas: em cada passada, dose do produto na zona dele e 0 nas outras. As prescrições por passada são a alternativa pronta, uma por produto.`;
   }
 }
-$("rxBtns").addEventListener("click", e => { const b = e.target.closest("[data-rx]"); if (!b) return; if (S.modo === "doses") baixarRxDoses(); else baixarRxProduto(+b.dataset.rx); });
+$("rxBtns").addEventListener("click", e => { if (e.target.closest("[data-zonas]")) { baixarZonas(); return; } const b = e.target.closest("[data-rx]"); if (!b) return; if (S.modo === "doses") baixarRxDoses(); else baixarRxProduto(+b.dataset.rx); });
 const CAMPOS_RX = [{nome:"ID", tipo:"N", tam:6}, {nome:"TRAT", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, {nome:"DOSE", tipo:"N", tam:12, dec:3}, {nome:"COLUNA", tipo:"N", tam:4}, {nome:"LINHA", tipo:"N", tam:4}, {nome:"PISTA", tipo:"N", tam:5}];
 const zipShp = (s, b) => zip([{nome:b + ".shp", dados:s.shp}, {nome:b + ".shx", dados:s.shx}, {nome:b + ".dbf", dados:s.dbf}, {nome:b + ".prj", dados:s.prj}]);
 function baixarRxProduto(i){
