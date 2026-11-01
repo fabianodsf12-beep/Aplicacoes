@@ -43,6 +43,7 @@
 .leg span{display:inline-flex;align-items:center;gap:6px}
 .leg i{width:14px;height:14px;border-radius:var(--radius-xs);background:var(--c);border:1px solid var(--line)}
 .leg i.fora{background:transparent;border:1.5px dashed var(--muted)}
+.leg i.ab,.ctl.legmap i.ab{height:0;border:0;border-top:2px dashed var(--muted);border-radius:0;background:transparent}
 .passos-jd{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:var(--space-2);font-size:15px}
 .mapmsg{font-size:14px;color:var(--muted);margin:0;min-height:20px}
 .modo{display:none}
@@ -103,9 +104,9 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
             </label>
             <div class="acoes-l">
               <label class="nd-btn nd-onda" for="arqLimite"><svg class="nd-ic" aria-hidden="true"><use href="#i-upload"/></svg>Importar limite</label>
-              <input type="file" id="arqLimite" accept=".zip,.kml,.geojson,.json">
+              <input type="file" id="arqLimite" accept=".zip,.gpkg,.kml,.geojson,.json">
             </div>
-            <p class="dica">Se o talhão não estiver no mapa da fazenda, importe o limite em shapefile (.zip), KML ou GeoJSON, por exemplo o limite exportado do Operations Center.</p>
+            <p class="dica">Se o talhão não estiver no mapa da fazenda, importe o limite em shapefile (.zip), GeoPackage (.gpkg), KML ou GeoJSON, por exemplo o limite exportado do Operations Center.</p>
             <p class="dica" id="talInfo"></p>
           </section>
 
@@ -115,7 +116,7 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
               <input class="nd-inp" id="codigo" autocomplete="off" placeholder="TAB RT-40 26/27">
             </label>
             <div class="dois">
-              <label class="nd-campo">Direção das linhas
+              <label class="nd-campo">Rumo da pista
                 <span class="un"><input class="nd-inp" id="ang" inputmode="decimal"><span>graus</span></span>
               </label>
               <label class="nd-campo">Área alvo
@@ -126,9 +127,13 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
               <button class="nd-btn nd-onda" type="button" id="btnMedir"><svg class="nd-ic" aria-hidden="true"><use href="#i-pencil"/></svg>Marcar direção no mapa</button>
               <button class="nd-btn nd-onda" type="button" id="btnAuto"><svg class="nd-ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg>Ajustar ao talhão</button>
             </div>
-            <p class="dica">Direção em graus a partir do norte (0 = norte–sul, 90 = leste–oeste). Para conferir, marque dois pontos sobre uma linha de plantio na imagem.</p>
+            <p class="dica">Use o rumo da linha AB do pulverizador (no Operations Center, em Linhas de orientação), por exemplo 358,2665. Graus a partir do norte: 0 = norte–sul, 90 = leste–oeste. Sem a linha, marque dois pontos sobre uma linha de plantio na imagem.</p>
+            <label class="nd-campo">Ponto A da linha AB (opcional)
+              <input class="nd-inp" id="pontoA" autocomplete="off" inputmode="decimal" placeholder="-17,801234, -50,901234">
+            </label>
+            <p class="dica" id="pontoADica">Latitude e longitude do Ponto A. Com ele, cada coluna do ensaio cai exatamente numa pista do pulverizador, e o mapa mostra o número da pista a partir da linha AB.</p>
             <div class="dois">
-              <label class="nd-campo">Largura do quadrado
+              <label class="nd-campo">Espaçamento entre pistas
                 <span class="un"><input class="nd-inp" id="W" inputmode="decimal"><span>m</span></span>
               </label>
               <label class="nd-campo">Comprimento
@@ -144,7 +149,7 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
                 <span class="un"><input class="nd-inp" id="bord" inputmode="decimal"><span>m</span></span>
               </label>
             </div>
-            <p class="dica">Largura de 36 m = uma passada da barra do M4030. Comprimento de 60 m ou mais, por causa do atraso do monitor de colheita. Quadrados a menos que a bordadura da divisa do talhão ficam de fora. Arraste o círculo do mapa para mudar o ensaio de lugar.</p>
+            <p class="dica">O espaçamento entre pistas é a largura do quadrado: 36 m = uma passada da barra do M4030, igual ao da linha AB. Comprimento de 60 m ou mais, por causa do atraso do monitor de colheita. Quadrados a menos que a bordadura da divisa do talhão ficam de fora. Arraste o círculo do mapa para mudar o ensaio de lugar.</p>
           </section>
 
           <section class="nd-cartao">
@@ -226,6 +231,7 @@ const DATA_URL = "https://script.google.com/macros/s/AKfycbwxeuEaQ6gyYzEo3yWbs4S
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt = (v, c = 0) => Number(v).toLocaleString("pt-BR", {minimumFractionDigits:c, maximumFractionDigits:c});
+const fmtMax = (v, c) => Number(v).toLocaleString("pt-BR", {maximumFractionDigits:c});
 const num = s => { s = String(s ?? "").trim(); if (!s) return NaN; if (s.includes(",")) s = s.replace(/\./g, "").replace(",", "."); return Number(s); };
 const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
@@ -241,7 +247,7 @@ const COR = {
 };
 
 /* ---------- estado (guardado no aparelho) ---------- */
-const PADRAO = {talhao:"RT-40", codigo:"", ang:null, alvo:50, W:36, L:72, nC:14, nR:14, bord:36, centro:null, unid:"L/ha", inverter:false, semente:1,
+const PADRAO = {talhao:"RT-40", codigo:"", ang:null, alvo:50, W:36, L:72, nC:14, nR:14, bord:36, centro:null, pontoA:null, rumoFixo:false, unid:"L/ha", inverter:false, semente:1,
   trats:[{cod:"A", nome:"Padrão fazenda", dose:""}, {cod:"T", nome:"Testemunha", dose:"0"}]};
 let S = {...PADRAO};
 try { const g = JSON.parse(lsGet("tabuleiro.plano") || "null"); if (g && typeof g === "object") S = {...PADRAO, ...g}; } catch (e) {}
@@ -323,7 +329,12 @@ function calcular(){
   const {d, p} = eixos(S.ang);
   const ringsUV = t.rings.map(r => r.map(ll => { const q = P.fwd(ll); return [q[0] * d[0] + q[1] * d[1], q[0] * p[0] + q[1] * p[1]]; }));
   const ringsXY = t.rings.map(r => r.map(P.fwd));
-  const W = S.W, L = S.L, b = S.bord, u0 = -S.nR * L / 2, v0 = -S.nC * W / 2;
+  const W = S.W, L = S.L, b = S.bord, u0 = -S.nR * L / 2;
+  let v0 = -S.nC * W / 2, vA = null;
+  if (S.pontoA) { // encaixa as colunas nas pistas: o centro de cada coluna fica a um número inteiro de pistas do Ponto A
+    const a = P.fwd([S.pontoA[1], S.pontoA[0]]); vA = a[0] * p[0] + a[1] * p[1];
+    let desl = ((vA - (v0 + W / 2)) % W + W) % W; if (desl > W / 2) desl -= W; v0 += desl;
+  }
   const toLL = (u, v) => P.inv([u * d[0] + v * p[0], u * d[1] + v * p[1]]);
   const quads = []; let id = 0;
   for (let c = 0; c < S.nC; c++) for (let r = 0; r < S.nR; r++) {
@@ -332,21 +343,23 @@ function calcular(){
     if (ok) { const x0 = ua - b, x1 = ub + b, y0 = va - b, y1 = vb + b;
       outer: for (const rg of ringsUV) for (let i = 1; i < rg.length; i++) if (segCaixa(rg[i-1], rg[i], x0, y0, x1, y1)) { ok = false; break outer; } }
     const ti = tratamentoDe(c, r);
-    quads.push({id: ok ? ++id : 0, c: c + 1, r: r + 1, ok, ti,
+    quads.push({id: ok ? ++id : 0, c: c + 1, r: r + 1, ok, ti, pista: vA == null ? null : Math.round((va + W / 2 - vA) / W),
       ll: [toLL(ua, va), toLL(ub, va), toLL(ub, vb), toLL(ua, vb)], centro: toLL((ua + ub) / 2, (va + vb) / 2)});
   }
   const uvs = ringsUV.flat();
-  GRADE = {quads, areaQ: W * L / 1e4, areaTal: areaRings(ringsXY) / 1e4,
+  GRADE = {quads, vA, areaQ: W * L / 1e4, areaTal: areaRings(ringsXY) / 1e4,
     extU: Math.max(...uvs.map(q => q[0])) - Math.min(...uvs.map(q => q[0])), extV: Math.max(...uvs.map(q => q[1])) - Math.min(...uvs.map(q => q[1]))};
 }
 function ajustarAoTalhao(){
   const t = talhaoAtual(); if (!t) return;
   const lat0 = t.rings[0][0][1], lon0 = t.rings[0][0][0], P = projecao(lat0, lon0);
   const xy = t.rings.map(r => r.map(P.fwd));
-  if (S.ang == null || !isFinite(S.ang)) S.ang = direcaoDominante(xy);
+  if (!S.rumoFixo || S.ang == null || !isFinite(S.ang)) { S.ang = direcaoDominante(xy); S.rumoFixo = false; }
   S.centro = (([x, y]) => { const ll = P.inv([x, y]); return [ll[1], ll[0]]; })(pontoInterno(xy));
-  calcular();
-  // tamanho: proporcional à forma do talhão, perto da área alvo
+  ajustarTamanho();
+}
+function ajustarTamanho(){ // passadas e quadrados proporcionais à forma do talhão no rumo atual, perto da área alvo
+  calcular(); if (!GRADE) return;
   const A = Math.max(1, num(S.alvo) || 50) * 1e4, Lu = Math.max(GRADE.extU - 2 * S.bord, S.L * 2), Lv = Math.max(GRADE.extV - 2 * S.bord, S.W * 2);
   let nC = Math.round(Math.sqrt(A * Lv / Lu) / S.W); nC = Math.max(2, Math.min(nC, Math.floor(Lv / S.W)));
   let nR = Math.round(A / (nC * S.W) / S.L); nR = Math.max(2, Math.min(nR, Math.floor(Lu / S.L)));
@@ -376,8 +389,8 @@ function iniciarMapa(){
       L.polyline([a, b], {color:COR.branco, weight:3, dashArray:"6 6"}).addTo(LM);
       const ang = Math.round(((Math.atan2(q[0], q[1]) / RAD) % 180 + 180) % 180);
       medir = null; $("btnMedir").setAttribute("aria-pressed", "false"); MAP.getContainer().style.cursor = "";
-      S.ang = ang; $("ang").value = fmt(ang); salvar(); atualizar();
-      $("mapMsg").textContent = `Direção das linhas: ${fmt(ang)} graus.`;
+      S.ang = ang; S.rumoFixo = true; ajustarTamanho(); salvar(); preencherCampos(); atualizar();
+      $("mapMsg").textContent = `Rumo das linhas: ${fmt(ang)} graus.`;
       setTimeout(() => LM.clearLayers(), 2500);
     } else $("mapMsg").textContent = "Agora toque no segundo ponto da mesma linha.";
   });
@@ -403,10 +416,15 @@ function desenharGrade(){
     const ll = q.ll.map(p => [p[1], p[0]]), t = S.trats[q.ti];
     if (!q.ok) { L.polygon(ll, {color:COR.branco, weight:.8, dashArray:"3 4", fillOpacity:0, interactive:false}).addTo(LQ); return; }
     L.polygon(ll, {color:COR.branco, weight:.5, fillColor:corTrat(q.ti), fillOpacity:.78})
-      .bindTooltip(`Q${q.id} · ${esc(t.cod)} ${esc(t.nome)}${isFinite(num(t.dose)) ? " · " + fmt(num(t.dose), 2) + " " + esc(S.unid) : ""}<br>Passada ${q.c}, quadrado ${q.r}`)
+      .bindTooltip(`Q${q.id} · ${esc(t.cod)} ${esc(t.nome)}${isFinite(num(t.dose)) ? " · " + fmt(num(t.dose), 2) + " " + esc(S.unid) : ""}<br>${q.pista == null ? "Passada " + q.c : "Pista " + (q.pista > 0 ? "+" : "") + q.pista + " da linha AB"}, quadrado ${q.r}`)
       .addTo(LQ);
     L.marker([q.centro[1], q.centro[0]], {interactive:false, keyboard:false, icon:L.divIcon({className:"qlbl", html:esc(t.cod), iconSize:[24,16], iconAnchor:[12,8]})}).addTo(LR);
   });
+  if (S.pontoA) { // linha AB: 3 km para cada lado do Ponto A, no rumo
+    const P = projecao(S.pontoA[0], S.pontoA[1]), {d} = eixos(S.ang), f = k => { const ll = P.inv([d[0] * k, d[1] * k]); return [ll[1], ll[0]]; };
+    L.polyline([f(-3000), f(3000)], {color:COR.branco, weight:2, dashArray:"10 6", interactive:false}).addTo(LB);
+    L.circleMarker(S.pontoA, {radius:6, color:COR.branco, weight:2, fillColor:COR.limite, fillOpacity:1}).bindTooltip("Ponto A da linha AB").addTo(LB);
+  }
   const ic = L.divIcon({className:"", html:'<div class="centro-ic" title="Arraste para mudar o ensaio de lugar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 2v20M2 12h20M12 2l-3 3M12 2l3 3M12 22l-3-3M12 22l3-3M2 12l3-3M2 12l3 3M22 12l-3-3M22 12l-3 3"/></svg></div>', iconSize:[28,28], iconAnchor:[14,14]});
   MK = L.marker(S.centro, {draggable:true, icon:ic, keyboard:true, title:"Centro do ensaio", alt:"Centro do ensaio"}).addTo(LB);
   MK.on("dragend", () => { const p = MK.getLatLng(); S.centro = [p.lat, p.lng]; salvar(); atualizar(); });
@@ -422,7 +440,8 @@ function enquadrar(){
 /* ---------- telas do formulário ---------- */
 function preencherCampos(){
   $("codigo").value = S.codigo || ""; $("codigo").placeholder = `TAB ${S.talhao || "talhão"} 26/27`;
-  $("ang").value = S.ang == null ? "" : fmt(S.ang, S.ang % 1 ? 1 : 0); $("alvo").value = fmt(num(S.alvo) || 50, 0);
+  $("ang").value = S.ang == null ? "" : fmtMax(S.ang, 4);
+  $("pontoA").value = S.pontoA ? fmtMax(S.pontoA[0], 7) + "; " + fmtMax(S.pontoA[1], 7) : ""; $("alvo").value = fmt(num(S.alvo) || 50, 0);
   $("W").value = fmt(S.W, S.W % 1 ? 1 : 0); $("L").value = fmt(S.L, S.L % 1 ? 1 : 0); $("nC").value = S.nC; $("nR").value = S.nR; $("bord").value = fmt(S.bord, S.bord % 1 ? 1 : 0);
   $("unid").value = S.unid;
   renderTrats();
@@ -443,7 +462,7 @@ function renderTrats(){
     : `Com ${n} tratamentos o tabuleiro é feito em blocos de ${n} × ${n} quadrados sorteados: em cada bloco, cada passada e cada fileira têm todos os tratamentos. Para produtos diferentes (A, B, A+B), cada produto precisa da sua passada e da sua prescrição.`;
 }
 function renderLegenda(){
-  const itens = S.trats.map((t, i) => `<span><i style="--c:${corTrat(i)}"></i>${esc(t.cod)}${t.nome ? " · " + esc(t.nome) : ""}</span>`).join("") + '<span><i class="fora"></i>Fora (bordadura)</span>';
+  const itens = S.trats.map((t, i) => `<span><i style="--c:${corTrat(i)}"></i>${esc(t.cod)}${t.nome ? " · " + esc(t.nome) : ""}</span>`).join("") + '<span><i class="fora"></i>Fora (bordadura)</span>' + (S.pontoA ? '<span><i class="ab"></i>Linha AB</span>' : "");
   $("legenda").innerHTML = itens;
   const lm = $("legMapa"); if (lm) lm.innerHTML = itens;
 }
@@ -474,7 +493,7 @@ function atualizar(){
 }
 function escolherTalhao(nome, ajustar){
   S.talhao = nome; $("talhao").value = nome;
-  if (ajustar) { S.ang = null; ajustarAoTalhao(); }
+  if (ajustar) { S.ang = null; S.rumoFixo = false; S.pontoA = null; ajustarAoTalhao(); }
   salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar();
 }
 function preencherLista(){
@@ -490,11 +509,21 @@ const campoNum = (id, k, min, max, inteiro) => $(id).addEventListener("change", 
   if (inteiro) v = Math.round(v);
   S[k] = Math.max(min, Math.min(max, v)); salvar(); preencherCampos(); atualizar();
 });
-campoNum("ang", "ang", 0, 180); campoNum("W", "W", 6, 200); campoNum("L", "L", 10, 500); campoNum("nC", "nC", 1, 80, true); campoNum("nR", "nR", 1, 80, true); campoNum("bord", "bord", 0, 200);
-$("alvo").addEventListener("change", () => { const v = num($("alvo").value); if (isFinite(v) && v > 0) { S.alvo = v; const a = S.ang; ajustarAoTalhao(); S.ang = a; salvar(); preencherCampos(); atualizar(); } else preencherCampos(); });
+$("ang").addEventListener("change", () => { const v = num($("ang").value); if (!isFinite(v)) { preencherCampos(); return; }
+  S.ang = ((v % 360) + 360) % 360; S.rumoFixo = true; ajustarTamanho(); salvar(); preencherCampos(); atualizar(); });
+$("pontoA").addEventListener("change", () => {
+  const t = $("pontoA").value.trim();
+  if (!t) { S.pontoA = null; salvar(); atualizar(); return; }
+  const ns = (t.match(/-?\d+(?:[.,]\d+)?/g) || []).map(x => Number(x.replace(",", ".")));
+  if (ns.length !== 2 || Math.abs(ns[0]) > 90 || Math.abs(ns[1]) > 180) { aviso("Ponto A inválido. Escreva latitude e longitude, por exemplo -17,801234; -50,901234."); preencherCampos(); return; }
+  S.pontoA = ns; salvar(); preencherCampos(); atualizar();
+  if (MAP) MAP.panTo([ns[0], ns[1]]);
+});
+campoNum("W", "W", 6, 200); campoNum("L", "L", 10, 500); campoNum("nC", "nC", 1, 80, true); campoNum("nR", "nR", 1, 80, true); campoNum("bord", "bord", 0, 200);
+$("alvo").addEventListener("change", () => { const v = num($("alvo").value); if (isFinite(v) && v > 0) { S.alvo = v; ajustarTamanho(); salvar(); preencherCampos(); atualizar(); } else preencherCampos(); });
 $("codigo").addEventListener("input", () => { S.codigo = $("codigo").value; salvar(); });
 $("unid").addEventListener("change", () => { S.unid = $("unid").value; salvar(); renderTrats(); atualizar(); });
-$("btnAuto").addEventListener("click", () => { if (!talhaoAtual()) { aviso("Escolha o talhão primeiro."); return; } S.ang = null; ajustarAoTalhao(); salvar(); preencherCampos(); atualizar(); aviso("Ensaio ajustado ao talhão"); });
+$("btnAuto").addEventListener("click", () => { if (!talhaoAtual()) { aviso("Escolha o talhão primeiro."); return; } ajustarAoTalhao(); salvar(); preencherCampos(); atualizar(); aviso("Ensaio ajustado ao talhão"); });
 $("btnMedir").addEventListener("click", () => {
   if (!MAP) return;
   if (medir) { medir = null; LM.clearLayers(); $("btnMedir").setAttribute("aria-pressed", "false"); MAP.getContainer().style.cursor = ""; $("mapMsg").textContent = ""; return; }
@@ -568,7 +597,7 @@ function shapefile(feicoes, campos){ // feicoes: [{anel:[[lon,lat]...] fechado, 
     let b = lenCab + lenReg * i; dbf[b++] = 0x20;
     campos.forEach(c => {
       const v = f.props[c.nome];
-      let s = c.tipo === "N" ? (isFinite(v) ? Number(v).toFixed(c.dec || 0) : "").padStart(c.tam).slice(-c.tam) : semAcento(v).slice(0, c.tam).padEnd(c.tam);
+      let s = c.tipo === "N" ? (v != null && v !== "" && isFinite(v) ? Number(v).toFixed(c.dec || 0) : "").padStart(c.tam).slice(-c.tam) : semAcento(v).slice(0, c.tam).padEnd(c.tam);
       for (let k = 0; k < c.tam; k++) dbf[b + k] = s.charCodeAt(k); b += c.tam;
     });
   });
@@ -586,9 +615,9 @@ $("btnRx").addEventListener("click", () => {
   if (S.trats.some(t => !isFinite(num(t.dose)))) { arqMsg("erro", "<b>Falta dose</b>Informe a dose de cada tratamento (0 na testemunha) para gerar a prescrição."); return; }
   const doseBord = (S.trats.find(t => num(t.dose) > 0) || {dose:0}).dose;
   const fe = GRADE.quads.map(q => ({anel:fechado(q), props: q.ok
-    ? {ID:q.id, TRAT:S.trats[q.ti].cod, NOME:S.trats[q.ti].nome, DOSE:num(S.trats[q.ti].dose), COLUNA:q.c, LINHA:q.r}
-    : {ID:0, TRAT:"BORD", NOME:"Bordadura", DOSE:num(doseBord), COLUNA:q.c, LINHA:q.r}}));
-  const s = shapefile(fe, [{nome:"ID", tipo:"N", tam:6}, {nome:"TRAT", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, {nome:"DOSE", tipo:"N", tam:12, dec:3}, {nome:"COLUNA", tipo:"N", tam:4}, {nome:"LINHA", tipo:"N", tam:4}]);
+    ? {ID:q.id, TRAT:S.trats[q.ti].cod, NOME:S.trats[q.ti].nome, DOSE:num(S.trats[q.ti].dose), COLUNA:q.c, LINHA:q.r, PISTA:q.pista}
+    : {ID:0, TRAT:"BORD", NOME:"Bordadura", DOSE:num(doseBord), COLUNA:q.c, LINHA:q.r, PISTA:q.pista}}));
+  const s = shapefile(fe, [{nome:"ID", tipo:"N", tam:6}, {nome:"TRAT", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, {nome:"DOSE", tipo:"N", tam:12, dec:3}, {nome:"COLUNA", tipo:"N", tam:4}, {nome:"LINHA", tipo:"N", tam:4}, {nome:"PISTA", tipo:"N", tam:5}]);
   const b = nomeBase();
   baixar(zip([{nome:b + ".shp", dados:s.shp}, {nome:b + ".shx", dados:s.shx}, {nome:b + ".dbf", dados:s.dbf}, {nome:b + ".prj", dados:s.prj}]), b + "_prescricao.zip");
   arqMsg("", `<b>Prescrição baixada</b>${fmt(GRADE.quads.filter(q => q.ok).length)} quadrados do ensaio e ${fmt(GRADE.quads.filter(q => !q.ok).length)} de bordadura (com a dose padrão), coluna DOSE em ${esc(S.unid)}.`);
@@ -616,16 +645,16 @@ $("btnKml").addEventListener("click", () => {
 $("btnCsv").addEventListener("click", () => {
   if (!exigirGrade()) return;
   const n = v => String(v).replace(".", ",");
-  const lin = [["quadrado","passada","posicao","tratamento","nome","dose","unidade","latitude","longitude","area_ha"].join(";")];
+  const lin = [["quadrado","passada","pista_ab","posicao","tratamento","nome","dose","unidade","latitude","longitude","area_ha"].join(";")];
   GRADE.quads.filter(q => q.ok).forEach(q => { const t = S.trats[q.ti];
-    lin.push([q.id, q.c, q.r, t.cod, `"${String(t.nome).replace(/"/g, '""')}"`, isFinite(num(t.dose)) ? n(num(t.dose)) : "", S.unid, n(q.centro[1].toFixed(7)), n(q.centro[0].toFixed(7)), n(GRADE.areaQ.toFixed(4))].join(";")); });
+    lin.push([q.id, q.c, q.pista ?? "", q.r, t.cod, `"${String(t.nome).replace(/"/g, '""')}"`, isFinite(num(t.dose)) ? n(num(t.dose)) : "", S.unid, n(q.centro[1].toFixed(7)), n(q.centro[0].toFixed(7)), n(GRADE.areaQ.toFixed(4))].join(";")); });
   baixar(new Blob(["﻿" + lin.join("\r\n")], {type:"text/csv;charset=utf-8"}), nomeBase() + ".csv");
   arqMsg("", "<b>Planilha baixada</b>Um quadrado por linha, com o centro em latitude e longitude.");
 });
 $("btnGj").addEventListener("click", () => {
   if (!exigirGrade()) return;
-  const gj = {type:"FeatureCollection", properties:{ensaio:S.codigo || null, talhao:S.talhao, direcao_graus:S.ang, largura_m:S.W, comprimento_m:S.L, bordadura_m:S.bord, unidade:S.unid, tratamentos:S.trats, plano:{centro:S.centro, ang:S.ang, W:S.W, L:S.L, nC:S.nC, nR:S.nR, bord:S.bord, unid:S.unid, inverter:S.inverter, semente:S.semente, alvo:S.alvo, codigo:S.codigo, talhao:S.talhao, trats:S.trats}, criado:new Date().toISOString()},
-    features: GRADE.quads.map(q => ({type:"Feature", properties:{id:q.id || null, passada:q.c, posicao:q.r, situacao:q.ok ? "ensaio" : "fora", trat:q.ok ? S.trats[q.ti].cod : null, dose:q.ok && isFinite(num(S.trats[q.ti].dose)) ? num(S.trats[q.ti].dose) : null},
+  const gj = {type:"FeatureCollection", properties:{ensaio:S.codigo || null, talhao:S.talhao, rumo_graus:S.ang, ponto_a:S.pontoA, largura_m:S.W, comprimento_m:S.L, bordadura_m:S.bord, unidade:S.unid, tratamentos:S.trats, plano:{centro:S.centro, ang:S.ang, rumoFixo:S.rumoFixo, pontoA:S.pontoA, W:S.W, L:S.L, nC:S.nC, nR:S.nR, bord:S.bord, unid:S.unid, inverter:S.inverter, semente:S.semente, alvo:S.alvo, codigo:S.codigo, talhao:S.talhao, trats:S.trats}, criado:new Date().toISOString()},
+    features: GRADE.quads.map(q => ({type:"Feature", properties:{id:q.id || null, passada:q.c, pista_ab:q.pista, posicao:q.r, situacao:q.ok ? "ensaio" : "fora", trat:q.ok ? S.trats[q.ti].cod : null, dose:q.ok && isFinite(num(S.trats[q.ti].dose)) ? num(S.trats[q.ti].dose) : null},
       geometry:{type:"Polygon", coordinates:[fechado(q).map(p => [+p[0].toFixed(8), +p[1].toFixed(8)])]}}))};
   baixar(new Blob([JSON.stringify(gj)], {type:"application/geo+json"}), nomeBase() + ".geojson");
   arqMsg("", "<b>GeoJSON baixado</b>Guarde junto com o ensaio: ele será usado para cruzar com o mapa de colheita.");
@@ -671,13 +700,59 @@ function lerShp(u8){
   }
   return polis;
 }
-const NOME_CAMPOS = ["talhao", "TALHAO", "Talhao", "name", "Name", "NAME", "nome", "NOME", "FIELD", "Field", "field", "FIELD_NAME", "FieldName", "TALHAO_NOM"];
+/* GeoPackage: é um banco SQLite; o leitor (sql.js) só é baixado quando alguém importa um .gpkg */
+const SQLJS = "https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/";
+function carregarScript(src){ return new Promise((ok, erro) => { const el = document.createElement("script"); el.src = src; el.onload = ok;
+  el.onerror = () => erro(new Error("Não consegui baixar o leitor de GeoPackage. Verifique a internet e tente de novo.")); document.head.appendChild(el); }); }
+function lerWkb(v){ // Polygon e MultiPolygon (2D, Z, M, ZM); devolve todos os anéis
+  let o = 0; const rings = [];
+  (function geom(){
+    const le = v.getUint8(o) === 1; o += 1;
+    let t = v.getUint32(o, le); o += 4; let dim = 2;
+    if (t & 0x80000000) dim++; if (t & 0x40000000) dim++; if (t & 0x20000000) o += 4; t &= 0x0FFFFFFF;
+    if (t >= 1000) { dim = Math.floor(t / 1000) === 3 ? 4 : 3; t %= 1000; }
+    const u32 = () => { const x = v.getUint32(o, le); o += 4; return x; };
+    if (t === 1) { o += 8 * dim; return; }
+    if (t === 2) { o += u32() * 8 * dim; return; }
+    if (t === 3) { const nr = u32(); for (let i = 0; i < nr; i++) { const np = u32(), r = []; for (let k = 0; k < np; k++) { r.push([v.getFloat64(o, le), v.getFloat64(o + 8, le)]); o += 8 * dim; } rings.push(r); } return; }
+    if (t >= 4 && t <= 7) { const n = u32(); for (let i = 0; i < n; i++) geom(); return; }
+    throw new Error("geometria não suportada");
+  })();
+  return rings;
+}
+function gpkgGeom(b){
+  if (!b || b.length < 8 || b[0] !== 0x47 || b[1] !== 0x50 || (b[3] & 0x10)) return null; // "GP"; bit 4 = vazio
+  const envLen = [0, 32, 48, 48, 64][(b[3] >> 1) & 7] || 0;
+  try { return lerWkb(new DataView(b.buffer, b.byteOffset + 8 + envLen, b.length - 8 - envLen)); } catch (e) { return null; }
+}
+async function lerGpkg(buf, base){
+  if (!window.initSqlJs) await carregarScript(SQLJS + "sql-wasm.js");
+  const SQL = await initSqlJs({locateFile: f => SQLJS + f});
+  let db; try { db = new SQL.Database(new Uint8Array(buf)); } catch (e) { throw new Error("O arquivo .gpkg está danificado."); }
+  try {
+    let gc; try { gc = db.exec("SELECT table_name, column_name, srs_id FROM gpkg_geometry_columns"); } catch (e) { throw new Error("O arquivo não é um GeoPackage de limites."); }
+    if (!gc.length) throw new Error("O GeoPackage não tem camada de polígonos.");
+    const out = [];
+    for (const [tab, col, srs] of gc[0].values) {
+      if (![4326, 4674, 4618, 0, -1].includes(Number(srs))) throw new Error(`O GeoPackage está no sistema EPSG ${srs}. Exporte em latitude e longitude (WGS84, EPSG 4326).`);
+      const r = db.exec(`SELECT * FROM "${String(tab).replace(/"/g, '""')}"`);
+      if (!r.length) continue;
+      const cols = r[0].columns, gi = cols.indexOf(col);
+      r[0].values.forEach((row, i) => { const props = {}; cols.forEach((c, k) => { if (k !== gi) props[c] = row[k]; });
+        const rings = gpkgGeom(row[gi]); if (rings && rings.length) out.push({nome:nomeDe(props, i, base), rings}); });
+    }
+    return out;
+  } finally { db.close(); }
+}
+const NOME_CAMPOS = ["talhao", "TALHAO", "Talhao", "name", "Name", "NAME", "nome", "NOME", "FIELD_NAME", "FieldName", "FIELD", "Field", "field", "TALHAO_NOM"];
 const nomeDe = (p, i, base) => { for (const k of NOME_CAMPOS) if (p && p[k]) return String(p[k]).trim(); return `${base} ${i + 1}`; };
 function geomParaRings(g){ if (!g) return null; if (g.type === "Polygon") return g.coordinates; if (g.type === "MultiPolygon") return g.coordinates.flat(); return null; }
 async function importar(arq){
   const base = arq.name.replace(/\.[^.]+$/, ""), ext = (arq.name.match(/\.([^.]+)$/) || [])[1]?.toLowerCase();
   let novos = [];
-  if (ext === "zip") {
+  if (ext === "gpkg") {
+    novos = await lerGpkg(await arq.arrayBuffer(), base);
+  } else if (ext === "zip") {
     const z = await lerZip(await arq.arrayBuffer()), nomes = Object.keys(z), shpN = nomes.find(n => n.endsWith(".shp"));
     if (!shpN) throw new Error("O .zip não tem shapefile (.shp).");
     if (!z[shpN]) throw new Error("Compressão do .zip não suportada. Compacte de novo e tente outra vez.");
@@ -740,7 +815,7 @@ async function carregarMapa(){
   juntarTalhoes([]); preencherLista(); desenharTalhoes();
   const faz = await carregarMapa();
   juntarTalhoes(faz); preencherLista(); desenharTalhoes();
-  if (!TALHOES.length) { $("mapMsg").textContent = "Não consegui carregar o mapa da fazenda. Importe o limite do talhão em shapefile, KML ou GeoJSON."; renderLegenda(); renderResumo(); return; }
+  if (!TALHOES.length) { $("mapMsg").textContent = "Não consegui carregar o mapa da fazenda. Importe o limite do talhão em shapefile, GeoPackage, KML ou GeoJSON."; renderLegenda(); renderResumo(); return; }
   const t = talhaoAtual();
   if (t) { if (!S.centro || S.ang == null) ajustarAoTalhao(); salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar();
     $("mapMsg").textContent = "Arraste o círculo para mudar o ensaio de lugar. Toque num quadrado para ver o tratamento."; }
