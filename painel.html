@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Painel de aplicações – Fazenda Reata, Soja 26/27</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600&display=swap">
+<link rel="icon" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.png">
+<link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -14,21 +14,21 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root{
-  --bg:#EDF0EB;--panel:#FFFFFF;--panel2:#F5F7F3;--ink:#17221C;--muted:#53605A;--line:#D9E0D7;--brand:#21513B;--brand-ink:#FFFFFF;--focus:#1E6FB8;
-  --s-atrasada:#C2410C;--s-janela:#D99A06;--s-prox7:#6FA6D2;--s-programada:#B4BDB7;--s-exec_atraso:#9A5A1C;--s-adiantada:#7462C4;--s-exec_prazo:#1E4E79;--s-none:#E1E6DF;
+  --panel2:#F5F7F3;--muted:#53605A;--line:#D9E0D7;
+  --s-programada:#B4BDB7;--s-exec_atraso:#9A5A1C;--s-exec_prazo:#1E4E79;
   --shadow:0 1px 2px rgba(23,34,28,.06);
   box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#111814;--panel:#18211D;--panel2:#1F2A25;--ink:#E5ECE7;--muted:#9AA8A0;--line:#2C3832;--brand:#7CC6A0;--brand-ink:#0D1411;--focus:#7DB8EE;
-    --s-atrasada:#F07A3C;--s-janela:#F0B52B;--s-prox7:#7DB4E0;--s-programada:#5E6A63;--s-exec_atraso:#C98543;--s-adiantada:#9B8BE0;--s-exec_prazo:#4F8FD0;--s-none:#25302A;
+    --muted:#9AA8A0;--line:#2C3832;--brand:#7CC6A0;--brand-ink:#0D1411;
+    --s-programada:#5E6A63;--s-exec_atraso:#C98543;--s-exec_prazo:#4F8FD0;
     --shadow:none;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#111814;--panel:#18211D;--panel2:#1F2A25;--ink:#E5ECE7;--muted:#9AA8A0;--line:#2C3832;--brand:#7CC6A0;--brand-ink:#0D1411;--focus:#7DB8EE;
-  --s-atrasada:#F07A3C;--s-janela:#F0B52B;--s-prox7:#7DB4E0;--s-programada:#5E6A63;--s-exec_atraso:#C98543;--s-adiantada:#9B8BE0;--s-exec_prazo:#4F8FD0;--s-none:#25302A;
+  --muted:#9AA8A0;--line:#2C3832;--brand:#7CC6A0;--brand-ink:#0D1411;
+  --s-programada:#5E6A63;--s-exec_atraso:#C98543;--s-exec_prazo:#4F8FD0;
   --shadow:none;
 }
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -242,7 +242,7 @@ tbody tr:hover td{background:var(--panel2)}
   <div class="top-inner">
     <div class="title-row">
       <a class="brand" href="./index.html" style="text-decoration:none;color:inherit" title="Página inicial">
-        <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="var(--brand)"/><path d="M8 30 C14 22, 26 22, 32 30 M8 24 C14 16, 26 16, 32 24 M8 18 C14 10, 26 10, 32 18" fill="none" stroke="var(--brand-ink)" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <img src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.svg" alt="Nadiana Agronegócios" width="48" height="40" style="height:40px;width:auto;flex:none">
         <div>
           <h1>Painel de aplicações</h1>
           <p id="subtitle">Fazenda Reata, safra soja 26/27</p>

@@ -3,32 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#21513B">
+<meta name="theme-color" content="#FFFFFF">
 <title>Lançamentos – Aplicações Reata</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600&display=swap">
+<link rel="icon" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.png">
+<link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
-:root{--bg:#EDF0EB;--panel:#FFFFFF;--panel2:#F6F8F5;--ink:#17221C;--muted:#4F5C55;--line:#C9D1C7;--line2:#E3E8E1;--brand:#21513B;--brand-ink:#FFFFFF;--brand-soft:#E3EEE7;--warn-bg:#FDF2CF;--warn:#6B4A04;--bad-bg:#FDE7D8;--bad:#8A2D07;--ok:#1E6B45;--focus:#1E6FB8;
+:root{
   box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111814;--panel:#18211D;--panel2:#1F2A25;--ink:#E5ECE7;--muted:#A3B0A8;--line:#36433C;--line2:#2A3530;--brand:#2F7553;--brand-ink:#FFFFFF;--brand-soft:#21362B;--warn-bg:#3A3015;--warn:#F0C65A;--bad-bg:#3B2117;--bad:#F39A6B;--ok:#7CC6A0;--focus:#7DB8EE}}
-:root[data-theme="dark"]{--bg:#111814;--panel:#18211D;--panel2:#1F2A25;--ink:#E5ECE7;--muted:#A3B0A8;--line:#36433C;--line2:#2A3530;--brand:#2F7553;--brand-ink:#FFFFFF;--brand-soft:#21362B;--warn-bg:#3A3015;--warn:#F0C65A;--bad-bg:#3B2117;--bad:#F39A6B;--ok:#7CC6A0;--focus:#7DB8EE}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){}}
+:root[data-theme="dark"]{}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:'Barlow','Segoe UI',system-ui,sans-serif;font-size:16px;line-height:1.4}
 button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .app{max-width:640px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
-header.top{background:var(--brand);color:#fff;padding:14px 16px 18px;position:sticky;top:0;z-index:10}
+header.top{background:var(--panel);color:var(--ink);padding:10px 16px 14px;position:sticky;top:0;z-index:10;border-bottom:1px solid var(--line2);box-shadow:var(--sombra-1)}
 .top-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.back{display:inline-flex;align-items:center;gap:4px;color:#fff;text-decoration:none;font-size:15px;min-height:44px;border:0;background:transparent;padding:0;cursor:pointer}
+.back{display:inline-flex;align-items:center;gap:4px;color:var(--ink);text-decoration:none;font-size:15px;min-height:44px;border:0;background:transparent;padding:0;cursor:pointer}
 .top h1{margin:6px 0 0;font-family:'Barlow Condensed','Barlow',sans-serif;font-weight:600;font-size:28px;line-height:1.05}
-.top p{margin:4px 0 0;font-size:14px;color:#D5E6DC}
-.top a.link{color:#fff;font-size:14px;display:inline-flex;align-items:center;gap:6px;min-height:44px;text-decoration:none;border:1px solid rgba(255,255,255,.35);border-radius:10px;padding:0 12px}
-.net{display:flex;align-items:center;gap:6px;font-size:13px;color:#D5E6DC;margin-top:6px}
-.net i{width:8px;height:8px;border-radius:50%;background:#9fd7b5}
-.net.err i{background:#F4A26B}.net.busy i{background:#F0C65A}
+.top p{margin:4px 0 0;font-size:14px;color:var(--muted)}
+.top a.link{color:var(--ink);font-size:14px;display:inline-flex;align-items:center;gap:6px;min-height:44px;text-decoration:none;border:1px solid var(--line);border-radius:10px;padding:0 12px}
+.net{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin-top:6px}
+.net i{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.net.err i{background:var(--s-atrasada)}.net.busy i{background:var(--s-janela)}
 main{padding:16px;display:flex;flex-direction:column;gap:14px;flex-grow:1}
 .card{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px}
 .card h2{margin:0;font-size:17px;font-weight:600}
@@ -116,7 +116,7 @@ select.inp{appearance:auto}
 <header class="top">
   <div class="top-row">
     <button type="button" class="back" id="btnBack" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Lançamentos</button>
-    <a id="brandMini" href="./index.html" style="font-size:14px;color:#D5E6DC;text-decoration:none;min-height:44px;display:inline-flex;align-items:center">Início · Fazenda Reata</a>
+    <a id="brandMini" href="./index.html" style="font-size:14px;color:var(--muted);text-decoration:none;min-height:44px;display:inline-flex;align-items:center;gap:8px"><img src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.svg" alt="" width="34" height="28" style="height:28px;width:auto">Início · Fazenda Reata</a>
     <a class="link" href="./painel.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Painel</a>
   </div>
   <h1 id="ttl">Lançamentos</h1>
