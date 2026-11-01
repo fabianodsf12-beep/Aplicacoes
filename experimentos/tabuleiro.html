@@ -131,6 +131,16 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
             <label class="nd-campo">Ponto A da linha AB (opcional)
               <input class="nd-inp" id="pontoA" autocomplete="off" inputmode="decimal" placeholder="-17,801234, -50,901234">
             </label>
+            <div class="nd-campo" id="ancoraBox" hidden>Posição do ensaio
+              <div class="nd-seg" id="ancora" role="group" aria-label="Posição do ensaio">
+                <button type="button" data-v="" aria-pressed="true">Livre</button>
+                <button type="button" data-v="dir" aria-pressed="false" id="ancDir">À direita da AB</button>
+                <button type="button" data-v="esq" aria-pressed="false" id="ancEsq">À esquerda da AB</button>
+              </div>
+            </div>
+            <label class="nd-campo" id="pista1Box" hidden>Primeira pista do ensaio
+              <input class="nd-inp" id="pista1" inputmode="numeric">
+            </label>
             <p class="dica" id="pontoADica">Latitude e longitude do Ponto A. Com ele, cada coluna do ensaio cai exatamente numa pista do pulverizador, e o mapa mostra o número da pista a partir da linha AB.</p>
             <div class="dois">
               <label class="nd-campo">Espaçamento entre pistas
@@ -154,6 +164,12 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 
           <section class="nd-cartao">
             <h2 class="passo"><span class="n">3</span>Tratamentos</h2>
+            <div class="nd-campo">Os tratamentos são
+              <div class="nd-seg" id="modo" role="group" aria-label="Tipo de tratamento">
+                <button type="button" data-v="produtos" aria-pressed="true">Produtos diferentes</button>
+                <button type="button" data-v="doses" aria-pressed="false">Doses de um produto</button>
+              </div>
+            </div>
             <div class="trs" id="trs"></div>
             <div class="dois">
               <label class="nd-campo">Unidade da dose
@@ -185,7 +201,7 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 
           <section class="nd-cartao">
             <h2 class="passo"><span class="n">5</span>Arquivos</h2>
-            <button class="nd-btn primario grande nd-onda" type="button" id="btnRx"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>Baixar prescrição (shapefile)</button>
+            <div class="trs" id="rxBtns"></div>
             <div class="acoes-l">
               <button class="nd-btn nd-onda" type="button" id="btnLim"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>Testemunhas como limite</button>
               <button class="nd-btn nd-onda" type="button" id="btnKml"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>KML (Google Earth)</button>
@@ -193,7 +209,8 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
               <button class="nd-btn nd-onda" type="button" id="btnGj"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>GeoJSON</button>
             </div>
             <div id="arqMsg"></div>
-            <p class="dica">A prescrição traz um polígono por quadrado com as colunas TRAT (código), DOSE e ID, em coordenadas geográficas WGS84. O KML e a planilha servem para a equipe achar os quadrados no campo e para a análise depois da colheita.</p>
+            <p class="dica" id="rxDica"></p>
+            <p class="dica">Cada prescrição traz um polígono por quadrado com as colunas TRAT (código), DOSE, ID e PISTA, em coordenadas geográficas WGS84. O KML e a planilha servem para a equipe achar os quadrados no campo e para a análise depois da colheita.</p>
           </section>
 
           <section class="nd-cartao">
@@ -201,7 +218,8 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
             <ol class="passos-jd">
               <li>Baixe a prescrição. Não descompacte o .zip.</li>
               <li>No Operations Center, envie o arquivo em Arquivos e mande para o monitor pela transferência de dados, ou leve por pendrive.</li>
-              <li>No monitor, escolha a prescrição no controle de dose e a coluna DOSE, na mesma unidade do ensaio. Fora da prescrição, use a dose padrão da fazenda.</li>
+              <li>No monitor, escolha a prescrição no controle de dose e a coluna DOSE, na mesma unidade do ensaio. Fora da prescrição: desligado nas passadas de produto em teste; dose padrão no ensaio de doses.</li>
+              <li>Produtos diferentes: uma passada por produto, cada uma com a sua prescrição. Lave o tanque entre um produto e outro.</li>
               <li>Ligue o desligamento bico a bico (Section Control) e trabalhe com sinal RTK.</li>
               <li>Antes do produto, faça um teste só com água em 3 ou 4 quadrados e confira o mapa do aplicado: a testemunha tem que sair sem aplicação.</li>
               <li>Se o monitor não fechar os bicos com dose 0, use o arquivo "Testemunhas como limite" como limites internos do talhão; o Section Control fecha os bicos dentro deles.</li>
@@ -247,7 +265,7 @@ const COR = {
 };
 
 /* ---------- estado (guardado no aparelho) ---------- */
-const PADRAO = {talhao:"RT-40", codigo:"", ang:null, alvo:50, W:36, L:72, nC:14, nR:14, bord:36, centro:null, pontoA:null, rumoFixo:false, unid:"L/ha", inverter:false, semente:1,
+const PADRAO = {talhao:"RT-40", codigo:"", ang:null, alvo:50, W:36, L:72, nC:14, nR:14, bord:36, centro:null, pontoA:null, rumoFixo:false, ancora:"", pista1:1, modo:"produtos", unid:"L/ha", inverter:false, semente:1,
   trats:[{cod:"A", nome:"Padrão fazenda", dose:""}, {cod:"T", nome:"Testemunha", dose:"0"}]};
 let S = {...PADRAO};
 try { const g = JSON.parse(lsGet("tabuleiro.plano") || "null"); if (g && typeof g === "object") S = {...PADRAO, ...g}; } catch (e) {}
@@ -333,7 +351,10 @@ function calcular(){
   let v0 = -S.nC * W / 2, vA = null;
   if (S.pontoA) { // encaixa as colunas nas pistas: o centro de cada coluna fica a um número inteiro de pistas do Ponto A
     const a = P.fwd([S.pontoA[1], S.pontoA[0]]); vA = a[0] * p[0] + a[1] * p[1];
-    let desl = ((vA - (v0 + W / 2)) % W + W) % W; if (desl > W / 2) desl -= W; v0 += desl;
+    const k1 = Math.max(0, Math.round(S.pista1) || 0);
+    if (S.ancora === "dir") v0 = vA + (k1 - 0.5) * W;                    // pistas +k1 ... +k1+nC-1
+    else if (S.ancora === "esq") v0 = vA - (k1 + S.nC - 0.5) * W;        // pistas -(k1+nC-1) ... -k1
+    else { let desl = ((vA - (v0 + W / 2)) % W + W) % W; if (desl > W / 2) desl -= W; v0 += desl; }
   }
   const toLL = (u, v) => P.inv([u * d[0] + v * p[0], u * d[1] + v * p[1]]);
   const quads = []; let id = 0;
@@ -407,7 +428,8 @@ function desenharTalhoes(){
     pg.addTo(LT);
   });
 }
-function corTrat(i){ const t = S.trats[i]; if (!t) return COR.test; if (num(t.dose) === 0) return COR.test; let k = 0; for (let j = 0; j < i; j++) if (num(S.trats[j].dose) !== 0) k++; return COR.trat[k % 4]; }
+const ehTest = t => num(t.dose) === 0;
+function corTrat(i){ const t = S.trats[i]; if (!t) return COR.test; if (ehTest(t)) return COR.test; let k = 0; for (let j = 0; j < i; j++) if (num(S.trats[j].dose) !== 0) k++; return COR.trat[k % 4]; }
 function desenharGrade(){
   if (!MAP) return;
   LQ.clearLayers(); LR.clearLayers(); LB.clearLayers();
@@ -441,6 +463,10 @@ function enquadrar(){
 function preencherCampos(){
   $("codigo").value = S.codigo || ""; $("codigo").placeholder = `TAB ${S.talhao || "talhão"} 26/27`;
   $("ang").value = S.ang == null ? "" : fmtMax(S.ang, 4);
+  $("ancoraBox").hidden = !S.pontoA; $("pista1Box").hidden = !S.pontoA || !S.ancora; $("pista1").value = S.pista1;
+  [...$("ancora").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === (S.pontoA ? S.ancora : ""))));
+  if (S.ang != null) { const lado = a => ["norte","nordeste","leste","sudeste","sul","sudoeste","oeste","noroeste"][Math.round((((a % 360) + 360) % 360) / 45) % 8];
+    $("ancDir").textContent = `À direita (${lado(S.ang + 90)})`; $("ancEsq").textContent = `À esquerda (${lado(S.ang - 90)})`; }
   $("pontoA").value = S.pontoA ? fmtMax(S.pontoA[0], 7) + "; " + fmtMax(S.pontoA[1], 7) : ""; $("alvo").value = fmt(num(S.alvo) || 50, 0);
   $("W").value = fmt(S.W, S.W % 1 ? 1 : 0); $("L").value = fmt(S.L, S.L % 1 ? 1 : 0); $("nC").value = S.nC; $("nR").value = S.nR; $("bord").value = fmt(S.bord, S.bord % 1 ? 1 : 0);
   $("unid").value = S.unid;
@@ -454,12 +480,14 @@ function renderTrats(){
     <label class="nd-campo ds">Dose (${esc(S.unid)})<input class="nd-inp" data-i="${i}" data-k="dose" value="${esc(t.dose)}" inputmode="decimal" placeholder="a definir"></label>
     <button class="nd-btn icone leve rm" type="button" data-rm="${i}" aria-label="Remover ${esc(t.nome || t.cod)}" ${S.trats.length <= 2 ? "disabled" : ""}><svg class="nd-ic" aria-hidden="true"><use href="#i-trash-2"/></svg></button>
   </div>`).join("");
-  $("btnAddTr").disabled = S.trats.length >= 4;
+  $("btnAddTr").disabled = S.trats.length >= 5;
   const n = S.trats.length;
+  [...$("modo").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === S.modo)));
   $("btnInverter").classList.toggle("on", n === 2); $("btnSortear").classList.toggle("on", n > 2);
   $("trDica").textContent = n === 2
     ? "Com 2 tratamentos o desenho é o xadrez: cada quadrado fica cercado pelo outro tratamento. Testemunha é dose 0 (bicos fechados)."
-    : `Com ${n} tratamentos o tabuleiro é feito em blocos de ${n} × ${n} quadrados sorteados: em cada bloco, cada passada e cada fileira têm todos os tratamentos. Para produtos diferentes (A, B, A+B), cada produto precisa da sua passada e da sua prescrição.`;
+    : `Com ${n} tratamentos o tabuleiro é feito em blocos de ${n} × ${n} quadrados sorteados: em cada bloco, cada passada e cada fileira têm todos os tratamentos. Use passadas e quadrados por passada em múltiplos de ${n} para todos os blocos ficarem completos.`;
+  $("trDica").textContent += S.modo === "produtos" ? " Produtos diferentes: cada produto vai numa passada própria, com a sua prescrição (bicos abertos só nos quadrados dele)." : " Doses de um produto: uma passada só, com a dose variando por quadrado.";
 }
 function renderLegenda(){
   const itens = S.trats.map((t, i) => `<span><i style="--c:${corTrat(i)}"></i>${esc(t.cod)}${t.nome ? " · " + esc(t.nome) : ""}</span>`).join("") + '<span><i class="fora"></i>Fora (bordadura)</span>' + (S.pontoA ? '<span><i class="ab"></i>Linha AB</span>' : "");
@@ -481,13 +509,16 @@ function renderResumo(){
   const minQ = Math.min(...cont);
   if (!ok.length) msgs.push(["erro", "Nenhum quadrado dentro do talhão", "Arraste o círculo para dentro do talhão ou toque em Ajustar ao talhão."]);
   else if (minQ < 15) msgs.push(["aviso", "Poucas repetições", `O tratamento com menos quadrados tem ${minQ}. Para separar por zona, o ideal é 15 ou mais de cada. Aumente a área ou diminua o quadrado.`]);
+  const nT = S.trats.length;
+  if (nT > 2 && (S.nC % nT || S.nR % nT)) msgs.push(["aviso", "Blocos incompletos", `Com ${nT} tratamentos, use passadas e quadrados por passada em múltiplos de ${nT} (hoje ${S.nC} × ${S.nR}). Assim todo tratamento aparece o mesmo número de vezes em cada parte da área.`]);
+  if (S.trats.filter(t => !ehTest(t)).length > 4) msgs.push(["aviso", "Cores repetidas", "Com 5 tratamentos, deixe um deles como testemunha (dose 0)."]);
   if (S.L < 60) msgs.push(["aviso", "Quadrado curto", "Com menos de 60 m de comprimento o monitor de colheita não estabiliza dentro do quadrado."]);
   if (S.W % 36 && 36 % S.W) msgs.push(["", "Largura fora da barra", "Com desligamento bico a bico o pulverizador acompanha qualquer largura, mas na colheita é melhor que a largura seja múltiplo da plataforma."]);
   if (S.trats.some(t => !isFinite(num(t.dose)))) msgs.push(["", "Dose em aberto", "O desenho já pode ser baixado em KML e planilha. A prescrição precisa da dose de cada tratamento."]);
   av.innerHTML = msgs.map(([c, t, d]) => `<div class="nd-msg ${c}"><svg class="nd-ic" aria-hidden="true"><use href="#i-${c === "erro" ? "circle-x" : c === "aviso" ? "triangle-alert" : "info"}"/></svg><div><b>${t}</b>${d}</div></div>`).join("");
 }
 function atualizar(){
-  calcular(); desenharGrade(); renderLegenda(); renderResumo();
+  calcular(); desenharGrade(); renderLegenda(); renderResumo(); renderRxBtns();
   const t = talhaoAtual();
   $("talInfo").textContent = t && GRADE ? `${t.nome}: ${fmt(GRADE.areaTal, 2)} ha${t.origem === "importado" ? " (limite importado)" : ""}.` : "";
 }
@@ -495,6 +526,7 @@ function escolherTalhao(nome, ajustar){
   S.talhao = nome; $("talhao").value = nome;
   if (ajustar) { S.ang = null; S.rumoFixo = false; S.pontoA = null; ajustarAoTalhao(); }
   salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar();
+  $("mapMsg").textContent = "Arraste o círculo para mudar o ensaio de lugar. Toque num quadrado para ver o tratamento.";
 }
 function preencherLista(){
   const nomes = TALHOES.map(t => t.nome).sort((a, b) => a.localeCompare(b, "pt-BR", {numeric:true}));
@@ -513,7 +545,7 @@ $("ang").addEventListener("change", () => { const v = num($("ang").value); if (!
   S.ang = ((v % 360) + 360) % 360; S.rumoFixo = true; ajustarTamanho(); salvar(); preencherCampos(); atualizar(); });
 $("pontoA").addEventListener("change", () => {
   const t = $("pontoA").value.trim();
-  if (!t) { S.pontoA = null; salvar(); atualizar(); return; }
+  if (!t) { S.pontoA = null; S.ancora = ""; salvar(); preencherCampos(); atualizar(); return; }
   const ns = (t.match(/-?\d+(?:[.,]\d+)?/g) || []).map(x => Number(x.replace(",", ".")));
   if (ns.length !== 2 || Math.abs(ns[0]) > 90 || Math.abs(ns[1]) > 180) { aviso("Ponto A inválido. Escreva latitude e longitude, por exemplo -17,801234; -50,901234."); preencherCampos(); return; }
   S.pontoA = ns; salvar(); preencherCampos(); atualizar();
@@ -539,8 +571,11 @@ $("trs").addEventListener("change", e => {
   S.trats[i][k] = v; salvar(); renderTrats(); atualizar();
 });
 $("trs").addEventListener("click", e => { const b = e.target.closest("[data-rm]"); if (!b || S.trats.length <= 2) return; S.trats.splice(+b.dataset.rm, 1); salvar(); renderTrats(); atualizar(); });
-$("btnAddTr").addEventListener("click", () => { if (S.trats.length >= 4) return; const cods = ["A","B","C","D","E"]; const cod = cods.find(c => !S.trats.some(t => t.cod === c));
+$("btnAddTr").addEventListener("click", () => { if (S.trats.length >= 5) return; const cods = ["A","B","C","D","E"]; const cod = cods.find(c => !S.trats.some(t => t.cod === c));
   S.trats.splice(S.trats.length - (S.trats.some(t => num(t.dose) === 0) ? 1 : 0), 0, {cod, nome:"", dose:""}); salvar(); renderTrats(); atualizar(); });
+$("modo").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.modo = b.dataset.v; salvar(); renderTrats(); atualizar(); });
+$("ancora").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.ancora = b.dataset.v; salvar(); preencherCampos(); atualizar(); });
+$("pista1").addEventListener("change", () => { const v = Math.round(num($("pista1").value)); if (isFinite(v) && v >= 0 && v < 500) S.pista1 = v; salvar(); preencherCampos(); atualizar(); });
 $("btnInverter").addEventListener("click", () => { S.inverter = !S.inverter; salvar(); atualizar(); });
 $("btnSortear").addEventListener("click", () => { S.semente = (S.semente % 9999) + 1; salvar(); atualizar(); aviso("Novo sorteio feito"); });
 
@@ -610,18 +645,43 @@ const nomeBase = () => semAcento(S.codigo || `TAB ${S.talhao} 26-27`).replace(/[
 const fechado = q => [...q.ll, q.ll[0]];
 function arqMsg(tipo, texto){ $("arqMsg").innerHTML = texto ? `<div class="nd-msg ${tipo}"><svg class="nd-ic" aria-hidden="true"><use href="#i-${tipo === "erro" ? "circle-x" : "circle-check"}"/></svg><div>${texto}</div></div>` : ""; }
 function exigirGrade(){ if (!GRADE || !GRADE.quads.some(q => q.ok)) { arqMsg("erro", "<b>Nada para baixar</b>Escolha o talhão e coloque o ensaio dentro dele."); return false; } return true; }
-$("btnRx").addEventListener("click", () => {
+function renderRxBtns(){
+  const ic = '<svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>';
+  if (S.modo === "doses") {
+    $("rxBtns").innerHTML = `<button class="nd-btn primario grande nd-onda" type="button" data-rx="">${ic}Baixar prescrição (shapefile)</button>`;
+    $("rxDica").textContent = "Uma passada só: a coluna DOSE muda por quadrado (0 na testemunha). Fora da prescrição, use a dose padrão da fazenda.";
+  } else {
+    const prods = S.trats.map((t, i) => [t, i]).filter(([t]) => !ehTest(t));
+    $("rxBtns").innerHTML = prods.map(([t, i], k) => `<button class="nd-btn ${k ? "" : "primario"} grande nd-onda" type="button" data-rx="${i}">${ic}Prescrição ${esc(t.cod)}${t.nome ? " · " + esc(t.nome) : ""} (passada ${k + 1})</button>`).join("");
+    $("rxDica").textContent = `Produtos diferentes: ${prods.length} passadas, uma por produto, cada uma com a sua prescrição. Em cada arquivo, DOSE é a dose do produto nos quadrados dele e 0 no resto do ensaio. Configure a dose fora da prescrição como desligado.`;
+  }
+}
+$("rxBtns").addEventListener("click", e => { const b = e.target.closest("[data-rx]"); if (!b) return; if (S.modo === "doses") baixarRxDoses(); else baixarRxProduto(+b.dataset.rx); });
+const CAMPOS_RX = [{nome:"ID", tipo:"N", tam:6}, {nome:"TRAT", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, {nome:"DOSE", tipo:"N", tam:12, dec:3}, {nome:"COLUNA", tipo:"N", tam:4}, {nome:"LINHA", tipo:"N", tam:4}, {nome:"PISTA", tipo:"N", tam:5}];
+const zipShp = (s, b) => zip([{nome:b + ".shp", dados:s.shp}, {nome:b + ".shx", dados:s.shx}, {nome:b + ".dbf", dados:s.dbf}, {nome:b + ".prj", dados:s.prj}]);
+function baixarRxProduto(i){
+  if (!exigirGrade()) return;
+  const t = S.trats[i]; if (!t) return;
+  if (!isFinite(num(t.dose))) { arqMsg("erro", `<b>Falta dose</b>Informe a dose do tratamento ${esc(t.cod)} para gerar a prescrição dele.`); return; }
+  const fe = GRADE.quads.map(q => ({anel:fechado(q), props: q.ok
+    ? {ID:q.id, TRAT:S.trats[q.ti].cod, NOME:q.ti === i ? t.nome : "Sem aplicacao", DOSE:q.ti === i ? num(t.dose) : 0, COLUNA:q.c, LINHA:q.r, PISTA:q.pista}
+    : {ID:0, TRAT:"BORD", NOME:"Bordadura", DOSE:0, COLUNA:q.c, LINHA:q.r, PISTA:q.pista}}));
+  const b = nomeBase() + "_" + semAcento(t.cod).replace(/[^A-Za-z0-9]/g, "");
+  baixar(zipShp(shapefile(fe, CAMPOS_RX), b), b + "_prescricao.zip");
+  const nq = GRADE.quads.filter(q => q.ok && q.ti === i).length;
+  arqMsg("", `<b>Prescrição ${esc(t.cod)} baixada</b>${fmt(nq)} quadrados com ${fmt(num(t.dose), 2)} ${esc(S.unid)}; os demais com dose 0.`);
+}
+function baixarRxDoses(){
   if (!exigirGrade()) return;
   if (S.trats.some(t => !isFinite(num(t.dose)))) { arqMsg("erro", "<b>Falta dose</b>Informe a dose de cada tratamento (0 na testemunha) para gerar a prescrição."); return; }
   const doseBord = (S.trats.find(t => num(t.dose) > 0) || {dose:0}).dose;
   const fe = GRADE.quads.map(q => ({anel:fechado(q), props: q.ok
     ? {ID:q.id, TRAT:S.trats[q.ti].cod, NOME:S.trats[q.ti].nome, DOSE:num(S.trats[q.ti].dose), COLUNA:q.c, LINHA:q.r, PISTA:q.pista}
     : {ID:0, TRAT:"BORD", NOME:"Bordadura", DOSE:num(doseBord), COLUNA:q.c, LINHA:q.r, PISTA:q.pista}}));
-  const s = shapefile(fe, [{nome:"ID", tipo:"N", tam:6}, {nome:"TRAT", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, {nome:"DOSE", tipo:"N", tam:12, dec:3}, {nome:"COLUNA", tipo:"N", tam:4}, {nome:"LINHA", tipo:"N", tam:4}, {nome:"PISTA", tipo:"N", tam:5}]);
   const b = nomeBase();
-  baixar(zip([{nome:b + ".shp", dados:s.shp}, {nome:b + ".shx", dados:s.shx}, {nome:b + ".dbf", dados:s.dbf}, {nome:b + ".prj", dados:s.prj}]), b + "_prescricao.zip");
+  baixar(zipShp(shapefile(fe, CAMPOS_RX), b), b + "_prescricao.zip");
   arqMsg("", `<b>Prescrição baixada</b>${fmt(GRADE.quads.filter(q => q.ok).length)} quadrados do ensaio e ${fmt(GRADE.quads.filter(q => !q.ok).length)} de bordadura (com a dose padrão), coluna DOSE em ${esc(S.unid)}.`);
-});
+}
 $("btnLim").addEventListener("click", () => {
   if (!exigirGrade()) return;
   const iT = S.trats.map((t, i) => num(t.dose) === 0 ? i : -1).filter(i => i >= 0);
@@ -653,7 +713,7 @@ $("btnCsv").addEventListener("click", () => {
 });
 $("btnGj").addEventListener("click", () => {
   if (!exigirGrade()) return;
-  const gj = {type:"FeatureCollection", properties:{ensaio:S.codigo || null, talhao:S.talhao, rumo_graus:S.ang, ponto_a:S.pontoA, largura_m:S.W, comprimento_m:S.L, bordadura_m:S.bord, unidade:S.unid, tratamentos:S.trats, plano:{centro:S.centro, ang:S.ang, rumoFixo:S.rumoFixo, pontoA:S.pontoA, W:S.W, L:S.L, nC:S.nC, nR:S.nR, bord:S.bord, unid:S.unid, inverter:S.inverter, semente:S.semente, alvo:S.alvo, codigo:S.codigo, talhao:S.talhao, trats:S.trats}, criado:new Date().toISOString()},
+  const gj = {type:"FeatureCollection", properties:{ensaio:S.codigo || null, talhao:S.talhao, rumo_graus:S.ang, ponto_a:S.pontoA, largura_m:S.W, comprimento_m:S.L, bordadura_m:S.bord, unidade:S.unid, tratamentos:S.trats, plano:{centro:S.centro, ang:S.ang, rumoFixo:S.rumoFixo, pontoA:S.pontoA, ancora:S.ancora, pista1:S.pista1, modo:S.modo, W:S.W, L:S.L, nC:S.nC, nR:S.nR, bord:S.bord, unid:S.unid, inverter:S.inverter, semente:S.semente, alvo:S.alvo, codigo:S.codigo, talhao:S.talhao, trats:S.trats}, criado:new Date().toISOString()},
     features: GRADE.quads.map(q => ({type:"Feature", properties:{id:q.id || null, passada:q.c, pista_ab:q.pista, posicao:q.r, situacao:q.ok ? "ensaio" : "fora", trat:q.ok ? S.trats[q.ti].cod : null, dose:q.ok && isFinite(num(S.trats[q.ti].dose)) ? num(S.trats[q.ti].dose) : null},
       geometry:{type:"Polygon", coordinates:[fechado(q).map(p => [+p[0].toFixed(8), +p[1].toFixed(8)])]}}))};
   baixar(new Blob([JSON.stringify(gj)], {type:"application/geo+json"}), nomeBase() + ".geojson");
