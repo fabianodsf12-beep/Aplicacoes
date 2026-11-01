@@ -325,6 +325,7 @@ form{border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:va
   <a href="#" role="tab" id="tab-experimentos" aria-selected="false" data-tab="experimentos"><svg class="nd-ic" aria-hidden="true"><use href="#i-sprout"/></svg>Experimentos</a>
   <a href="#" role="tab" id="tab-resultados" aria-selected="false" data-tab="resultados"><svg class="nd-ic" aria-hidden="true"><use href="#i-chart-column"/></svg>Resultados</a>
   <a href="#" role="tab" id="tab-novo" aria-selected="false" data-tab="novo"><svg class="nd-ic" aria-hidden="true"><use href="#i-plus"/></svg>Novo</a>
+  <a href="tabuleiro.html"><svg class="nd-ic" aria-hidden="true"><use href="#i-map"/></svg>Tabuleiro</a>
 </nav>
 <div class="nd-conteudo">
 <header class="nd-topo"><div class="nd-wrap">
@@ -975,6 +976,7 @@ $('cfgForm').onsubmit=async e=>{
 $('note').insertAdjacentHTML('afterend','<p class="note"><button type="button" class="sair" id="trocar">Trocar acesso</button></p>');
 $('trocar').onclick=()=>telaConfig(true);
 if(navigator.storage?.persist)navigator.storage.persist().catch(()=>{});
+{const h=location.hash.slice(1);if(['experimentos','resultados','novo'].includes(h))show(h);}
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 if(cfg)conectar();else telaConfig(true);
 </script>

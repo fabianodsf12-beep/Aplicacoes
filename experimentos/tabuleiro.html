@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
+<title>Tabuleiro – Experimentos</title>
+<!-- Planejamento de ensaio em tabuleiro (xadrez) para aplicação com prescrição. Base Nadiana: https://github.com/fabianodsf12-beep/nadiana-design/blob/main/v1/README.md -->
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.css">
+<link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/componentes.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/icones.js"></script>
+<script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.js"></script>
+<script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/nadiana.js" defer></script>
+<style>
+/* Estilos só desta tela. Cores sempre por var(--token). */
+*{box-sizing:border-box}
+.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--space-5);padding-block:var(--space-5)}
+@media (min-width:1100px){.layout{grid-template-columns:400px minmax(0,1fr);align-items:start}.mapcol{position:sticky;top:84px;order:2}.side{order:1}}
+.side{display:flex;flex-direction:column;gap:var(--space-5);min-width:0}
+.mapcol{display:flex;flex-direction:column;gap:var(--space-3);min-width:0}
+#mapa{height:62vh;min-height:360px;border-radius:var(--radius-2xl);border:1px solid var(--line2);box-shadow:var(--sombra-1);background:var(--panel2)}
+@media (min-width:1100px){#mapa{height:calc(100vh - 170px)}}
+.passo{display:flex;align-items:center;gap:var(--space-3)}
+.passo .n{flex:0 0 auto;width:28px;height:28px;border-radius:var(--radius-pill);background:var(--brand-soft);color:var(--brand);font-family:var(--font-display);font-weight:600;font-size:17px;display:inline-flex;align-items:center;justify-content:center}
+.dois{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3)}
+.acoes-l{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.nd-campo .un{display:flex;align-items:center;gap:var(--space-2)}
+.nd-campo .un span{color:var(--muted);font-weight:500;white-space:nowrap}
+.dica{font-size:13.5px;color:var(--muted);margin:0}
+.trs{display:flex;flex-direction:column;gap:var(--space-3)}
+.tr{display:grid;grid-template-columns:20px 60px minmax(0,1fr) 84px 44px;grid-template-areas:"c k n d x";gap:var(--space-2);align-items:end}
+.tr .cor{grid-area:c;width:20px;height:20px;border-radius:var(--radius-sm);margin-bottom:14px;background:var(--c);border:1px solid var(--line)}
+.tr .k{grid-area:k}.tr .nm{grid-area:n}.tr .ds{grid-area:d}.tr .rm{grid-area:x;margin-bottom:2px}
+@media (max-width:520px){.tr{grid-template-columns:20px 72px minmax(0,1fr) 44px;grid-template-areas:"c k d x" ". n n n";padding-bottom:var(--space-3);border-bottom:1px solid var(--line2)}}
+.tr .nd-campo{font-size:12.5px}
+.tr .nd-inp{padding:0 var(--space-2)}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3)}
+.kpis .nd-kpi .val{font-size:28px}
+.leg{display:flex;flex-wrap:wrap;gap:var(--space-2) var(--space-4);font-size:13.5px}
+.leg span{display:inline-flex;align-items:center;gap:6px}
+.leg i{width:14px;height:14px;border-radius:var(--radius-xs);background:var(--c);border:1px solid var(--line)}
+.leg i.fora{background:transparent;border:1.5px dashed var(--muted)}
+.passos-jd{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:var(--space-2);font-size:15px}
+.mapmsg{font-size:14px;color:var(--muted);margin:0;min-height:20px}
+.modo{display:none}
+.modo.on{display:flex}
+.nd-tabela td.cod{font-weight:600}
+.nd-tabela td .cor{display:inline-block;width:12px;height:12px;border-radius:var(--radius-xs);background:var(--c);vertical-align:-1px;margin-right:6px;border:1px solid var(--line)}
+input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+/* mapa: rótulos e controles sobre a imagem de satélite (sempre tema claro) */
+.leaflet-container{font-family:var(--font-body)}
+.leaflet-tooltip.tlbl{background:transparent;border:0;box-shadow:none;color:var(--brand-ink);font:600 12px var(--font-body);text-shadow:0 0 3px var(--nadiana-preto),0 0 2px var(--nadiana-preto);padding:0}
+.leaflet-tooltip.tlbl::before{display:none}
+.qlbl{font:600 12px var(--font-display);color:var(--brand-ink);text-shadow:0 0 3px var(--nadiana-preto),0 0 2px var(--nadiana-preto);text-align:center;line-height:16px;pointer-events:none}
+.ctl{background:var(--panel);color:var(--ink);border-radius:var(--radius-lg);box-shadow:var(--sombra-2);padding:var(--space-2) var(--space-3);font-size:12.5px}
+.ctl.norte{display:flex;flex-direction:column;align-items:center;padding:var(--space-1) var(--space-2);font:600 13px var(--font-display);line-height:1}
+.ctl.legmap{display:flex;flex-direction:column;gap:4px;max-width:180px}
+.ctl.legmap span{display:flex;align-items:center;gap:6px}
+.ctl.legmap i{width:12px;height:12px;border-radius:var(--radius-xs);background:var(--c);flex:0 0 auto;border:1px solid var(--line)}
+.ctl.legmap i.fora{background:transparent;border:1.5px dashed var(--muted)}
+.centro-ic{width:28px;height:28px;border-radius:var(--radius-pill);background:var(--panel);border:3px solid var(--brand);box-shadow:var(--sombra-2);display:flex;align-items:center;justify-content:center;color:var(--brand);cursor:grab}
+.centro-ic svg{width:16px;height:16px}
+</style>
+</head>
+<body>
+<div class="nd-app">
+  <nav class="nd-nav" aria-label="Principal">
+    <div class="marca"><span class="nd-logo"><img src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-logo-vertical.svg" alt="Nadiana Agronegócios"></span></div>
+    <a href="./#lembretes"><svg class="nd-ic" aria-hidden="true"><use href="#i-bell"/></svg>Lembretes</a>
+    <a href="./#experimentos"><svg class="nd-ic" aria-hidden="true"><use href="#i-sprout"/></svg>Experimentos</a>
+    <a href="./#resultados"><svg class="nd-ic" aria-hidden="true"><use href="#i-chart-column"/></svg>Resultados</a>
+    <a href="./#novo"><svg class="nd-ic" aria-hidden="true"><use href="#i-plus"/></svg>Novo</a>
+    <a href="tabuleiro.html" aria-current="page"><svg class="nd-ic" aria-hidden="true"><use href="#i-map"/></svg>Tabuleiro</a>
+  </nav>
+
+  <div class="nd-conteudo">
+    <header class="nd-topo">
+      <div class="nd-wrap largo">
+        <img class="nd-simbolo" src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.svg" alt="Nadiana">
+        <div class="app"><h1>Ensaio em tabuleiro</h1><p>Quadrados alternados com prescrição para o pulverizador</p></div>
+        <div class="acoes">
+          <button class="nd-btn icone leve" type="button" data-nd-tema aria-label="Trocar tema claro ou escuro"><svg class="nd-ic" aria-hidden="true"><use href="#i-sun"/></svg></button>
+        </div>
+      </div>
+    </header>
+
+    <main class="nd-wrap largo">
+      <div class="layout">
+        <div class="mapcol">
+          <div id="mapa" role="region" aria-label="Mapa do ensaio"></div>
+          <p class="mapmsg" id="mapMsg" aria-live="polite">Carregando o mapa dos talhões…</p>
+          <div class="leg" id="legenda" aria-label="Legenda"></div>
+        </div>
+
+        <div class="side">
+          <section class="nd-cartao">
+            <h2 class="passo"><span class="n">1</span>Talhão</h2>
+            <label class="nd-campo">Talhão do ensaio
+              <select class="nd-inp" id="talhao"><option value="">Carregando…</option></select>
+            </label>
+            <div class="acoes-l">
+              <label class="nd-btn nd-onda" for="arqLimite"><svg class="nd-ic" aria-hidden="true"><use href="#i-upload"/></svg>Importar limite</label>
+              <input type="file" id="arqLimite" accept=".zip,.kml,.geojson,.json">
+            </div>
+            <p class="dica">Se o talhão não estiver no mapa da fazenda, importe o limite em shapefile (.zip), KML ou GeoJSON, por exemplo o limite exportado do Operations Center.</p>
+            <p class="dica" id="talInfo"></p>
+          </section>
+
+          <section class="nd-cartao">
+            <h2 class="passo"><span class="n">2</span>Direção e tamanho</h2>
+            <label class="nd-campo">Nome do ensaio
+              <input class="nd-inp" id="codigo" autocomplete="off" placeholder="TAB RT-40 26/27">
+            </label>
+            <div class="dois">
+              <label class="nd-campo">Direção das linhas
+                <span class="un"><input class="nd-inp" id="ang" inputmode="decimal"><span>graus</span></span>
+              </label>
+              <label class="nd-campo">Área alvo
+                <span class="un"><input class="nd-inp" id="alvo" inputmode="decimal"><span>ha</span></span>
+              </label>
+            </div>
+            <div class="acoes-l">
+              <button class="nd-btn nd-onda" type="button" id="btnMedir"><svg class="nd-ic" aria-hidden="true"><use href="#i-pencil"/></svg>Marcar direção no mapa</button>
+              <button class="nd-btn nd-onda" type="button" id="btnAuto"><svg class="nd-ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg>Ajustar ao talhão</button>
+            </div>
+            <p class="dica">Direção em graus a partir do norte (0 = norte–sul, 90 = leste–oeste). Para conferir, marque dois pontos sobre uma linha de plantio na imagem.</p>
+            <div class="dois">
+              <label class="nd-campo">Largura do quadrado
+                <span class="un"><input class="nd-inp" id="W" inputmode="decimal"><span>m</span></span>
+              </label>
+              <label class="nd-campo">Comprimento
+                <span class="un"><input class="nd-inp" id="L" inputmode="decimal"><span>m</span></span>
+              </label>
+              <label class="nd-campo">Passadas (colunas)
+                <input class="nd-inp" id="nC" inputmode="numeric">
+              </label>
+              <label class="nd-campo">Quadrados por passada
+                <input class="nd-inp" id="nR" inputmode="numeric">
+              </label>
+              <label class="nd-campo">Bordadura
+                <span class="un"><input class="nd-inp" id="bord" inputmode="decimal"><span>m</span></span>
+              </label>
+            </div>
+            <p class="dica">Largura de 36 m = uma passada da barra do M4030. Comprimento de 60 m ou mais, por causa do atraso do monitor de colheita. Quadrados a menos que a bordadura da divisa do talhão ficam de fora. Arraste o círculo do mapa para mudar o ensaio de lugar.</p>
+          </section>
+
+          <section class="nd-cartao">
+            <h2 class="passo"><span class="n">3</span>Tratamentos</h2>
+            <div class="trs" id="trs"></div>
+            <div class="dois">
+              <label class="nd-campo">Unidade da dose
+                <select class="nd-inp" id="unid"><option>L/ha</option><option>mL/ha</option><option>kg/ha</option><option>g/ha</option></select>
+              </label>
+              <div class="nd-campo" style="justify-content:flex-end">
+                <button class="nd-btn nd-onda" type="button" id="btnAddTr"><svg class="nd-ic gira" aria-hidden="true"><use href="#i-plus"/></svg>Tratamento</button>
+              </div>
+            </div>
+            <div class="acoes-l">
+              <button class="nd-btn nd-onda modo" type="button" id="btnInverter"><svg class="nd-ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg>Inverter o xadrez</button>
+              <button class="nd-btn nd-onda modo" type="button" id="btnSortear"><svg class="nd-ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg>Sortear de novo</button>
+            </div>
+            <p class="dica" id="trDica"></p>
+          </section>
+
+          <section class="nd-cartao" aria-live="polite">
+            <h2 class="passo"><span class="n">4</span>Resumo</h2>
+            <div class="kpis">
+              <div class="nd-kpi"><span class="rot">Quadrados</span><span class="val" id="kQ">0</span><span class="var" id="kQs"></span></div>
+              <div class="nd-kpi"><span class="rot">Área do ensaio</span><span class="val" id="kA">0<small>ha</small></span><span class="var" id="kAs"></span></div>
+            </div>
+            <div class="nd-tabela-wrap"><table class="nd-tabela">
+              <thead><tr><th>Tratamento</th><th class="n">Quadrados</th><th class="n">Área</th><th class="n">Produto</th></tr></thead>
+              <tbody id="tbTr"></tbody>
+            </table></div>
+            <div id="avisos" class="trs"></div>
+          </section>
+
+          <section class="nd-cartao">
+            <h2 class="passo"><span class="n">5</span>Arquivos</h2>
+            <button class="nd-btn primario grande nd-onda" type="button" id="btnRx"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>Baixar prescrição (shapefile)</button>
+            <div class="acoes-l">
+              <button class="nd-btn nd-onda" type="button" id="btnLim"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>Testemunhas como limite</button>
+              <button class="nd-btn nd-onda" type="button" id="btnKml"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>KML (Google Earth)</button>
+              <button class="nd-btn nd-onda" type="button" id="btnCsv"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>Planilha (CSV)</button>
+              <button class="nd-btn nd-onda" type="button" id="btnGj"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>GeoJSON</button>
+            </div>
+            <div id="arqMsg"></div>
+            <p class="dica">A prescrição traz um polígono por quadrado com as colunas TRAT (código), DOSE e ID, em coordenadas geográficas WGS84. O KML e a planilha servem para a equipe achar os quadrados no campo e para a análise depois da colheita.</p>
+          </section>
+
+          <section class="nd-cartao">
+            <h2>Como levar para o M4030</h2>
+            <ol class="passos-jd">
+              <li>Baixe a prescrição. Não descompacte o .zip.</li>
+              <li>No Operations Center, envie o arquivo em Arquivos e mande para o monitor pela transferência de dados, ou leve por pendrive.</li>
+              <li>No monitor, escolha a prescrição no controle de dose e a coluna DOSE, na mesma unidade do ensaio. Fora da prescrição, use a dose padrão da fazenda.</li>
+              <li>Ligue o desligamento bico a bico (Section Control) e trabalhe com sinal RTK.</li>
+              <li>Antes do produto, faça um teste só com água em 3 ou 4 quadrados e confira o mapa do aplicado: a testemunha tem que sair sem aplicação.</li>
+              <li>Se o monitor não fechar os bicos com dose 0, use o arquivo "Testemunhas como limite" como limites internos do talhão; o Section Control fecha os bicos dentro deles.</li>
+            </ol>
+            <p class="dica">Os nomes dos menus mudam com a versão do monitor. Guarde o mapa do aplicado: ele mostra o que cada quadrado recebeu de fato.</p>
+          </section>
+
+          <section class="nd-cartao">
+            <h2>Zonas de manejo</h2>
+            <p class="nd-corpo" style="margin:0">O tabuleiro cobre a área toda por igual. Por isso, as zonas podem ser desenhadas depois, e o resultado sai separado por zona do mesmo jeito.</p>
+            <ul class="passos-jd">
+              <li>Durante a safra: NDVI de satélite no enchimento de grãos.</li>
+              <li>Na colheita: produtividade das testemunhas. Elas mostram o potencial de cada parte da área sem o produto.</li>
+              <li>Depois, cada quadrado é comparado com as testemunhas vizinhas dentro da sua zona.</li>
+            </ul>
+          </section>
+        </div>
+      </div>
+      <footer class="nd-rodape">O limite dos talhões vem da planilha Base_Aplicacoes no Google Drive. O plano fica guardado neste aparelho.</footer>
+    </main>
+  </div>
+</div>
+
+<script>
+"use strict";
+const DATA_URL = "https://script.google.com/macros/s/AKfycbwxeuEaQ6gyYzEo3yWbs4SPVj529WUWqdp04ObgWcei8J8z4SiuciiEiXBFNg7-R2FrKg/exec";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = (v, c = 0) => Number(v).toLocaleString("pt-BR", {minimumFractionDigits:c, maximumFractionDigits:c});
+const num = s => { s = String(s ?? "").trim(); if (!s) return NaN; if (s.includes(",")) s = s.replace(/\./g, "").replace(",", "."); return Number(s); };
+const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+const aviso = t => { if (window.Nadiana && Nadiana.aviso) Nadiana.aviso(t); };
+
+/* cores: sobre a imagem de satélite vale sempre o tema claro da base */
+const TK = (window.NadianaTokens || {}).light || {};
+const COR = {
+  trat: [TK["graf-1"] || "#04954D", TK["graf-2"] || "#2A78D6", TK["graf-3"] || "#D55181", TK["graf-4"] || "#6250D6"],
+  test: TK["graf-outros"] || "#A9B3AF",
+  branco: TK.panel || "#FFFFFF",
+  limite: TK["nadiana-verde-claro"] || "#04B365"
+};
+
+/* ---------- estado (guardado no aparelho) ---------- */
+const PADRAO = {talhao:"RT-40", codigo:"", ang:null, alvo:50, W:36, L:72, nC:14, nR:14, bord:36, centro:null, unid:"L/ha", inverter:false, semente:1,
+  trats:[{cod:"A", nome:"Padrão fazenda", dose:""}, {cod:"T", nome:"Testemunha", dose:"0"}]};
+let S = {...PADRAO};
+try { const g = JSON.parse(lsGet("tabuleiro.plano") || "null"); if (g && typeof g === "object") S = {...PADRAO, ...g}; } catch (e) {}
+let importados = [];
+try { importados = JSON.parse(lsGet("tabuleiro.importados") || "[]") || []; } catch (e) { importados = []; }
+const salvar = () => lsSet("tabuleiro.plano", JSON.stringify(S));
+
+let TALHOES = [];   // {nome, rings:[[ [lon,lat], ... ], ...], origem}
+let GRADE = null;   // resultado do cálculo
+
+/* ---------- geometria: projeção plana local (metros) ---------- */
+const RAD = Math.PI / 180, WA = 6378137, WE2 = 0.00669437999014; // elipsoide WGS84
+function projecao(lat0, lon0){ // metros por grau no ponto central (raios do elipsoide)
+  const s2 = Math.sin(lat0 * RAD) ** 2, N = WA / Math.sqrt(1 - WE2 * s2), M = WA * (1 - WE2) / (1 - WE2 * s2) ** 1.5;
+  const k = Math.cos(lat0 * RAD) * N * RAD, m = M * RAD;
+  return {fwd: p => [(p[0] - lon0) * k, (p[1] - lat0) * m], inv: q => [q[0] / k + lon0, q[1] / m + lat0]};
+}
+function areaAssinada(r){ let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += (r[j][0] - r[i][0]) * (r[j][1] + r[i][1]); return a / 2; }
+function dentro(rings, p){ // par-ímpar em todos os anéis: serve para buracos e várias partes
+  let d = false;
+  for (const r of rings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const a = r[i], b = r[j];
+    if ((a[1] > p[1]) !== (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]) d = !d;
+  }
+  return d;
+}
+function areaRings(rings){ // m², anéis já em metros
+  let t = 0;
+  rings.forEach((r, i) => { const prof = rings.filter((o, j) => j !== i && dentro([o], r[0])).length; t += (prof % 2 ? -1 : 1) * Math.abs(areaAssinada(r)); });
+  return t;
+}
+function segCaixa(a, b, x0, y0, x1, y1){ // Liang–Barsky: o segmento toca a caixa?
+  let t0 = 0, t1 = 1; const dx = b[0] - a[0], dy = b[1] - a[1];
+  const p = [-dx, dx, -dy, dy], q = [a[0] - x0, x1 - a[0], a[1] - y0, y1 - a[1]];
+  for (let i = 0; i < 4; i++) {
+    if (p[i] === 0) { if (q[i] < 0) return false; }
+    else { const t = q[i] / p[i]; if (p[i] < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; } }
+  }
+  return true;
+}
+function direcaoDominante(rings){ // direção (0–180°) com mais comprimento de divisa
+  const h = new Array(180).fill(0);
+  rings.forEach(r => { for (let i = 1; i < r.length; i++) { const dx = r[i][0] - r[i-1][0], dy = r[i][1] - r[i-1][1], l = Math.hypot(dx, dy); if (!l) continue;
+    const a = ((Math.atan2(dx, dy) / RAD) % 180 + 180) % 180; h[Math.round(a) % 180] += l; } });
+  let best = 0, bv = -1;
+  for (let a = 0; a < 180; a++) { let v = 0; for (let k = -4; k <= 4; k++) v += h[(a + k + 180) % 180] * (5 - Math.abs(k)); if (v > bv) { bv = v; best = a; } }
+  return best;
+}
+function pontoInterno(rings){
+  let maior = rings[0], am = 0; rings.forEach(r => { const a = Math.abs(areaAssinada(r)); if (a > am) { am = a; maior = r; } });
+  let cx = 0, cy = 0, a6 = 0;
+  for (let i = 0, j = maior.length - 1; i < maior.length; j = i++) { const f = maior[j][0] * maior[i][1] - maior[i][0] * maior[j][1]; cx += (maior[j][0] + maior[i][0]) * f; cy += (maior[j][1] + maior[i][1]) * f; a6 += f * 3; }
+  if (a6) { cx /= a6; cy /= a6; }
+  if (a6 && dentro(rings, [cx, cy])) return [cx, cy];
+  const xs = []; // linha horizontal pelo centro: pega o maior trecho dentro
+  rings.forEach(r => { for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const a = r[i], b = r[j]; if ((a[1] > cy) !== (b[1] > cy)) xs.push(a[0] + (cy - a[1]) * (b[0] - a[0]) / (b[1] - a[1])); } });
+  xs.sort((p, q) => p - q); let bx = maior[0][0], bl = -1;
+  for (let i = 0; i + 1 < xs.length; i += 2) if (xs[i+1] - xs[i] > bl) { bl = xs[i+1] - xs[i]; bx = (xs[i] + xs[i+1]) / 2; }
+  return [bx, cy];
+}
+
+/* ---------- cálculo da grade ---------- */
+function eixos(ang){ const a = ang * RAD; return {d:[Math.sin(a), Math.cos(a)], p:[Math.cos(a), -Math.sin(a)]}; }
+function talhaoAtual(){ return TALHOES.find(t => t.nome === S.talhao) || null; }
+function rng(seed){ return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function embaralhar(n, r){ const a = [...Array(n).keys()]; for (let i = n - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function tratamentoDe(c, r){
+  const n = S.trats.length;
+  if (n === 2) return (c + r + (S.inverter ? 1 : 0)) % 2;
+  // 3 ou 4: blocos n × n em quadrado latino sorteado; em cada bloco, cada passada e cada fileira têm todos os tratamentos
+  const bc = Math.floor(c / n), br = Math.floor(r / n), g = rng(S.semente * 7919 + bc * 1009 + br * 9176 + 1);
+  const pr = embaralhar(n, g), pc = embaralhar(n, g), ps = embaralhar(n, g);
+  return ps[(pr[r % n] + pc[c % n]) % n];
+}
+function calcular(){
+  const t = talhaoAtual();
+  if (!t || !S.centro) { GRADE = null; return; }
+  const P = projecao(S.centro[0], S.centro[1]);
+  const {d, p} = eixos(S.ang);
+  const ringsUV = t.rings.map(r => r.map(ll => { const q = P.fwd(ll); return [q[0] * d[0] + q[1] * d[1], q[0] * p[0] + q[1] * p[1]]; }));
+  const ringsXY = t.rings.map(r => r.map(P.fwd));
+  const W = S.W, L = S.L, b = S.bord, u0 = -S.nR * L / 2, v0 = -S.nC * W / 2;
+  const toLL = (u, v) => P.inv([u * d[0] + v * p[0], u * d[1] + v * p[1]]);
+  const quads = []; let id = 0;
+  for (let c = 0; c < S.nC; c++) for (let r = 0; r < S.nR; r++) {
+    const ua = u0 + r * L, ub = ua + L, va = v0 + c * W, vb = va + W;
+    let ok = dentro(ringsUV, [(ua + ub) / 2, (va + vb) / 2]);
+    if (ok) { const x0 = ua - b, x1 = ub + b, y0 = va - b, y1 = vb + b;
+      outer: for (const rg of ringsUV) for (let i = 1; i < rg.length; i++) if (segCaixa(rg[i-1], rg[i], x0, y0, x1, y1)) { ok = false; break outer; } }
+    const ti = tratamentoDe(c, r);
+    quads.push({id: ok ? ++id : 0, c: c + 1, r: r + 1, ok, ti,
+      ll: [toLL(ua, va), toLL(ub, va), toLL(ub, vb), toLL(ua, vb)], centro: toLL((ua + ub) / 2, (va + vb) / 2)});
+  }
+  const uvs = ringsUV.flat();
+  GRADE = {quads, areaQ: W * L / 1e4, areaTal: areaRings(ringsXY) / 1e4,
+    extU: Math.max(...uvs.map(q => q[0])) - Math.min(...uvs.map(q => q[0])), extV: Math.max(...uvs.map(q => q[1])) - Math.min(...uvs.map(q => q[1]))};
+}
+function ajustarAoTalhao(){
+  const t = talhaoAtual(); if (!t) return;
+  const lat0 = t.rings[0][0][1], lon0 = t.rings[0][0][0], P = projecao(lat0, lon0);
+  const xy = t.rings.map(r => r.map(P.fwd));
+  if (S.ang == null || !isFinite(S.ang)) S.ang = direcaoDominante(xy);
+  S.centro = (([x, y]) => { const ll = P.inv([x, y]); return [ll[1], ll[0]]; })(pontoInterno(xy));
+  calcular();
+  // tamanho: proporcional à forma do talhão, perto da área alvo
+  const A = Math.max(1, num(S.alvo) || 50) * 1e4, Lu = Math.max(GRADE.extU - 2 * S.bord, S.L * 2), Lv = Math.max(GRADE.extV - 2 * S.bord, S.W * 2);
+  let nC = Math.round(Math.sqrt(A * Lv / Lu) / S.W); nC = Math.max(2, Math.min(nC, Math.floor(Lv / S.W)));
+  let nR = Math.round(A / (nC * S.W) / S.L); nR = Math.max(2, Math.min(nR, Math.floor(Lu / S.L)));
+  S.nC = nC; S.nR = nR;
+}
+
+/* ---------- mapa ---------- */
+let MAP = null, LT = null, LQ = null, LR = null, LB = null, MK = null, LM = null, medir = null;
+function iniciarMapa(){
+  if (typeof L === "undefined" || !L.map) { $("mapMsg").textContent = "O mapa não carregou. Verifique a internet e abra a página de novo."; return false; }
+  MAP = L.map("mapa", {preferCanvas:true, zoomControl:true});
+  L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {maxZoom:20, maxNativeZoom:19, attribution:"Imagem © Esri"}).addTo(MAP);
+  L.control.scale({metric:true, imperial:false, position:"bottomleft"}).addTo(MAP);
+  const Norte = L.Control.extend({options:{position:"topright"}, onAdd(){ const d = L.DomUtil.create("div", "ctl norte"); d.setAttribute("aria-label", "Norte para cima");
+    d.innerHTML = '<svg width="16" height="18" viewBox="0 0 16 18" aria-hidden="true"><path d="M8 1l6 16-6-4-6 4z" fill="currentColor"/></svg>N'; return d; }});
+  new Norte().addTo(MAP);
+  const Leg = L.Control.extend({options:{position:"bottomright"}, onAdd(){ const d = L.DomUtil.create("div", "ctl legmap"); d.id = "legMapa"; return d; }});
+  new Leg().addTo(MAP);
+  LT = L.layerGroup().addTo(MAP); LQ = L.layerGroup().addTo(MAP); LR = L.layerGroup(); LB = L.layerGroup().addTo(MAP); LM = L.layerGroup().addTo(MAP);
+  MAP.setView([-15.8, -47.9], 5);
+  MAP.on("zoomend", () => { if (MAP.getZoom() >= 17) LR.addTo(MAP); else LR.remove(); });
+  MAP.on("click", e => {
+    if (!medir) return;
+    medir.push(e.latlng); L.circleMarker(e.latlng, {radius:5, color:COR.branco, weight:2, fillColor:COR.limite, fillOpacity:1}).addTo(LM);
+    if (medir.length === 2) {
+      const [a, b] = medir, P = projecao(a.lat, a.lng), q = P.fwd([b.lng, b.lat]);
+      L.polyline([a, b], {color:COR.branco, weight:3, dashArray:"6 6"}).addTo(LM);
+      const ang = Math.round(((Math.atan2(q[0], q[1]) / RAD) % 180 + 180) % 180);
+      medir = null; $("btnMedir").setAttribute("aria-pressed", "false"); MAP.getContainer().style.cursor = "";
+      S.ang = ang; $("ang").value = fmt(ang); salvar(); atualizar();
+      $("mapMsg").textContent = `Direção das linhas: ${fmt(ang)} graus.`;
+      setTimeout(() => LM.clearLayers(), 2500);
+    } else $("mapMsg").textContent = "Agora toque no segundo ponto da mesma linha.";
+  });
+  return true;
+}
+function desenharTalhoes(){
+  if (!MAP) return;
+  LT.clearLayers();
+  TALHOES.forEach(t => {
+    const sel = t.nome === S.talhao;
+    const pg = L.polygon(t.rings.map(r => r.map(p => [p[1], p[0]])), {color: sel ? COR.limite : COR.branco, weight: sel ? 3 : 1.2, fillOpacity: sel ? 0 : .08, fillColor: COR.branco, interactive: !sel});
+    pg.bindTooltip(esc(t.nome), {permanent:!sel, direction:"center", className:"tlbl"});
+    pg.on("click", () => { if (medir) return; escolherTalhao(t.nome, true); });
+    pg.addTo(LT);
+  });
+}
+function corTrat(i){ const t = S.trats[i]; if (!t) return COR.test; if (num(t.dose) === 0) return COR.test; let k = 0; for (let j = 0; j < i; j++) if (num(S.trats[j].dose) !== 0) k++; return COR.trat[k % 4]; }
+function desenharGrade(){
+  if (!MAP) return;
+  LQ.clearLayers(); LR.clearLayers(); LB.clearLayers();
+  if (!GRADE) return;
+  GRADE.quads.forEach(q => {
+    const ll = q.ll.map(p => [p[1], p[0]]), t = S.trats[q.ti];
+    if (!q.ok) { L.polygon(ll, {color:COR.branco, weight:.8, dashArray:"3 4", fillOpacity:0, interactive:false}).addTo(LQ); return; }
+    L.polygon(ll, {color:COR.branco, weight:.5, fillColor:corTrat(q.ti), fillOpacity:.78})
+      .bindTooltip(`Q${q.id} · ${esc(t.cod)} ${esc(t.nome)}${isFinite(num(t.dose)) ? " · " + fmt(num(t.dose), 2) + " " + esc(S.unid) : ""}<br>Passada ${q.c}, quadrado ${q.r}`)
+      .addTo(LQ);
+    L.marker([q.centro[1], q.centro[0]], {interactive:false, keyboard:false, icon:L.divIcon({className:"qlbl", html:esc(t.cod), iconSize:[24,16], iconAnchor:[12,8]})}).addTo(LR);
+  });
+  const ic = L.divIcon({className:"", html:'<div class="centro-ic" title="Arraste para mudar o ensaio de lugar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 2v20M2 12h20M12 2l-3 3M12 2l3 3M12 22l-3-3M12 22l3-3M2 12l3-3M2 12l3 3M22 12l-3-3M22 12l-3 3"/></svg></div>', iconSize:[28,28], iconAnchor:[14,14]});
+  MK = L.marker(S.centro, {draggable:true, icon:ic, keyboard:true, title:"Centro do ensaio", alt:"Centro do ensaio"}).addTo(LB);
+  MK.on("dragend", () => { const p = MK.getLatLng(); S.centro = [p.lat, p.lng]; salvar(); atualizar(); });
+  if (MAP.getZoom() >= 17) LR.addTo(MAP);
+}
+function enquadrar(){
+  if (!MAP) return;
+  const t = talhaoAtual(); if (!t) return;
+  const b = L.latLngBounds(t.rings.flat().map(p => [p[1], p[0]]));
+  MAP.fitBounds(b, {padding:[16,16]});
+}
+
+/* ---------- telas do formulário ---------- */
+function preencherCampos(){
+  $("codigo").value = S.codigo || ""; $("codigo").placeholder = `TAB ${S.talhao || "talhão"} 26/27`;
+  $("ang").value = S.ang == null ? "" : fmt(S.ang, S.ang % 1 ? 1 : 0); $("alvo").value = fmt(num(S.alvo) || 50, 0);
+  $("W").value = fmt(S.W, S.W % 1 ? 1 : 0); $("L").value = fmt(S.L, S.L % 1 ? 1 : 0); $("nC").value = S.nC; $("nR").value = S.nR; $("bord").value = fmt(S.bord, S.bord % 1 ? 1 : 0);
+  $("unid").value = S.unid;
+  renderTrats();
+}
+function renderTrats(){
+  $("trs").innerHTML = S.trats.map((t, i) => `<div class="tr">
+    <span class="cor" style="--c:${corTrat(i)}" aria-hidden="true"></span>
+    <label class="nd-campo k">Código<input class="nd-inp" data-i="${i}" data-k="cod" value="${esc(t.cod)}" maxlength="4" autocomplete="off"></label>
+    <label class="nd-campo nm">Nome<input class="nd-inp" data-i="${i}" data-k="nome" value="${esc(t.nome)}" autocomplete="off" placeholder="Produto ou dose"></label>
+    <label class="nd-campo ds">Dose (${esc(S.unid)})<input class="nd-inp" data-i="${i}" data-k="dose" value="${esc(t.dose)}" inputmode="decimal" placeholder="a definir"></label>
+    <button class="nd-btn icone leve rm" type="button" data-rm="${i}" aria-label="Remover ${esc(t.nome || t.cod)}" ${S.trats.length <= 2 ? "disabled" : ""}><svg class="nd-ic" aria-hidden="true"><use href="#i-trash-2"/></svg></button>
+  </div>`).join("");
+  $("btnAddTr").disabled = S.trats.length >= 4;
+  const n = S.trats.length;
+  $("btnInverter").classList.toggle("on", n === 2); $("btnSortear").classList.toggle("on", n > 2);
+  $("trDica").textContent = n === 2
+    ? "Com 2 tratamentos o desenho é o xadrez: cada quadrado fica cercado pelo outro tratamento. Testemunha é dose 0 (bicos fechados)."
+    : `Com ${n} tratamentos o tabuleiro é feito em blocos de ${n} × ${n} quadrados sorteados: em cada bloco, cada passada e cada fileira têm todos os tratamentos. Para produtos diferentes (A, B, A+B), cada produto precisa da sua passada e da sua prescrição.`;
+}
+function renderLegenda(){
+  const itens = S.trats.map((t, i) => `<span><i style="--c:${corTrat(i)}"></i>${esc(t.cod)}${t.nome ? " · " + esc(t.nome) : ""}</span>`).join("") + '<span><i class="fora"></i>Fora (bordadura)</span>';
+  $("legenda").innerHTML = itens;
+  const lm = $("legMapa"); if (lm) lm.innerHTML = itens;
+}
+function renderResumo(){
+  const tb = $("tbTr"), av = $("avisos");
+  if (!GRADE) { $("kQ").textContent = "0"; $("kQs").textContent = "Escolha o talhão"; $("kA").innerHTML = "0<small>ha</small>"; $("kAs").textContent = ""; tb.innerHTML = ""; av.innerHTML = ""; return; }
+  const ok = GRADE.quads.filter(q => q.ok), fora = GRADE.quads.length - ok.length, aQ = GRADE.areaQ;
+  $("kQ").textContent = fmt(ok.length); $("kQs").textContent = fora ? `${fmt(fora)} ficaram de fora` : "Todos dentro do talhão";
+  $("kA").innerHTML = `${fmt(ok.length * aQ, 2)}<small>ha</small>`; $("kAs").textContent = `de ${fmt(GRADE.areaTal, 2)} ha do talhão`;
+  const cont = S.trats.map((t, i) => ok.filter(q => q.ti === i).length);
+  let tot = 0;
+  tb.innerHTML = S.trats.map((t, i) => { const a = cont[i] * aQ, d = num(t.dose), prod = isFinite(d) ? d * a : NaN; if (isFinite(prod)) tot += prod;
+    const un = S.unid.replace("/ha", "");
+    return `<tr><td class="cod"><span class="cor" style="--c:${corTrat(i)}" aria-hidden="true"></span>${esc(t.cod)} <span style="font-weight:400">${esc(t.nome)}</span></td><td class="n">${fmt(cont[i])}</td><td class="n">${fmt(a, 2)} ha</td><td class="n">${isFinite(prod) ? fmt(prod, prod < 100 ? 1 : 0) + " " + esc(un) : "—"}</td></tr>`; }).join("");
+  const msgs = [];
+  const minQ = Math.min(...cont);
+  if (!ok.length) msgs.push(["erro", "Nenhum quadrado dentro do talhão", "Arraste o círculo para dentro do talhão ou toque em Ajustar ao talhão."]);
+  else if (minQ < 15) msgs.push(["aviso", "Poucas repetições", `O tratamento com menos quadrados tem ${minQ}. Para separar por zona, o ideal é 15 ou mais de cada. Aumente a área ou diminua o quadrado.`]);
+  if (S.L < 60) msgs.push(["aviso", "Quadrado curto", "Com menos de 60 m de comprimento o monitor de colheita não estabiliza dentro do quadrado."]);
+  if (S.W % 36 && 36 % S.W) msgs.push(["", "Largura fora da barra", "Com desligamento bico a bico o pulverizador acompanha qualquer largura, mas na colheita é melhor que a largura seja múltiplo da plataforma."]);
+  if (S.trats.some(t => !isFinite(num(t.dose)))) msgs.push(["", "Dose em aberto", "O desenho já pode ser baixado em KML e planilha. A prescrição precisa da dose de cada tratamento."]);
+  av.innerHTML = msgs.map(([c, t, d]) => `<div class="nd-msg ${c}"><svg class="nd-ic" aria-hidden="true"><use href="#i-${c === "erro" ? "circle-x" : c === "aviso" ? "triangle-alert" : "info"}"/></svg><div><b>${t}</b>${d}</div></div>`).join("");
+}
+function atualizar(){
+  calcular(); desenharGrade(); renderLegenda(); renderResumo();
+  const t = talhaoAtual();
+  $("talInfo").textContent = t && GRADE ? `${t.nome}: ${fmt(GRADE.areaTal, 2)} ha${t.origem === "importado" ? " (limite importado)" : ""}.` : "";
+}
+function escolherTalhao(nome, ajustar){
+  S.talhao = nome; $("talhao").value = nome;
+  if (ajustar) { S.ang = null; ajustarAoTalhao(); }
+  salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar();
+}
+function preencherLista(){
+  const nomes = TALHOES.map(t => t.nome).sort((a, b) => a.localeCompare(b, "pt-BR", {numeric:true}));
+  $("talhao").innerHTML = '<option value="">Escolha o talhão</option>' + nomes.map(n => `<option${n === S.talhao ? " selected" : ""}>${esc(n)}</option>`).join("");
+}
+
+/* ---------- eventos ---------- */
+$("talhao").addEventListener("change", e => { if (e.target.value) escolherTalhao(e.target.value, true); });
+const campoNum = (id, k, min, max, inteiro) => $(id).addEventListener("change", () => {
+  let v = num($(id).value);
+  if (!isFinite(v)) { preencherCampos(); return; }
+  if (inteiro) v = Math.round(v);
+  S[k] = Math.max(min, Math.min(max, v)); salvar(); preencherCampos(); atualizar();
+});
+campoNum("ang", "ang", 0, 180); campoNum("W", "W", 6, 200); campoNum("L", "L", 10, 500); campoNum("nC", "nC", 1, 80, true); campoNum("nR", "nR", 1, 80, true); campoNum("bord", "bord", 0, 200);
+$("alvo").addEventListener("change", () => { const v = num($("alvo").value); if (isFinite(v) && v > 0) { S.alvo = v; const a = S.ang; ajustarAoTalhao(); S.ang = a; salvar(); preencherCampos(); atualizar(); } else preencherCampos(); });
+$("codigo").addEventListener("input", () => { S.codigo = $("codigo").value; salvar(); });
+$("unid").addEventListener("change", () => { S.unid = $("unid").value; salvar(); renderTrats(); atualizar(); });
+$("btnAuto").addEventListener("click", () => { if (!talhaoAtual()) { aviso("Escolha o talhão primeiro."); return; } S.ang = null; ajustarAoTalhao(); salvar(); preencherCampos(); atualizar(); aviso("Ensaio ajustado ao talhão"); });
+$("btnMedir").addEventListener("click", () => {
+  if (!MAP) return;
+  if (medir) { medir = null; LM.clearLayers(); $("btnMedir").setAttribute("aria-pressed", "false"); MAP.getContainer().style.cursor = ""; $("mapMsg").textContent = ""; return; }
+  medir = []; LM.clearLayers(); $("btnMedir").setAttribute("aria-pressed", "true"); MAP.getContainer().style.cursor = "crosshair";
+  $("mapMsg").textContent = "Toque no primeiro ponto, em cima de uma linha de plantio.";
+  if (window.innerWidth < 1100) $("mapa").scrollIntoView({behavior:"smooth", block:"center"});
+});
+$("trs").addEventListener("change", e => {
+  const el = e.target, i = +el.dataset.i, k = el.dataset.k; if (!S.trats[i] || !k) return;
+  let v = el.value.trim();
+  if (k === "cod") { v = v.toUpperCase().replace(/[^A-Z0-9+]/g, "").slice(0, 4); if (!v || S.trats.some((t, j) => j !== i && t.cod === v)) { aviso("Use um código diferente para cada tratamento."); el.value = S.trats[i].cod; return; } }
+  if (k === "dose" && v && !(num(v) >= 0)) { aviso("Dose inválida. Use número, por exemplo 1,5."); el.value = S.trats[i].dose; return; }
+  S.trats[i][k] = v; salvar(); renderTrats(); atualizar();
+});
+$("trs").addEventListener("click", e => { const b = e.target.closest("[data-rm]"); if (!b || S.trats.length <= 2) return; S.trats.splice(+b.dataset.rm, 1); salvar(); renderTrats(); atualizar(); });
+$("btnAddTr").addEventListener("click", () => { if (S.trats.length >= 4) return; const cods = ["A","B","C","D","E"]; const cod = cods.find(c => !S.trats.some(t => t.cod === c));
+  S.trats.splice(S.trats.length - (S.trats.some(t => num(t.dose) === 0) ? 1 : 0), 0, {cod, nome:"", dose:""}); salvar(); renderTrats(); atualizar(); });
+$("btnInverter").addEventListener("click", () => { S.inverter = !S.inverter; salvar(); atualizar(); });
+$("btnSortear").addEventListener("click", () => { S.semente = (S.semente % 9999) + 1; salvar(); atualizar(); aviso("Novo sorteio feito"); });
+
+/* ---------- arquivos: zip, shapefile, KML, CSV, GeoJSON ---------- */
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = b => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+function zip(arqs){ // [{nome, dados:Uint8Array}] sem compressão
+  const enc = new TextEncoder(), partes = [], centrais = []; let off = 0;
+  const d = new Date(), hora = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1), dia = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  arqs.forEach(a => {
+    const nome = enc.encode(a.nome), c = crc32(a.dados), n = a.dados.length;
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(10, hora, true); lh.setUint16(12, dia, true);
+    lh.setUint32(14, c, true); lh.setUint32(18, n, true); lh.setUint32(22, n, true); lh.setUint16(26, nome.length, true);
+    partes.push(new Uint8Array(lh.buffer), nome, a.dados);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(12, hora, true); ch.setUint16(14, dia, true);
+    ch.setUint32(16, c, true); ch.setUint32(20, n, true); ch.setUint32(24, n, true); ch.setUint16(28, nome.length, true); ch.setUint32(42, off, true);
+    centrais.push(new Uint8Array(ch.buffer), nome);
+    off += 30 + nome.length + n;
+  });
+  const tamC = centrais.reduce((s, x) => s + x.length, 0), fim = new DataView(new ArrayBuffer(22));
+  fim.setUint32(0, 0x06054b50, true); fim.setUint16(8, arqs.length, true); fim.setUint16(10, arqs.length, true); fim.setUint32(12, tamC, true); fim.setUint32(16, off, true);
+  return new Blob([...partes, ...centrais, new Uint8Array(fim.buffer)], {type:"application/zip"});
+}
+const semAcento = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\x20-\x7E]/g, "");
+function shapefile(feicoes, campos){ // feicoes: [{anel:[[lon,lat]...] fechado, props}] ; campos: [{nome, tipo:'C'|'N', tam, dec}]
+  const n = feicoes.length;
+  const aneis = feicoes.map(f => { let r = f.anel.slice(); if (areaAssinada(r) > 0) r.reverse(); return r; }); // externo no sentido horário (shapefile); areaAssinada > 0 = anti-horário
+  const tamReg = aneis.map(r => 44 + 4 + 16 * r.length);
+  const shpLen = 100 + tamReg.reduce((s, t) => s + 8 + t, 0), shxLen = 100 + 8 * n;
+  const shp = new DataView(new ArrayBuffer(shpLen)), shx = new DataView(new ArrayBuffer(shxLen));
+  const all = aneis.flat(), bb = [Math.min(...all.map(p => p[0])), Math.min(...all.map(p => p[1])), Math.max(...all.map(p => p[0])), Math.max(...all.map(p => p[1]))];
+  const cab = (v, len) => { v.setInt32(0, 9994); v.setInt32(24, len / 2); v.setInt32(28, 1000, true); v.setInt32(32, 5, true); bb.forEach((x, i) => v.setFloat64(36 + 8 * i, x, true)); };
+  cab(shp, shpLen); cab(shx, shxLen);
+  let o = 100;
+  aneis.forEach((r, i) => {
+    shx.setInt32(100 + 8 * i, o / 2); shx.setInt32(104 + 8 * i, tamReg[i] / 2);
+    shp.setInt32(o, i + 1); shp.setInt32(o + 4, tamReg[i] / 2); o += 8;
+    const xs = r.map(p => p[0]), ys = r.map(p => p[1]);
+    shp.setInt32(o, 5, true); [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)].forEach((x, k) => shp.setFloat64(o + 4 + 8 * k, x, true));
+    shp.setInt32(o + 36, 1, true); shp.setInt32(o + 40, r.length, true); shp.setInt32(o + 44, 0, true);
+    r.forEach((p, k) => { shp.setFloat64(o + 48 + 16 * k, p[0], true); shp.setFloat64(o + 56 + 16 * k, p[1], true); });
+    o += tamReg[i];
+  });
+  // DBF (dBASE III), texto sem acento para o monitor ler
+  const lenReg = 1 + campos.reduce((s, c) => s + c.tam, 0), lenCab = 32 + 32 * campos.length + 1;
+  const dbf = new Uint8Array(lenCab + lenReg * n + 1), dv = new DataView(dbf.buffer), d = new Date();
+  dbf[0] = 3; dbf[1] = d.getFullYear() - 1900; dbf[2] = d.getMonth() + 1; dbf[3] = d.getDate();
+  dv.setUint32(4, n, true); dv.setUint16(8, lenCab, true); dv.setUint16(10, lenReg, true);
+  campos.forEach((c, i) => { const b = 32 + 32 * i; for (let k = 0; k < Math.min(10, c.nome.length); k++) dbf[b + k] = c.nome.charCodeAt(k); dbf[b + 11] = c.tipo.charCodeAt(0); dbf[b + 16] = c.tam; dbf[b + 17] = c.dec || 0; });
+  dbf[lenCab - 1] = 0x0D;
+  feicoes.forEach((f, i) => {
+    let b = lenCab + lenReg * i; dbf[b++] = 0x20;
+    campos.forEach(c => {
+      const v = f.props[c.nome];
+      let s = c.tipo === "N" ? (isFinite(v) ? Number(v).toFixed(c.dec || 0) : "").padStart(c.tam).slice(-c.tam) : semAcento(v).slice(0, c.tam).padEnd(c.tam);
+      for (let k = 0; k < c.tam; k++) dbf[b + k] = s.charCodeAt(k); b += c.tam;
+    });
+  });
+  dbf[dbf.length - 1] = 0x1A;
+  const prj = 'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]';
+  return {shp:new Uint8Array(shp.buffer), shx:new Uint8Array(shx.buffer), dbf, prj:new TextEncoder().encode(prj)};
+}
+function baixar(blob, nome){ const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+const nomeBase = () => semAcento(S.codigo || `TAB ${S.talhao} 26-27`).replace(/[^A-Za-z0-9_-]+/g, "_").replace(/^_+|_+$/g, "") || "tabuleiro";
+const fechado = q => [...q.ll, q.ll[0]];
+function arqMsg(tipo, texto){ $("arqMsg").innerHTML = texto ? `<div class="nd-msg ${tipo}"><svg class="nd-ic" aria-hidden="true"><use href="#i-${tipo === "erro" ? "circle-x" : "circle-check"}"/></svg><div>${texto}</div></div>` : ""; }
+function exigirGrade(){ if (!GRADE || !GRADE.quads.some(q => q.ok)) { arqMsg("erro", "<b>Nada para baixar</b>Escolha o talhão e coloque o ensaio dentro dele."); return false; } return true; }
+$("btnRx").addEventListener("click", () => {
+  if (!exigirGrade()) return;
+  if (S.trats.some(t => !isFinite(num(t.dose)))) { arqMsg("erro", "<b>Falta dose</b>Informe a dose de cada tratamento (0 na testemunha) para gerar a prescrição."); return; }
+  const doseBord = (S.trats.find(t => num(t.dose) > 0) || {dose:0}).dose;
+  const fe = GRADE.quads.map(q => ({anel:fechado(q), props: q.ok
+    ? {ID:q.id, TRAT:S.trats[q.ti].cod, NOME:S.trats[q.ti].nome, DOSE:num(S.trats[q.ti].dose), COLUNA:q.c, LINHA:q.r}
+    : {ID:0, TRAT:"BORD", NOME:"Bordadura", DOSE:num(doseBord), COLUNA:q.c, LINHA:q.r}}));
+  const s = shapefile(fe, [{nome:"ID", tipo:"N", tam:6}, {nome:"TRAT", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, {nome:"DOSE", tipo:"N", tam:12, dec:3}, {nome:"COLUNA", tipo:"N", tam:4}, {nome:"LINHA", tipo:"N", tam:4}]);
+  const b = nomeBase();
+  baixar(zip([{nome:b + ".shp", dados:s.shp}, {nome:b + ".shx", dados:s.shx}, {nome:b + ".dbf", dados:s.dbf}, {nome:b + ".prj", dados:s.prj}]), b + "_prescricao.zip");
+  arqMsg("", `<b>Prescrição baixada</b>${fmt(GRADE.quads.filter(q => q.ok).length)} quadrados do ensaio e ${fmt(GRADE.quads.filter(q => !q.ok).length)} de bordadura (com a dose padrão), coluna DOSE em ${esc(S.unid)}.`);
+});
+$("btnLim").addEventListener("click", () => {
+  if (!exigirGrade()) return;
+  const iT = S.trats.map((t, i) => num(t.dose) === 0 ? i : -1).filter(i => i >= 0);
+  if (!iT.length) { arqMsg("erro", "<b>Sem testemunha</b>Nenhum tratamento tem dose 0."); return; }
+  const fe = GRADE.quads.filter(q => q.ok && iT.includes(q.ti)).map(q => ({anel:fechado(q), props:{ID:q.id, TRAT:S.trats[q.ti].cod, NOME:"Sem aplicacao"}}));
+  const s = shapefile(fe, [{nome:"ID", tipo:"N", tam:6}, {nome:"TRAT", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:20}]);
+  const b = nomeBase() + "_testemunhas";
+  baixar(zip([{nome:b + ".shp", dados:s.shp}, {nome:b + ".shx", dados:s.shx}, {nome:b + ".dbf", dados:s.dbf}, {nome:b + ".prj", dados:s.prj}]), b + ".zip");
+  arqMsg("", `<b>Limites baixados</b>${fmt(fe.length)} quadrados de testemunha, para usar como limites internos (sem aplicação).`);
+});
+const hexKml = h => { h = (h || "#888888").replace("#", ""); return "c8" + h.slice(4, 6) + h.slice(2, 4) + h.slice(0, 2); };
+$("btnKml").addEventListener("click", () => {
+  if (!exigirGrade()) return;
+  const est = S.trats.map((t, i) => `<Style id="t${i}"><LineStyle><color>ffffffff</color><width>1</width></LineStyle><PolyStyle><color>${hexKml(corTrat(i))}</color></PolyStyle></Style>`).join("");
+  const pm = GRADE.quads.filter(q => q.ok).map(q => { const t = S.trats[q.ti];
+    return `<Placemark><name>Q${q.id} ${esc(t.cod)}</name><description>${esc(t.nome)} | dose ${esc(t.dose || "a definir")} ${esc(S.unid)} | passada ${q.c}, quadrado ${q.r}</description><styleUrl>#t${q.ti}</styleUrl><Polygon><outerBoundaryIs><LinearRing><coordinates>${fechado(q).map(p => p[0].toFixed(7) + "," + p[1].toFixed(7) + ",0").join(" ")}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>`; }).join("");
+  const kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${esc(S.codigo || "Tabuleiro " + S.talhao)}</name>${est}${pm}</Document></kml>`;
+  baixar(new Blob([kml], {type:"application/vnd.google-earth.kml+xml"}), nomeBase() + ".kml");
+  arqMsg("", "<b>KML baixado</b>Abra no Google Earth ou no celular para achar os quadrados no campo.");
+});
+$("btnCsv").addEventListener("click", () => {
+  if (!exigirGrade()) return;
+  const n = v => String(v).replace(".", ",");
+  const lin = [["quadrado","passada","posicao","tratamento","nome","dose","unidade","latitude","longitude","area_ha"].join(";")];
+  GRADE.quads.filter(q => q.ok).forEach(q => { const t = S.trats[q.ti];
+    lin.push([q.id, q.c, q.r, t.cod, `"${String(t.nome).replace(/"/g, '""')}"`, isFinite(num(t.dose)) ? n(num(t.dose)) : "", S.unid, n(q.centro[1].toFixed(7)), n(q.centro[0].toFixed(7)), n(GRADE.areaQ.toFixed(4))].join(";")); });
+  baixar(new Blob(["﻿" + lin.join("\r\n")], {type:"text/csv;charset=utf-8"}), nomeBase() + ".csv");
+  arqMsg("", "<b>Planilha baixada</b>Um quadrado por linha, com o centro em latitude e longitude.");
+});
+$("btnGj").addEventListener("click", () => {
+  if (!exigirGrade()) return;
+  const gj = {type:"FeatureCollection", properties:{ensaio:S.codigo || null, talhao:S.talhao, direcao_graus:S.ang, largura_m:S.W, comprimento_m:S.L, bordadura_m:S.bord, unidade:S.unid, tratamentos:S.trats, plano:{centro:S.centro, ang:S.ang, W:S.W, L:S.L, nC:S.nC, nR:S.nR, bord:S.bord, unid:S.unid, inverter:S.inverter, semente:S.semente, alvo:S.alvo, codigo:S.codigo, talhao:S.talhao, trats:S.trats}, criado:new Date().toISOString()},
+    features: GRADE.quads.map(q => ({type:"Feature", properties:{id:q.id || null, passada:q.c, posicao:q.r, situacao:q.ok ? "ensaio" : "fora", trat:q.ok ? S.trats[q.ti].cod : null, dose:q.ok && isFinite(num(S.trats[q.ti].dose)) ? num(S.trats[q.ti].dose) : null},
+      geometry:{type:"Polygon", coordinates:[fechado(q).map(p => [+p[0].toFixed(8), +p[1].toFixed(8)])]}}))};
+  baixar(new Blob([JSON.stringify(gj)], {type:"application/geo+json"}), nomeBase() + ".geojson");
+  arqMsg("", "<b>GeoJSON baixado</b>Guarde junto com o ensaio: ele será usado para cruzar com o mapa de colheita.");
+});
+
+/* ---------- importar limite (shapefile em .zip, KML, GeoJSON) ---------- */
+async function lerZip(buf){
+  const v = new DataView(buf), u8 = new Uint8Array(buf); let e = -1;
+  for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 66000); i--) if (v.getUint32(i, true) === 0x06054b50) { e = i; break; }
+  if (e < 0) throw new Error("O arquivo .zip está danificado.");
+  const n = v.getUint16(e + 10, true); let p = v.getUint32(e + 16, true); const out = {};
+  for (let k = 0; k < n; k++) {
+    const met = v.getUint16(p + 10, true), tc = v.getUint32(p + 20, true), ln = v.getUint16(p + 28, true), le = v.getUint16(p + 30, true), lc = v.getUint16(p + 32, true), ol = v.getUint32(p + 42, true);
+    const nome = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + ln));
+    const ini = ol + 30 + v.getUint16(ol + 26, true) + v.getUint16(ol + 28, true), dados = u8.slice(ini, ini + tc);
+    out[nome.toLowerCase()] = met === 0 ? async () => dados
+      : met === 8 && typeof DecompressionStream !== "undefined" ? async () => new Uint8Array(await new Response(new Blob([dados]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer())
+      : null;
+    p += 46 + ln + le + lc;
+  }
+  return out;
+}
+function lerDbf(u8){
+  const v = new DataView(u8.buffer, u8.byteOffset, u8.byteLength), n = v.getUint32(4, true), lc = v.getUint16(8, true), lr = v.getUint16(10, true), campos = [];
+  for (let o = 32; u8[o] !== 0x0D && o < lc; o += 32) { let nm = ""; for (let k = 0; k < 11 && u8[o + k]; k++) nm += String.fromCharCode(u8[o + k]); campos.push({nome:nm.trim(), tam:u8[o + 16]}); }
+  const dec = new TextDecoder("latin1"), regs = [];
+  for (let i = 0; i < n; i++) { let o = lc + i * lr + 1; const r = {}; campos.forEach(c => { r[c.nome] = dec.decode(u8.subarray(o, o + c.tam)).trim(); o += c.tam; }); regs.push(r); }
+  return regs;
+}
+function lerShp(u8){
+  const v = new DataView(u8.buffer, u8.byteOffset, u8.byteLength), fim = v.getInt32(24) * 2, polis = [];
+  let o = 100;
+  while (o + 8 <= Math.min(fim, u8.byteLength)) {
+    const tam = v.getInt32(o + 4) * 2, c = o + 8, tipo = v.getInt32(c, true);
+    if ([5, 15, 25].includes(tipo)) {
+      const np = v.getInt32(c + 36, true), npt = v.getInt32(c + 40, true), parts = [];
+      for (let i = 0; i < np; i++) parts.push(v.getInt32(c + 44 + 4 * i, true));
+      const pts = []; const b = c + 44 + 4 * np;
+      for (let i = 0; i < npt; i++) pts.push([v.getFloat64(b + 16 * i, true), v.getFloat64(b + 16 * i + 8, true)]);
+      polis.push(parts.map((s, i) => pts.slice(s, i + 1 < np ? parts[i + 1] : npt)));
+    } else polis.push(null);
+    o = c + tam;
+  }
+  return polis;
+}
+const NOME_CAMPOS = ["talhao", "TALHAO", "Talhao", "name", "Name", "NAME", "nome", "NOME", "FIELD", "Field", "field", "FIELD_NAME", "FieldName", "TALHAO_NOM"];
+const nomeDe = (p, i, base) => { for (const k of NOME_CAMPOS) if (p && p[k]) return String(p[k]).trim(); return `${base} ${i + 1}`; };
+function geomParaRings(g){ if (!g) return null; if (g.type === "Polygon") return g.coordinates; if (g.type === "MultiPolygon") return g.coordinates.flat(); return null; }
+async function importar(arq){
+  const base = arq.name.replace(/\.[^.]+$/, ""), ext = (arq.name.match(/\.([^.]+)$/) || [])[1]?.toLowerCase();
+  let novos = [];
+  if (ext === "zip") {
+    const z = await lerZip(await arq.arrayBuffer()), nomes = Object.keys(z), shpN = nomes.find(n => n.endsWith(".shp"));
+    if (!shpN) throw new Error("O .zip não tem shapefile (.shp).");
+    if (!z[shpN]) throw new Error("Compressão do .zip não suportada. Compacte de novo e tente outra vez.");
+    const polis = lerShp(await z[shpN]()), dbfN = shpN.replace(/\.shp$/, ".dbf"), regs = z[dbfN] ? lerDbf(await z[dbfN]()) : [];
+    polis.forEach((r, i) => { if (r && r.length) novos.push({nome:nomeDe(regs[i], i, base), rings:r}); });
+  } else if (ext === "kml") {
+    const doc = new DOMParser().parseFromString(await arq.text(), "application/xml");
+    [...doc.getElementsByTagName("Placemark")].forEach((pm, i) => {
+      const rings = [...pm.getElementsByTagName("Polygon")].flatMap(pg => [...pg.getElementsByTagName("coordinates")]).map(c => c.textContent.trim().split(/\s+/).map(t => t.split(",").map(Number)).filter(p => p.length >= 2 && isFinite(p[0]) && isFinite(p[1])).map(p => [p[0], p[1]])).filter(r => r.length >= 4);
+      if (!rings.length) return;
+      const nm = pm.getElementsByTagName("name")[0]?.textContent?.trim();
+      novos.push({nome: nm || `${base} ${i + 1}`, rings});
+    });
+  } else {
+    const j = JSON.parse(await arq.text());
+    if (j.properties && j.properties.plano && Array.isArray(j.properties.plano.trats)) return {plano:j.properties.plano}; // GeoJSON baixado desta tela: reabre o plano
+    const fs = j.type === "FeatureCollection" ? j.features : j.type === "Feature" ? [j] : [{type:"Feature", properties:{}, geometry:j}];
+    fs.forEach((f, i) => { const r = geomParaRings(f.geometry); if (r && r.length) novos.push({nome:nomeDe(f.properties, i, base), rings:r}); });
+  }
+  if (!novos.length) throw new Error("Não achei polígono no arquivo.");
+  if (novos.some(t => t.rings.flat().some(p => Math.abs(p[0]) > 180 || Math.abs(p[1]) > 90))) throw new Error("O limite precisa estar em latitude e longitude (WGS84). Exporte de novo nesse sistema.");
+  const vistos = {};
+  novos = novos.map(t => { let nm = t.nome; if (vistos[nm]) nm = `${t.nome} (${++vistos[t.nome]})`; else vistos[nm] = 1;
+    return {...t, nome:nm, rings:t.rings.map(r => r.map(p => [+p[0], +p[1]])), origem:"importado"}; });
+  novos.forEach(t => { importados = importados.filter(x => x.nome !== t.nome); importados.push(t); });
+  lsSet("tabuleiro.importados", JSON.stringify(importados));
+  juntarTalhoes(TALHOES.filter(t => t.origem !== "importado"));
+  return novos;
+}
+$("arqLimite").addEventListener("change", async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  try { const n = await importar(f);
+    if (n.plano) { const pl = n.plano; if (!TALHOES.some(t => t.nome === pl.talhao)) throw new Error(`O plano é do talhão ${pl.talhao}, que não está no mapa. Importe o limite dele primeiro.`);
+      S = {...PADRAO, ...pl}; salvar(); escolherTalhao(pl.talhao, false); aviso(`Plano ${pl.codigo || pl.talhao} reaberto`); return; }
+    preencherLista(); desenharTalhoes(); escolherTalhao(n[0].nome, true); aviso(n.length > 1 ? `${n.length} limites importados` : `Limite ${n[0].nome} importado`); }
+  catch (err) { aviso(err.message || "Não consegui ler o arquivo."); $("talInfo").textContent = err.message || "Não consegui ler o arquivo."; }
+});
+
+/* ---------- talhões da fazenda ---------- */
+function juntarTalhoes(daFazenda){
+  const nomesImp = new Set(importados.map(t => t.nome));
+  TALHOES = [...daFazenda.filter(t => !nomesImp.has(t.nome)), ...importados.map(t => ({...t, origem:"importado"}))];
+}
+function deGeoJSON(gj){
+  return (gj.features || []).map((f, i) => ({nome: nomeDe(f.properties, i, "Talhão"), rings: geomParaRings(f.geometry), origem:"fazenda"})).filter(t => t.rings && t.rings.length);
+}
+async function carregarMapa(){
+  let c = null; try { c = JSON.parse(lsGet("lancar.mapa") || "null"); } catch (e) {}
+  try {
+    const m = await (await fetch(DATA_URL + "?acao=mapa&meta=1", {cache:"no-store", redirect:"follow"})).json();
+    if (m.ok && (!c || c.modified !== m.modified)) { const j = await (await fetch(DATA_URL + "?acao=mapa", {cache:"no-store", redirect:"follow"})).json();
+      if (j.ok) { c = {modified:j.modified, gj:JSON.parse(j.geojson)}; lsSet("lancar.mapa", JSON.stringify(c)); } }
+  } catch (e) {}
+  return c && c.gj ? deGeoJSON(c.gj) : [];
+}
+
+(async function iniciar(){
+  preencherCampos();
+  iniciarMapa();
+  juntarTalhoes([]); preencherLista(); desenharTalhoes();
+  const faz = await carregarMapa();
+  juntarTalhoes(faz); preencherLista(); desenharTalhoes();
+  if (!TALHOES.length) { $("mapMsg").textContent = "Não consegui carregar o mapa da fazenda. Importe o limite do talhão em shapefile, KML ou GeoJSON."; renderLegenda(); renderResumo(); return; }
+  const t = talhaoAtual();
+  if (t) { if (!S.centro || S.ang == null) ajustarAoTalhao(); salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar();
+    $("mapMsg").textContent = "Arraste o círculo para mudar o ensaio de lugar. Toque num quadrado para ver o tratamento."; }
+  else { $("mapMsg").textContent = `${S.talhao ? S.talhao + " não está no mapa da fazenda. " : ""}Escolha o talhão na lista ou toque nele no mapa.`;
+    if (MAP && TALHOES.length) MAP.fitBounds(L.latLngBounds(TALHOES.flatMap(x => x.rings.flat().map(p => [p[1], p[0]]))), {padding:[8,8]}); renderLegenda(); renderResumo(); }
+})();
+</script>
+</body>
+</html>
