@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.css">
 <link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/componentes.css">
 <script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.js"></script>
+<script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/nadiana.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
@@ -30,6 +31,8 @@ header.top{background:var(--panel);color:var(--ink);padding:10px 16px 14px;posit
 .net{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin-top:6px}
 .net i{width:8px;height:8px;border-radius:50%;background:var(--ok)}
 .net.err i{background:var(--bad)}.net.busy i{background:var(--s-janela)}
+.net.vivo i{position:relative}
+.net.vivo i::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;animation:nd-ping 1.8s var(--curva) infinite}
 main{padding:16px;display:flex;flex-direction:column;gap:14px;flex-grow:1}
 .card{background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:var(--sombra-1);padding:16px;display:flex;flex-direction:column;gap:14px}
 .card h2{margin:0;font-family:var(--font-display);font-size:19px;font-weight:600;line-height:1.15}
@@ -129,7 +132,7 @@ select.inp{appearance:auto}
     <a href="./index.html" aria-label="Início"><img class="nd-simbolo" src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.svg" alt="Nadiana"></a>
     <button type="button" class="back" id="btnBack" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Lançamentos</button>
     <a id="brandMini" href="./index.html" style="font-size:14px;color:var(--muted);text-decoration:none;min-height:44px;display:inline-flex;align-items:center">Início · Fazenda Reata</a>
-    <a class="link" href="./painel.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Painel</a>
+    <a class="link nd-onda" href="./painel.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Painel</a>
   </div>
   <h1 id="ttl">Lançamentos</h1>
   <p id="sub">Programação, execução e plantio</p>
@@ -145,7 +148,7 @@ select.inp{appearance:auto}
       <label class="f">Usuário<input class="inp" id="cfgNome" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Ex.: fabiano"></label>
       <label class="f">Senha<input class="inp" id="cfgCod" type="password" autocomplete="current-password"></label>
       <div id="cfgMsg"></div>
-      <button type="button" class="save" id="cfgSave">Salvar e continuar</button>
+      <button type="button" class="save nd-onda" id="cfgSave">Salvar e continuar</button>
     </div>
   </main>
 </section>
@@ -153,10 +156,11 @@ select.inp{appearance:auto}
 <!-- INÍCIO -->
 <section id="s-home" hidden>
   <main>
-    <button type="button" class="act" data-go="programar"><span class="n">1</span><span class="tx"><span class="t">Programar aplicação</span><span class="s">Talhões, operação, data e produtos</span></span></button>
-    <button type="button" class="act" data-go="executar"><span class="n">2</span><span class="tx"><span class="t">Registrar execução</span><span class="s">Data, área aplicada e nº da OS do Protector</span></span><span class="badge" id="bPend" hidden></span></button>
-    <button type="button" class="act" data-go="chuva"><span class="n" style="font-size:20px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 16a5 5 0 1 1 1.5-9.8A6 6 0 0 1 20 9a4 4 0 0 1-1 7.9M8 19l-1 2M12 19l-1 2M16 19l-1 2"/></svg></span><span class="tx"><span class="t">Chuva</span><span class="s">Registrar a pluviometria do dia</span></span><span class="badge" id="bChuva" hidden></span></button>
-    <button type="button" class="act" data-go="talhoes"><span class="n">4</span><span class="tx"><span class="t">Talhões e plantio</span><span class="s">Lançar plantio em vários ou cadastrar talhão</span></span><span class="badge" id="bPlant" hidden></span></button>
+    <div class="card nd-feito" id="feitoHome" hidden role="status"><svg viewBox="0 0 76 76" aria-hidden="true"><circle cx="38" cy="38" r="34" pathLength="1"/><path d="M24 39l10 10 19-21" pathLength="1"/></svg><b id="feitoT">Execução registrada</b><span class="hint" id="feitoS"></span></div>
+    <button type="button" class="act nd-onda" data-go="programar"><span class="n">1</span><span class="tx"><span class="t">Programar aplicação</span><span class="s">Talhões, operação, data e produtos</span></span></button>
+    <button type="button" class="act nd-onda" data-go="executar"><span class="n">2</span><span class="tx"><span class="t">Registrar execução</span><span class="s">Data, área aplicada e nº da OS do Protector</span></span><span class="badge" id="bPend" hidden></span></button>
+    <button type="button" class="act nd-onda" data-go="chuva"><span class="n" style="font-size:20px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 16a5 5 0 1 1 1.5-9.8A6 6 0 0 1 20 9a4 4 0 0 1-1 7.9M8 19l-1 2M12 19l-1 2M16 19l-1 2"/></svg></span><span class="tx"><span class="t">Chuva</span><span class="s">Registrar a pluviometria do dia</span></span><span class="badge" id="bChuva" hidden></span></button>
+    <button type="button" class="act nd-onda" data-go="talhoes"><span class="n">4</span><span class="tx"><span class="t">Talhões e plantio</span><span class="s">Lançar plantio em vários ou cadastrar talhão</span></span><span class="badge" id="bPlant" hidden></span></button>
     <div class="card" style="gap:4px">
       <h2 style="margin-bottom:6px">Últimos lançamentos</h2>
       <div id="recentes"><div class="empty">Carregando…</div></div>
@@ -171,14 +175,14 @@ select.inp{appearance:auto}
     <div class="card">
       <h2>O quê e quando</h2>
       <label class="f">Operação<select class="inp" id="pOp"></select></label>
-      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Modalidade<div class="seg" id="pModo"><button type="button" data-v="T" aria-pressed="true">Terrestre</button><button type="button" data-v="A" aria-pressed="false">Aérea</button></div></div>
+      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Modalidade<div class="seg nd-desliza" id="pModo"><button type="button" data-v="T" aria-pressed="true">Terrestre</button><button type="button" data-v="A" aria-pressed="false">Aérea</button></div></div>
       <label class="f">Data programada<input class="inp" type="date" id="pData"></label>
     </div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h2>Talhões</h2><span class="hint" id="pSel">nenhum marcado</span></div>
       <div class="selist" id="pChips"></div>
       <p class="hint" id="pChipsHint" hidden>A área vem do cadastro do talhão. Altere se a aplicação for só em parte dele.</p>
-      <div class="seg" id="pVista" role="group" aria-label="Escolher talhões por"><button type="button" data-v="lista" aria-pressed="true">Lista</button><button type="button" data-v="mapa" aria-pressed="false">Mapa</button></div>
+      <div class="seg nd-desliza" id="pVista" role="group" aria-label="Escolher talhões por"><button type="button" data-v="lista" aria-pressed="true">Lista</button><button type="button" data-v="mapa" aria-pressed="false">Mapa</button></div>
       <div id="pVLista" style="display:flex;flex-direction:column;gap:14px">
         <label class="f">Buscar talhão<input class="inp" type="search" id="pBusca" placeholder="Digite RT, BT, SA…" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
         <div><p class="hint" style="margin-bottom:8px">Marcar ou desmarcar um grupo inteiro</p><div class="grp" id="pGrp"></div></div>
@@ -191,14 +195,14 @@ select.inp{appearance:auto}
       <h2>Produtos</h2>
       <label class="f">Receita (preenche os produtos)<select class="inp" id="pRec"></select></label>
       <div id="pProds" style="display:flex;flex-direction:column;gap:10px"></div>
-      <button type="button" class="ghost" id="pAdd">Adicionar produto</button>
+      <button type="button" class="ghost nd-onda" id="pAdd">Adicionar produto</button>
       <p class="hint">O total é a dose vezes a área dos talhões marcados.</p>
 
     </div>
     <div class="card"><label class="f">Observação<textarea class="inp" id="pObs" rows="3" placeholder="Opcional"></textarea></label></div>
     <div id="pMsg"></div>
   </main>
-  <div class="foot"><span id="pResumo">Marque os talhões</span><button type="button" class="save" id="pSave">Salvar programação</button></div>
+  <div class="foot"><span id="pResumo">Marque os talhões</span><button type="button" class="save nd-onda nd-estado" id="pSave" data-enviando="Salvando…" data-feito="Salvo">Salvar programação</button></div>
 </section>
 
 <!-- EXECUTAR -->
@@ -217,7 +221,7 @@ select.inp{appearance:auto}
       </div>
       <label class="check" id="eConclL"><input type="checkbox" id="eConcl" checked>Aplicação concluída neste talhão</label>
       <p class="hint" id="eParc"></p>
-      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Modalidade<div class="seg" id="eModo"><button type="button" data-v="T" aria-pressed="true">Terrestre</button><button type="button" data-v="A" aria-pressed="false">Aérea</button></div></div>
+      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Modalidade<div class="seg nd-desliza" id="eModo"><button type="button" data-v="T" aria-pressed="true">Terrestre</button><button type="button" data-v="A" aria-pressed="false">Aérea</button></div></div>
       <label class="f">Nº da OS no Protector<input class="inp" id="eOS" inputmode="numeric" placeholder="Opcional"></label>
 
     </div>
@@ -228,7 +232,7 @@ select.inp{appearance:auto}
     <div class="card"><label class="f">Observação<textarea class="inp" id="eObs" rows="3" placeholder="Opcional: vento, reaplicação, problema na máquina…"></textarea></label></div>
     <div id="eMsg"></div>
   </main>
-  <div class="foot"><span id="eResumo">Escolha a aplicação</span><button type="button" class="save" id="eSave">Salvar execução</button></div>
+  <div class="foot"><span id="eResumo">Escolha a aplicação</span><button type="button" class="save nd-onda nd-estado" id="eSave" data-enviando="Salvando…" data-feito="Salvo">Salvar execução</button></div>
 </section>
 
 <!-- CHUVA -->
@@ -242,7 +246,7 @@ select.inp{appearance:auto}
       </div>
       <p class="hint">Informe a média de todos os pluviômetros da fazenda no dia. Dia sem chuva também vale lançar como 0 mm. Lançar de novo a mesma data corrige o valor.</p>
       <div id="cMsg"></div>
-      <button type="button" class="save" id="cSave">Salvar chuva</button>
+      <button type="button" class="save nd-onda nd-estado" id="cSave" data-enviando="Salvando…" data-feito="Salvo">Salvar chuva</button>
     </div>
     <div class="card" style="gap:4px">
       <h2 style="margin-bottom:6px">Últimos registros</h2>
@@ -258,7 +262,7 @@ select.inp{appearance:auto}
       <div><h2>Trazer do painel de plantio</h2><p class="hint" style="margin-top:4px">Datas de plantio (aba Diário) e de emergência (aba Safra) do Plantio para os talhões que estão sem elas aqui. Talhão plantado em mais de um dia fica com o dia em que passou da metade da área; sem emergência no Plantio, ela fica em plantio + 5 dias.</p></div>
       <div class="list" id="pcList"></div>
       <div id="pcMsg"></div>
-      <button type="button" class="save" id="pcSave" hidden>Lançar datas</button>
+      <button type="button" class="save nd-onda nd-estado" id="pcSave" data-enviando="Lançando…" data-feito="Lançado" hidden>Lançar datas</button>
     </div>
     <div class="card">
       <div><h2>Lançar plantio em vários talhões</h2><p class="hint" style="margin-top:4px">Preencha só o que for lançar. Campos vazios não apagam o que já existe.</p></div>
@@ -271,7 +275,7 @@ select.inp{appearance:auto}
       <label class="check"><input type="checkbox" id="tTodos">Mostrar também talhões que já têm plantio (para corrigir)</label>
       <div class="list" id="tList"></div>
       <div id="tMsg"></div>
-      <button type="button" class="save" id="tSave">Salvar plantio</button>
+      <button type="button" class="save nd-onda nd-estado" id="tSave" data-enviando="Salvando…" data-feito="Salvo">Salvar plantio</button>
     </div>
     <div class="card">
       <h2>Cadastrar talhão novo</h2>
@@ -284,7 +288,7 @@ select.inp{appearance:auto}
         <label class="f">Variedade<input class="inp" id="nV" placeholder="Opcional"></label>
       </div>
       <div id="nMsg"></div>
-      <button type="button" class="save" id="nSave" style="background:var(--panel);color:var(--brand);border:1.5px solid var(--brand)">Cadastrar talhão</button>
+      <button type="button" class="save nd-onda nd-estado" id="nSave" data-enviando="Salvando…" data-feito="Salvo" style="background:var(--panel);color:var(--brand);border:1.5px solid var(--brand)">Cadastrar talhão</button>
     </div>
   </main>
 </section>
@@ -312,6 +316,7 @@ const tcmp = (a, b) => a.localeCompare(b, "pt", {numeric:true});
 const DIAS = ["dom","seg","ter","qua","qui","sex","sáb"];
 const X = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("on"); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove("on"),3200); }
+function feitoHome(t, sub){ const el = $("feitoHome"); $("feitoT").textContent = t; $("feitoS").textContent = sub || ""; el.hidden = false; Nadiana.feito(el); clearTimeout(feitoHome.t); feitoHome.t = setTimeout(() => { el.hidden = true; }, 6000); }
 function net(kind, txt){ $("net").className = "net " + (kind||""); $("netTxt").textContent = txt; }
 function msg(el, kind, txt){ $(el).innerHTML = txt ? `<div class="msg ${kind}">${esc(txt)}</div>` : ""; }
 
@@ -329,7 +334,7 @@ async function getListas(){
     const j = await r.json();
     if (!j.ok) throw new Error(j.error || "erro no script");
     L = j; lsSet("lancar.listas", JSON.stringify(j));
-    net("", "Listas atualizadas às " + new Date().toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}));
+    net("vivo", "Listas atualizadas às " + new Date().toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}));
     refreshAll();
   } catch (e) {
     net("err", navigator.onLine === false ? "Sem internet. Mostrando as últimas listas salvas." : "Não consegui atualizar as listas (" + (e.message || e) + ")");
@@ -567,14 +572,14 @@ $("pSave").addEventListener("click", async () => {
     : prods.find(x => !(num(x.dose) > 0)) ? "Informe a dose de todos os produtos." : "";
   if (erro) { msg("pMsg", "err", erro); return; }
   if (!prods.length && !confirm("Salvar a programação sem produtos? Dá para lançar os produtos depois na planilha.")) return;
-  const b = $("pSave"); b.disabled = true; b.textContent = "Salvando…";
+  const b = $("pSave"); Nadiana.estado(b, "enviando");
   try {
     const j = await enviar({acao:"programar", op:$("pOp").value, modo:P.modo, data:$("pData").value, talhoes, receita:$("pRec").value,
       produtos: prods.map(x => ({p:x.p.trim(), dose:num(x.dose)})), obs:$("pObs").value, permitirRepetida:$("pRep").checked, areas});
     toast(j.msg); P.sel.clear(); P.areas = {}; P.prods = []; P.busca = ""; $("pBusca").value = ""; $("pObs").value = ""; $("pRec").value = ""; $("pRep").checked = false;
     renderProdsUI(); await getListas(); location.hash = "home";
   } catch (e) { msg("pMsg", "err", e.message || String(e)); }
-  finally { b.disabled = false; b.textContent = "Salvar programação"; }
+  finally { Nadiana.estado(b, null); }
 });
 
 /* ---------- chuva ---------- */
@@ -591,12 +596,12 @@ $("cSave").addEventListener("click", async () => {
   if (!$("cData").value) { msg("cMsg", "err", "Informe a data."); return; }
   if (mm == null || mm < 0) { msg("cMsg", "err", "Informe a chuva em mm (0 se não choveu)."); return; }
   if ($("cData").value > hojeIso()) { msg("cMsg", "err", "A data não pode ser no futuro."); return; }
-  const b = $("cSave"); b.disabled = true; b.textContent = "Salvando…";
+  const b = $("cSave"); Nadiana.estado(b, "enviando");
   try {
     const j = await enviar({acao:"chuva", data:$("cData").value, mm, local:"", obs:""});
-    toast(j.msg); $("cMm").value = ""; $("cData").value = hojeIso(); await getListas(); $("cMm").blur(); window.scrollTo(0, 0);
+    toast(j.msg); $("cMm").value = ""; $("cData").value = hojeIso(); await getListas(); $("cMm").blur(); window.scrollTo(0, 0); Nadiana.estado(b, "feito");
   } catch (e) { msg("cMsg", "err", e.message || String(e)); }
-  finally { b.disabled = false; b.textContent = "Salvar chuva"; }
+  finally { if (b.dataset.estado !== "feito") Nadiana.estado(b, null); }
 });
 
 /* ---------- executar ---------- */
@@ -650,13 +655,13 @@ $("eSave").addEventListener("click", async () => {
   const erro = !sel ? "Escolha o talhão e a aplicação executada." : !$("eData").value ? "Informe a data executada." : !(a > 0) ? "Informe a área aplicada." : a > sel.area * 1.05 ? `A área aplicada é maior que a programada (${ha(sel.area)} ha).` : "";
   if (erro) { msg("eMsg", "err", erro); return; }
   const itens = [{id: sel.id, area: a, concluida: $("eConcl").checked}].concat(L.progs.filter(p => E.extras.has(p.id)).map(p => ({id: p.id, area: restante(p), concluida: true})));
-  const b = $("eSave"); b.disabled = true; b.textContent = "Salvando…";
+  const b = $("eSave"); Nadiana.estado(b, "enviando");
   try {
     const j = await enviar({acao:"executar", data:$("eData").value, modo:E.modo, os:$("eOS").value, obs:$("eObs").value, itens});
-    toast(j.msg); E.id = null; E.extras.clear(); ["eOS", "eObs", "eArea"].forEach(id => $(id).value = ""); $("eTal").value = ""; $("eConcl").checked = true;
+    feitoHome("Execução registrada", j.msg); E.id = null; E.extras.clear(); ["eOS", "eObs", "eArea"].forEach(id => $(id).value = ""); $("eTal").value = ""; $("eConcl").checked = true;
     await getListas(); location.hash = "home";
   } catch (e) { msg("eMsg", "err", e.message || String(e)); }
-  finally { b.disabled = false; b.textContent = "Salvar execução"; }
+  finally { Nadiana.estado(b, null); }
 });
 
 /* ---------- talhões ---------- */
@@ -676,22 +681,22 @@ $("tSave").addEventListener("click", async () => {
   msg("tMsg", "", "");
   if (!T.sel.size) { msg("tMsg", "err", "Marque pelo menos um talhão."); return; }
   if (!$("tPlant").value && !$("tGerm").value && !$("tVar").value.trim()) { msg("tMsg", "err", "Preencha a data de plantio, a de emergência ou a variedade."); return; }
-  const b = $("tSave"); b.disabled = true; b.textContent = "Salvando…";
+  const b = $("tSave"); Nadiana.estado(b, "enviando"); let ok = false;
   try {
     const j = await enviar({acao:"plantio", talhoes:[...T.sel], plantio:$("tPlant").value, germ:$("tGerm").value, variedade:$("tVar").value});
-    toast(j.msg); T.sel.clear(); ["tPlant", "tGerm", "tVar"].forEach(id => $(id).value = ""); await getListas(); renderTal();
+    toast(j.msg); T.sel.clear(); ["tPlant", "tGerm", "tVar"].forEach(id => $(id).value = ""); await getListas(); renderTal(); ok = true;
   } catch (e) { msg("tMsg", "err", e.message || String(e)); }
-  finally { b.disabled = false; renderTal(); }
+  finally { Nadiana.estado(b, null); renderTal(); if (ok) Nadiana.estado(b, "feito"); }
 });
 $("nSave").addEventListener("click", async () => {
   msg("nMsg", "", "");
   const t = $("nT").value.trim(), a = num($("nA").value);
   if (!t || !(a > 0)) { msg("nMsg", "err", "Informe o nome e a área do talhão."); return; }
   if (L && L.talhoes.some(x => norm(x.t) === norm(t))) { msg("nMsg", "err", `O talhão ${t.toUpperCase()} já existe.`); return; }
-  const b = $("nSave"); b.disabled = true;
-  try { const j = await enviar({acao:"talhao", t, area:a, cult:$("nC").value, vari:$("nV").value}); toast(j.msg); ["nT", "nA", "nV"].forEach(id => $(id).value = ""); await getListas(); }
+  const b = $("nSave"); Nadiana.estado(b, "enviando");
+  try { const j = await enviar({acao:"talhao", t, area:a, cult:$("nC").value, vari:$("nV").value}); toast(j.msg); ["nT", "nA", "nV"].forEach(id => $(id).value = ""); await getListas(); Nadiana.estado(b, "feito"); }
   catch (e) { msg("nMsg", "err", e.message || String(e)); }
-  finally { b.disabled = false; }
+  finally { if (b.dataset.estado !== "feito") Nadiana.estado(b, null); }
 });
 
 /* ---------- datas do painel de Plantio ---------- */
@@ -795,13 +800,13 @@ $("pcSave").addEventListener("click", async () => {
   const sel = pcLista().filter(x => !PC.fora.has(x.t.t)); if (!sel.length) return;
   const grupos = {};   // um envio por plantio, emergência e variedade; campo vazio não apaga o que já existe
   sel.forEach(({t, p, pl, gm}) => { const v = pl && !t.vari ? p.vari || "" : "", k = [pl, gm, v].join("|"); (grupos[k] ||= {plantio: pl, germ: gm, variedade: v, talhoes: []}).talhoes.push(t.t); });
-  const b = $("pcSave"); b.disabled = true; b.textContent = "Lançando…";
+  const b = $("pcSave"); Nadiana.estado(b, "enviando");
   let ok = 0;
   try {
     for (const g of Object.values(grupos)) { await enviar({acao:"plantio", talhoes: g.talhoes, plantio: g.plantio, germ: g.germ, variedade: g.variedade}); ok += g.talhoes.length; }
     toast(`Datas lançadas em ${ok} ${ok === 1 ? "talhão" : "talhões"}.`); PC.fora.clear();
   } catch (e) { msg("pcMsg", "err", (ok ? `Lancei ${ok} e parei: ` : "") + (e.message || String(e))); }
-  finally { await getListas(); renderPC(); }
+  finally { await getListas(); Nadiana.estado(b, null); renderPC(); }
 });
 
 /* ---------- início ---------- */

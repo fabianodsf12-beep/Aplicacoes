@@ -311,7 +311,7 @@ form{border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:va
     <input id="cfgUrl" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec" required>
     <label for="cfgChave">Chave de acesso</label>
     <input id="cfgChave" autocomplete="off" required>
-    <button class="btn primary" type="submit" id="cfgOk">Entrar</button>
+    <button class="btn nd-onda primary" type="submit" id="cfgOk">Entrar</button>
     <div id="cfgMsg"></div>
   </form>
 </div>
@@ -327,7 +327,7 @@ form{border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:va
 <header class="nd-topo"><div class="nd-wrap">
   <img class="nd-simbolo" src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.svg" alt="Nadiana">
   <div class="app"><h1>Experimentos 26/27</h1><p id="today"></p></div>
-  <div class="acoes"><span class="nd-net" id="net"><i></i><span>Conectado</span></span><button type="button" class="nd-btn icone leve" data-nd-tema aria-label="Trocar tema claro ou escuro"><svg class="nd-ic" aria-hidden="true"><use href="#i-moon" id="temaIc"/></svg></button></div>
+  <div class="acoes"><span class="nd-net" id="net"><i></i><span>Conectado</span></span><button type="button" class="nd-btn nd-onda icone leve" data-nd-tema aria-label="Trocar tema claro ou escuro"><svg class="nd-ic" aria-hidden="true"><use href="#i-moon" id="temaIc"/></svg></button></div>
 </div></header>
 <div class="wrap">
 
@@ -365,7 +365,7 @@ form{border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:va
       <div id="lFaixas"></div>
       <div class="f"><label for="lObs">Observações de campo</label><textarea id="lObs" rows="2" placeholder="Chuva, falha, mancha de solo, pisoteio..."></textarea></div>
       <div id="lMsg"></div>
-      <div class="savebar"><button type="button" class="btn" id="lCancel">← Voltar</button><button type="submit" class="btn primary" id="lSave">Salvar avaliação</button></div>
+      <div class="savebar"><button type="button" class="btn nd-onda" id="lCancel">← Voltar</button><button type="submit" class="btn nd-onda primary" id="lSave">Salvar avaliação</button></div>
     </form>
   </section>
 
@@ -394,15 +394,15 @@ form{border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:va
         <span class="hint" id="trHint"></span>
         <div class="trs" id="trs"></div>
         <div class="trtot" id="trTot"></div>
-        <button type="button" class="btn addp" id="addTr">+ Adicionar faixa</button>
+        <button type="button" class="btn nd-onda addp" id="addTr">+ Adicionar faixa</button>
       </div>
       <div class="f"><label for="obs">Observações</label><textarea id="obs" rows="2"></textarea></div>
       <div id="formMsg"></div>
-      <div class="row"><button type="submit" class="btn primary" id="save">Salvar experimento</button></div>
+      <div class="row"><button type="submit" class="btn nd-onda primary" id="save">Salvar experimento</button></div>
     </form>
   </section>
 
-  <div class="backbar" id="backbar" hidden><button type="button" class="btn" id="voltar">← Voltar</button></div>
+  <div class="backbar" id="backbar" hidden><button type="button" class="btn nd-onda" id="voltar">← Voltar</button></div>
   <p class="note" id="note">As datas são de referência para soja. Confirme sempre pelo estágio da planta no campo. A janela de cada avaliação vai de 3 dias antes a 3 dias depois da data.</p>
 </div>
 </div>
@@ -517,14 +517,15 @@ function eventos(){
 }
 
 function renderStats(evs){
-  $('sLate').textContent=evs.filter(e=>e.st==='late').length;
-  $('sNow').textContent=evs.filter(e=>e.st==='now').length;
-  $('sSoon').textContent=evs.filter(e=>e.st==='soon').length;
+  const conta=(id,v)=>{const el=$(id);if(window.Nadiana&&Nadiana.contar)Nadiana.contar(el,v);else el.textContent=v;};
+  conta('sLate',evs.filter(e=>e.st==='late').length);
+  conta('sNow',evs.filter(e=>e.st==='now').length);
+  conta('sSoon',evs.filter(e=>e.st==='soon').length);
 }
 function itemHTML(e){
   const pill=e.st==='late'?'<span class="pill late">Atrasada '+(-e.delta)+' d</span>':e.st==='now'?'<span class="pill now">'+(e.delta===0?'Hoje':e.delta>0?'em '+e.delta+' d':'há '+(-e.delta)+' d')+'</span>':e.st==='done'?'<span class="pill done">Feita '+esc(e.done.split('-').reverse().slice(0,2).join('/'))+'</span>':'';
-  const lb=canWrite&&CAMPOS[e.ev.k]?`<button class="btn small" data-lancar="${esc(e.x.codigo)}|${e.ev.k}">${avals[e.x.codigo+'__'+e.ev.k]?'Ver / editar dados':'Lançar dados'}</button>`:'';
-  const act=lb+(!canWrite?'':e.done?`<button class="btn small" data-undo="${esc(e.x.codigo)}|${e.key}">Desfazer</button>`:`<button class="btn small primary" data-done="${esc(e.x.codigo)}|${e.key}">Marcar feita</button>`);
+  const lb=canWrite&&CAMPOS[e.ev.k]?`<button class="btn nd-onda small" data-lancar="${esc(e.x.codigo)}|${e.ev.k}">${avals[e.x.codigo+'__'+e.ev.k]?'Ver / editar dados':'Lançar dados'}</button>`:'';
+  const act=lb+(!canWrite?'':e.done?`<button class="btn nd-onda small" data-undo="${esc(e.x.codigo)}|${e.key}">Desfazer</button>`:`<button class="btn nd-onda small primary" data-done="${esc(e.x.codigo)}|${e.key}">Marcar feita</button>`);
   return `<div class="item ${e.st}">
     <div class="date"><span class="m">${SEM[e.dt.getDay()]}</span><span class="d">${String(e.dt.getDate()).padStart(2,'0')}</span><span class="m">${MES[e.dt.getMonth()]}</span></div>
     <div class="what"><div class="t">${esc(e.ev.t)}</div>
@@ -538,7 +539,7 @@ function renderLembretes(){
   const evs=all.filter(e=>(!f||e.x.codigo===f)&&(showDone||!e.done));
   const box=$('lembretes');
   if(!exps.length){
-    box.innerHTML=`<div class="empty"><h2>Nenhum experimento cadastrado</h2><p>Cadastre o primeiro experimento com a data de plantio. Cada avaliação vira um lembrete com data, estágio, o que fazer e a ficha a usar.</p><button class="btn primary" id="goNew">Cadastrar experimento</button></div>`;
+    box.innerHTML=`<div class="empty"><h2>Nenhum experimento cadastrado</h2><p>Cadastre o primeiro experimento com a data de plantio. Cada avaliação vira um lembrete com data, estágio, o que fazer e a ficha a usar.</p><button class="btn nd-onda primary" id="goNew">Cadastrar experimento</button></div>`;
     $('goNew').onclick=()=>show('novo'); return;
   }
   const sec=[['late','Atrasadas','passou a janela de 3 dias'],['now','Janela aberta','fazer nestes dias'],['soon','Próximos 5 dias',''],['later','Mais adiante',''],['done','Feitas','']];
@@ -562,7 +563,7 @@ function renderExps(){
       <dt>Plantio</dt><dd>${x.plantio?esc(x.plantio.split('-').reverse().join('/')):'—'} · ciclo ${esc(x.ciclo)} d</dd></dl>
       <div class="chips">${(x.tratamentos||[]).map(t=>`<span class="tag" title="${esc(t.desc)}">${esc(t.cod)}${t.padrao?' (padrão)':''}${t.area!=null?' · '+String(t.area).replace('.',',')+' ha':''}</span>`).join('')}</div>
       <div><div class="bar"><i style="width:${mine.length?Math.round(done/mine.length*100):0}%"></i></div><small class="sub">${done} de ${mine.length} avaliações feitas</small></div>
-      ${canWrite?`<div class="row" id="r-${esc(x.codigo)}"><button class="btn small" data-res="${esc(x.codigo)}">Resultados</button><button class="btn small" data-edit="${esc(x.codigo)}">Editar</button><button class="btn small danger" data-del="${esc(x.codigo)}">Excluir</button></div>`:''}</div>`;}).join('')+'</div>';
+      ${canWrite?`<div class="row" id="r-${esc(x.codigo)}"><button class="btn nd-onda small" data-res="${esc(x.codigo)}">Resultados</button><button class="btn nd-onda small" data-edit="${esc(x.codigo)}">Editar</button><button class="btn nd-onda small danger" data-del="${esc(x.codigo)}">Excluir</button></div>`:''}</div>`;}).join('')+'</div>';
 }
 function render(){renderExps();renderLembretes();renderRes();}
 function vals(cod,evk,trat){const a=avals[cod+'__'+evk];return a?.valores?.[trat]||null}
@@ -645,7 +646,7 @@ function renderFila(){
   const b=$('fila');const n=fila.length, nf=fila.reduce((a,o)=>a+o.fotos.length,0);
   if(!n){b.hidden=!ultimoEnvio&&!erroEnvio;b.className='fila ok';b.innerHTML=ultimoEnvio?`Tudo enviado. Último envio: ${esc(new Date(ultimoEnvio).toLocaleString('pt-BR'))}`:'';return;}
   b.hidden=false;b.className='fila wait';
-  b.innerHTML=`<span><b>${n} lançamento${n>1?'s':''}${nf?' e '+nf+' foto'+(nf>1?'s':''):''} guardado${n>1?'s':''} no celular</b>, aguardando sinal para enviar.${erroEnvio?' '+esc(erroEnvio):''}</span><button class="btn small primary" id="enviarAgora" ${sincronizando?'disabled':''}>${sincronizando?'Enviando...':'Enviar agora'}</button>`;
+  b.innerHTML=`<span><b>${n} lançamento${n>1?'s':''}${nf?' e '+nf+' foto'+(nf>1?'s':''):''} guardado${n>1?'s':''} no celular</b>, aguardando sinal para enviar.${erroEnvio?' '+esc(erroEnvio):''}</span><button class="btn nd-onda small primary" id="enviarAgora" ${sincronizando?'disabled':''}>${sincronizando?'Enviando...':'Enviar agora'}</button>`;
   $('enviarAgora').onclick=()=>sync();
 }
 const ate=(p,ms=window.__ATE||20000)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r({code:'timeout'}),ms))]);
@@ -717,9 +718,9 @@ function thumbs(lista,pend){return (lista||[]).map(f=>`<a class="th" href="${esc
 function pontoHTML(ti,p,cs,v,coord){
   return `<div class="pc" id="pc-${ti}-${p}" data-ti="${ti}" data-p="${p}">
     <div class="pch"><span class="pn">${p}</span><b>Ponto ${p}</b><span class="gps ${coord?'on':''}" id="gs-${ti}-${p}" ${coord?'':'hidden'}>${coord?`<a href="${mapa(coord)}" target="_blank" rel="noopener">GPS salvo</a>`:''}</span>
-      <span class="pa"><label class="btn small foto" for="lp-${ti}-${p}">+ Foto</label>${p>1?`<button type="button" class="x" data-rm="${ti}-${p}" aria-label="Remover ponto ${p}">Remover</button>`:''}</span></div>
+      <span class="pa"><label class="btn nd-onda small foto" for="lp-${ti}-${p}">+ Foto</label>${p>1?`<button type="button" class="x" data-rm="${ti}-${p}" aria-label="Remover ponto ${p}">Remover</button>`:''}</span></div>
     <input type="hidden" id="lg-${ti}-${p}" value="${esc(fmtCoord(coord))}">
-    <div class="ccrow" id="cc-${ti}-${p}" hidden><input id="ci-${ti}-${p}" placeholder="Cole aqui: -12.345678, -45.678901" inputmode="text" autocomplete="off"><button type="button" class="btn small" data-paste="${ti}-${p}">Colar</button><a class="btn small" href="https://www.google.com/maps" target="_blank" rel="noopener">Abrir Maps</a><small>No Maps, toque na bolinha azul, copie as coordenadas e cole aqui.</small></div>
+    <div class="ccrow" id="cc-${ti}-${p}" hidden><input id="ci-${ti}-${p}" placeholder="Cole aqui: -12.345678, -45.678901" inputmode="text" autocomplete="off"><button type="button" class="btn nd-onda small" data-paste="${ti}-${p}">Colar</button><a class="btn nd-onda small" href="https://www.google.com/maps" target="_blank" rel="noopener">Abrir Maps</a><small>No Maps, toque na bolinha azul, copie as coordenadas e cole aqui.</small></div>
     <div class="pcf">${cs.map(c=>`<label class="fld"><span>${c.l}</span><input id="lv-${ti}-${p}-${c.k}" ${c.t?`type="${c.t}"`:'inputmode="decimal"'} value="${esc(v?.[c.k]??'')}"></label>`).join('')}</div>
     <input type="file" accept="image/*" multiple id="lp-${ti}-${p}" data-ti="${ti}" data-p="${p}" class="vh"><div class="nv" id="nv-${ti}-${p}"></div>
   </div>`;
@@ -737,7 +738,7 @@ function abrirLanc(cod,evk){
     return `<section class="fx ${t.padrao?'pad':''}"><header><h3>${esc(t.desc)}</h3><span class="tag">${esc(t.cod)}</span>${t.padrao?'<span class="pill done">padrão</span>':''}</header>
      ${ff.length?`<div class="pcf">${ff.map(c=>c.t==='estadio'?`<label class="fld"><span>${c.l}</span><select id="lf-${ti}-${c.k}"><option value="">Escolha</option>${ESTADIOS.map(o=>`<option${v[1]?.[c.k]===o?' selected':''}>${o}</option>`).join('')}</select></label>`:`<label class="fld"><span>${c.l}</span><input id="lf-${ti}-${c.k}" type="${c.t||'text'}" value="${esc(v[1]?.[c.k]??'')}"></label>`).join('')}</div>`:''}
      <div class="pts" id="pts-${ti}">${ps.map(p=>pontoHTML(ti,p,pf,v[p],pts[p])).join('')}</div>
-     <button type="button" class="btn addp" data-addp="${ti}">+ Adicionar ponto</button>
+     <button type="button" class="btn nd-onda addp" data-addp="${ti}">+ Adicionar ponto</button>
      ${fts.length||pend?`<div class="ths">${thumbs(fts,pend)}</div>`:''}</section>`}).join('');
   show('lancar');
 }
@@ -889,17 +890,20 @@ document.addEventListener('click',async e=>{
   if(b.dataset.res){$('rExp').value=b.dataset.res;show('resultados');}
   if(b.dataset.lancar){const [c,k]=b.dataset.lancar.split('|');abrirLanc(c,k);}
   if(b.dataset.edit){editing=b.dataset.edit;fillForm(exps.find(x=>x.codigo===editing));show('novo');}
-  if(b.dataset.del){const r=$('r-'+b.dataset.del);r.innerHTML=`<span class="confirm">Excluir ${esc(b.dataset.del)} e todos os lembretes? <button class="btn small danger" data-delok="${esc(b.dataset.del)}">Excluir</button><button class="btn small" data-delno="1">Manter</button></span>`;}
+  if(b.dataset.del){const r=$('r-'+b.dataset.del);r.innerHTML=`<span class="confirm">Excluir ${esc(b.dataset.del)} e todos os lembretes? <button class="btn small danger nd-segurar" data-delhold="${esc(b.dataset.del)}">Segure para excluir</button><button class="btn nd-onda small" data-delno="1">Manter</button></span>`;}
   if(b.dataset.delno) renderExps();
-  if(b.dataset.delok){if(!db||navigator.onLine===false){$('r-'+b.dataset.delok).textContent='Para excluir, abra o app com sinal.';return;}try{await db.collection('experimentos').doc(b.dataset.delok).delete();await puxar();}catch(err){$('r-'+b.dataset.delok).textContent='Não consegui excluir agora. Tente de novo com sinal.';}}
+  if(b.dataset.delok) excluirExp(b.dataset.delok);
 });
+async function excluirExp(cod){if(!db||navigator.onLine===false){$('r-'+cod).textContent='Para excluir, abra o app com sinal.';return;}try{await db.collection('experimentos').doc(cod).delete();await puxar();}catch(err){$('r-'+cod).textContent='Não consegui excluir agora. Tente de novo com sinal.';}}
+/* segurar para excluir (base Nadiana): ao encher, exclui */
+document.addEventListener('nd-confirma',e=>{const b=e.target.closest&&e.target.closest('[data-delhold]');if(b)excluirExp(b.dataset.delhold);});
 
 const t=today(); $('today').textContent='Hoje, '+SEM[t.getDay()]+', '+String(t.getDate()).padStart(2,'0')+' '+MES[t.getMonth()]+' '+t.getFullYear();
 sExps=LS.get('cache_exps',[]);sAvals=LS.get('cache_avals',{});atualizarTudo();
 
 /* ---------- indicador de conexão (base Nadiana) ---------- */
 function netStatus(){const n=$('net');if(!n)return;const off=navigator.onLine===false,pend=fila.length;
-  n.className='nd-net'+(off?' erro':pend?' ocupado':'');n.lastChild.textContent=off?'Sem sinal':pend?(pend+' na fila'):'Conectado';}
+  n.className='nd-net vivo'+(off?' erro':pend?' ocupado':'');n.lastChild.textContent=off?'Sem sinal':pend?(pend+' na fila'):'Conectado';}
 ['online','offline'].forEach(ev=>window.addEventListener(ev,netStatus));setInterval(netStatus,3000);
 function iconeTema(){const d=(window.Nadiana?Nadiana.tema():(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))==='dark';$('temaIc').setAttribute('href',d?'#i-sun':'#i-moon');}
 document.addEventListener('nd-tema',iconeTema);window.addEventListener('load',iconeTema);
