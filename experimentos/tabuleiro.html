@@ -352,7 +352,8 @@ const aviso = t => { if (window.Nadiana && Nadiana.aviso) Nadiana.aviso(t); };
 /* cores: sobre a imagem de satélite vale sempre o tema claro da base */
 const TK = (window.NadianaTokens || {}).light || {};
 const COR = {
-  trat: [TK["graf-1"] || "#04954D", TK["graf-2"] || "#2A78D6", TK["graf-3"] || "#D55181", TK["graf-4"] || "#6250D6"],
+  trat: [TK["graf-1"] || "#04954D", TK["graf-2"] || "#2A78D6", TK["graf-3"] || "#D55181", TK["graf-4"] || "#6250D6", // base Nadiana: até 8 séries
+         TK["graf-5"] || "#8B8C27", TK["graf-6"] || "#0E9BB4", TK["graf-7"] || "#AB9017", TK["graf-8"] || "#C8729C"],
   test: TK["graf-outros"] || "#A9B3AF",
   branco: TK.panel || "#FFFFFF",
   limite: TK["nadiana-verde-claro"] || "#04B365"
@@ -567,7 +568,8 @@ function textoPosicao(){
   const fora = GRADE.quads.length - GRADE.quads.filter(q => q.ok).length;
   return `${pistas}; ${ini} e ${fim}. Comprimento de ${fmt(x.comp, 0)} m. ${fmt(GRADE.quads.length - fora)} quadrados dentro${fora ? `, ${fmt(fora)} fora do talhão (tracejados)` : ", nenhum fora"}.`;
 }
-function corTrat(i){ const t = S.trats[i]; if (!t) return COR.test; if (ehTest(t)) return COR.test; let k = 0; for (let j = 0; j < i; j++) if (num(S.trats[j].dose) !== 0) k++; return COR.trat[k % 4]; }
+function corTrat(i){ const t = S.trats[i]; if (!t) return COR.test; if (ehTest(t)) return COR.test; let k = 0; for (let j = 0; j < i; j++) if (num(S.trats[j].dose) !== 0) k++; return COR.trat[k % COR.trat.length]; }
+const MAX_TRATS = 9; // 8 testes (graf-1 a graf-8) + testemunha
 function desenharGrade(){
   if (!MAP) return;
   LQ.clearLayers(); LR.clearLayers(); LB.clearLayers();
@@ -631,7 +633,7 @@ function renderTrats(){
     <label class="nd-campo ds">Vazão (L/ha)<input class="nd-inp" data-i="${i}" data-k="dose" value="${esc(t.dose)}" inputmode="decimal" placeholder="a definir"></label>
     <button class="nd-btn icone leve rm" type="button" data-rm="${i}" aria-label="Remover ${esc(t.nome || t.cod)}" ${S.trats.length <= 2 ? "disabled" : ""}><svg class="nd-ic" aria-hidden="true"><use href="#i-trash-2"/></svg></button>
   </div>`).join("");
-  $("btnAddTr").disabled = S.trats.length >= 5;
+  $("btnAddTr").disabled = S.trats.length >= MAX_TRATS;
   const n = S.trats.length;
   [...$("modo").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === S.modo)));
   $("btnInverter").classList.toggle("on", n === 2); $("btnSortear").classList.toggle("on", n > 2);
@@ -662,7 +664,7 @@ function renderResumo(){
   else if (minQ < 15) msgs.push(["aviso", "Poucas repetições", `O tratamento com menos quadrados tem ${minQ}. Para separar por zona, o ideal é 15 ou mais de cada. Aumente a área ou diminua o quadrado.`]);
   const nT = S.trats.length;
   if (nT > 2 && (S.nC % nT || S.nR % nT)) msgs.push(["aviso", "Blocos incompletos", `Com ${nT} tratamentos, use passadas e quadrados por passada em múltiplos de ${nT} (hoje ${S.nC} × ${S.nR}). Assim todo tratamento aparece o mesmo número de vezes em cada parte da área.`]);
-  if (S.trats.filter(t => !ehTest(t)).length > 4) msgs.push(["aviso", "Cores repetidas", "Com 5 tratamentos, deixe um deles como testemunha (vazão 0)."]);
+  if (S.trats.filter(t => !ehTest(t)).length > 8) msgs.push(["aviso", "Cores repetidas", `Com ${MAX_TRATS} tratamentos, deixe um deles como testemunha (vazão 0).`]);
   if (S.W !== 36) msgs.push(["aviso", "Espaçamento diferente da barra", `O espaçamento entre pistas está em ${fmtMax(S.W, 2)} m. Ele tem que ser igual ao da linha AB no Operations Center (36 m no M4030), senão as colunas saem das pistas.`]);
   if (!S.pontoA) msgs.push(["aviso", "Sem Ponto A", "Sem o Ponto A da linha AB o ensaio não fica preso às pistas e os arquivos de aplicação ficam bloqueados."]);
   if (S.L < 60) msgs.push(["aviso", "Quadrado curto", "Com menos de 60 m de comprimento o monitor de colheita não estabiliza dentro do quadrado."]);
@@ -786,7 +788,7 @@ $("trs").addEventListener("change", e => {
   S.trats[i][k] = v; salvar(); renderTrats(); atualizar(); arqMsg("", "");
 });
 $("trs").addEventListener("click", e => { const b = e.target.closest("[data-rm]"); if (!b || S.trats.length <= 2) return; S.trats.splice(+b.dataset.rm, 1); salvar(); renderTrats(); atualizar(); });
-$("btnAddTr").addEventListener("click", () => { if (S.trats.length >= 5) return; const cods = ["A","B","C","D","E"]; const cod = cods.find(c => !S.trats.some(t => t.cod === c));
+$("btnAddTr").addEventListener("click", () => { if (S.trats.length >= MAX_TRATS) return; const cods = ["A","B","C","D","E","F","G","H","I","J"]; const cod = cods.find(c => !S.trats.some(t => t.cod === c));
   S.trats.splice(S.trats.length - (S.trats.some(t => num(t.dose) === 0) ? 1 : 0), 0, {cod, nome:"", dose:""}); salvar(); renderTrats(); atualizar(); });
 $("modo").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.modo = b.dataset.v; salvar(); renderTrats(); atualizar(); });
 function mudouPosicao(){ S.posLivre = !S.pontoA; salvar(); preencherCampos(); atualizar(); }
@@ -1161,6 +1163,8 @@ const GH_BASE = "https://fabianodsf12-beep.github.io/nadiana-design/v1/";
 const JSPDF = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
 const AUTOTABLE = "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js";
 const LOGO_PDF = GH_BASE + "logos/nadiana-simbolo.png";
+const lumin = h => rgbHex(h).map(x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }).reduce((a, x, i) => a + x * [0.2126, 0.7152, 0.0722][i], 0);
+const contraste = (a, b) => { const la = lumin(a), lb = lumin(b); return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05); };
 const rgbHex = h => { h = (h || "#000000").replace("#", ""); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); };
 const coordTxt = c => c ? `${fmtMax(c[0], 7)}; ${fmtMax(c[1], 7)}` : "não informado";
 async function gerarPDF(){
@@ -1263,7 +1267,7 @@ async function gerarPDF(){
       const qx = gx + (q.c - 1) * cw, qy = gy + (nR - q.r) * ch, tr = S.trats[q.ti];
       if (!q.ok) { doc.setDrawColor(...CL); doc.setLineWidth(0.2); doc.setLineDashPattern([0.8, 0.8], 0); doc.rect(qx + 0.3, qy + 0.3, cw - 0.6, ch - 0.6, "S"); doc.setLineDashPattern([], 0); return; }
       doc.setFillColor(...rgbHex(corTrat(q.ti))); doc.setDrawColor(...CB); doc.setLineWidth(0.3); doc.rect(qx, qy, cw, ch, "FD");
-      doc.setFont(FN, "bold"); doc.setFontSize(Math.max(6, Math.min(10, cw * 1.6))); doc.setTextColor(...(ehTest(tr) ? CI : CB));
+      doc.setFont(FN, "bold"); doc.setFontSize(Math.max(6, Math.min(10, cw * 1.6))); doc.setTextColor(...(ehTest(tr) || contraste(corTrat(q.ti), "#FFFFFF") < 3.5 ? CI : CB));
       doc.text(tr.cod, qx + cw / 2, qy + ch / 2 + 1.2, {align:"center"});
     });
     for (let rr = 1; rr <= nR; rr++) { const yy = gy + (nR - rr + 1) * ch, u = GRADE.u0 + (rr - 1) * S.L;
