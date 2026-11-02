@@ -46,6 +46,13 @@
 .leg i.ab,.ctl.legmap i.ab{height:0;border:0;border-top:2px dashed var(--muted);border-radius:0;background:transparent}
 details.alt summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:500;color:var(--muted)}
 details.alt .trs{padding-top:var(--space-2)}
+.salvos{display:flex;flex-direction:column;gap:var(--space-3);border-top:1px solid var(--line2);padding-top:var(--space-3)}
+.salvar-form{display:flex;flex-direction:column;gap:var(--space-3);background:var(--panel2);border-radius:var(--radius-lg);padding:var(--space-3)}
+#ensLista > div{flex-wrap:wrap}
+#ensLista .ini{flex:1 1 220px}
+#ensLista .t{overflow-wrap:anywhere}
+#ensLista .acoes-l{flex:0 0 auto}
+#ensLista .atual .t::after{content:" · aberto";color:var(--ok);font-weight:500}
 .posicao{display:flex;flex-direction:column;gap:var(--space-3_5);border:1px solid var(--line2);border-radius:var(--radius-xl);padding:var(--space-3) var(--space-3_5) var(--space-3_5)}
 .mais-menos{display:grid;grid-template-columns:52px minmax(0,1fr) 52px;gap:var(--space-2);align-items:center}
 .mais-menos .nd-btn{min-height:48px;padding:0;font-family:var(--font-display);font-size:26px;font-weight:600;line-height:1}
@@ -164,6 +171,20 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
                 <span class="ab-ok" id="bOk"></span>
               </div>
               <div class="acoes-l"><button class="nd-btn leve nd-onda" type="button" id="btnLimparAB"><svg class="nd-ic" aria-hidden="true"><use href="#i-x"/></svg>Limpar pontos A e B</button></div>
+              <div class="salvos" id="linhasBox">
+                <label class="nd-campo">Linhas AB salvas deste talhão
+                  <select class="nd-inp" id="linhaSel"><option value="">Carregando…</option></select>
+                </label>
+                <div class="acoes-l">
+                  <button class="nd-btn nd-onda" type="button" id="btnSalvarLinha"><svg class="nd-ic" aria-hidden="true"><use href="#i-check"/></svg>Salvar esta linha AB</button>
+                  <button class="nd-btn leve nd-onda" type="button" id="btnApagarLinha" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-trash-2"/></svg><span>Apagar linha escolhida</span></button>
+                </div>
+                <div class="salvar-form" id="linhaForm" hidden>
+                  <label class="nd-campo">Nome da linha<input class="nd-inp" id="linhaNome" autocomplete="off" maxlength="60"></label>
+                  <div class="acoes-l"><button class="nd-btn primario nd-onda" type="button" id="linhaOk">Salvar linha</button><button class="nd-btn leve nd-onda" type="button" id="linhaCancel">Cancelar</button></div>
+                </div>
+                <p class="dica" id="linhasMsg"></p>
+              </div>
               <p class="dica">Cole cada número no seu campo, com 7 casas decimais. Se colar "latitude, longitude" juntas num campo, o app separa sozinho. O que você cola fica guardado na hora, mesmo saindo da página.</p>
             </fieldset>
             <p class="dica" id="abInfo" hidden></p>
@@ -252,6 +273,24 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
               <tbody id="tbTr"></tbody>
             </table></div>
             <div id="avisos" class="trs"></div>
+          </section>
+
+          <section class="nd-cartao" id="ensaiosBox">
+            <h2>Ensaios salvos</h2>
+            <div class="acoes-l">
+              <button class="nd-btn primario nd-onda" type="button" id="btnSalvarEnsaio"><svg class="nd-ic" aria-hidden="true"><use href="#i-check"/></svg><span>Salvar ensaio</span></button>
+              <button class="nd-btn nd-onda" type="button" id="btnSalvarNovo" hidden><svg class="nd-ic gira" aria-hidden="true"><use href="#i-plus"/></svg>Salvar como novo</button>
+            </div>
+            <div class="salvar-form" id="ensaioForm" hidden>
+              <label class="nd-campo">Nome do ensaio<input class="nd-inp" id="ensaioNome" autocomplete="off" maxlength="80"></label>
+              <div class="acoes-l"><button class="nd-btn primario nd-onda" type="button" id="ensaioOk">Salvar</button><button class="nd-btn leve nd-onda" type="button" id="ensaioCancel">Cancelar</button></div>
+            </div>
+            <div class="nd-seg" id="ensFiltro" role="group" aria-label="Quais ensaios mostrar">
+              <button type="button" data-v="talhao" aria-pressed="true">Deste talhão</button>
+              <button type="button" data-v="todos" aria-pressed="false">Todos os talhões</button>
+            </div>
+            <div class="nd-lista" id="ensLista"></div>
+            <p class="dica" id="ensMsg"></p>
           </section>
 
           <section class="nd-cartao">
@@ -643,8 +682,10 @@ function atualizar(){
 }
 function escolherTalhao(nome, ajustar){
   S.talhao = nome; $("talhao").value = nome;
-  if (ajustar) { S.ang = null; S.rumoFixo = false; S.pontoA = null; S.pontoB = null; S.abTxt = null; ajustarAoTalhao(); }
+  if (ajustar) { S.ang = null; S.rumoFixo = false; S.pontoA = null; S.pontoB = null; S.abTxt = null; S.linhaId = null; S.ensaioId = null; ajustarAoTalhao(); }
   salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar();
+  if (ajustar) usarLinhaMaisRecente(true);
+  renderSalvos();
   $("mapMsg").textContent = "Mova o ensaio com os botões − e + da pista e da distância da cabeceira. Toque num quadrado para ver o tratamento.";
 }
 function preencherLista(){ // agrupa por bloco quando os limites trazem o bloco (FARM_NAME)
@@ -986,6 +1027,129 @@ $("btnGj").addEventListener("click", () => {
   arqMsg("", "<b>GeoJSON baixado</b>Guarde junto com o ensaio: ele será usado para cruzar com o mapa de colheita.");
 });
 
+/* ---------- salvos: linhas AB e ensaios. No simulador (claude.ai) ficam no banco do próprio simulador, para todos que abrem o link; fora dele, neste aparelho */
+const SALVOS = {linhas:[], ensaios:[], ondeTxt:"", podeEscrever:true, pronto:false, uid:null, user:null, db:null};
+const agoraISO = () => new Date().toISOString();
+const dataHora = iso => { try { return new Date(iso).toLocaleString("pt-BR", {day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"}); } catch (e) { return ""; } };
+const idNovo = () => "x" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const LOCAL_SALVOS = "tabuleiro.salvos";
+function localLer(){ try { const o = JSON.parse(lsGet(LOCAL_SALVOS) || "null"); return o && typeof o === "object" ? o : {linhas:{}, ensaios:{}}; } catch (e) { return {linhas:{}, ensaios:{}}; } }
+const ARMAZEM = {
+  async gravar(tipo, id, dados){
+    if (SALVOS.db) { await SALVOS.db.collection(tipo).doc(id).set(dados); return; }
+    const o = localLer(); (o[tipo] = o[tipo] || {})[id] = dados; lsSet(LOCAL_SALVOS, JSON.stringify(o)); carregarLocal();
+  },
+  async apagar(tipo, id){
+    if (SALVOS.db) { await SALVOS.db.collection(tipo).doc(id).delete(); return; }
+    const o = localLer(); if (o[tipo]) delete o[tipo][id]; lsSet(LOCAL_SALVOS, JSON.stringify(o)); carregarLocal();
+  }
+};
+function carregarLocal(){ const o = localLer(); ["linhas", "ensaios"].forEach(t => { SALVOS[t] = Object.entries(o[t] || {}).map(([id, d]) => ({id, ...d})); }); SALVOS.pronto = true; renderSalvos(); }
+async function iniciarSalvos(){
+  const usar = window.claude && typeof claude.use === "function";
+  const db = usar ? await claude.use("db") : null;
+  if (!db) { SALVOS.ondeTxt = "Salvo só neste aparelho."; carregarLocal(); return; }
+  SALVOS.db = db; SALVOS.ondeTxt = "Salvo no simulador: aparece para todos que abrem este link, em qualquer aparelho.";
+  try { SALVOS.user = await claude.use("user"); SALVOS.uid = SALVOS.user ? await SALVOS.user.id() : null;
+    const pode = SALVOS.user ? await SALVOS.user.can("data.write") : null; SALVOS.podeEscrever = pode !== false; } catch (e) {}
+  let respondeu = false; const t = setTimeout(() => { if (!respondeu) { $("linhasMsg").textContent = $("ensMsg").textContent = "Ainda não consegui ler os salvos. Verifique a internet."; } }, 10000);
+  ["linhas", "ensaios"].forEach(tipo => db.collection(tipo).onSnapshot(snap => {
+    if (!snap.metadata.fromCache) { respondeu = true; clearTimeout(t); }
+    SALVOS[tipo] = snap.docs.map(d => ({id:d.id, ...d.data()})); SALVOS.pronto = true; renderSalvos();
+    if (tipo === "linhas" && !SALVOS._auto) { SALVOS._auto = true; if (!S.pontoA) usarLinhaMaisRecente(true); }
+  }, err => { clearTimeout(t); $("linhasMsg").textContent = $("ensMsg").textContent = err && err.code === "revoked" ? "" : "Não consegui ler os salvos agora."; }));
+}
+const linhasDoTalhao = () => SALVOS.linhas.filter(l => l.talhao === S.talhao).sort((a, b) => String(b.criadoEm).localeCompare(String(a.criadoEm)));
+async function nomesDe(ids){ const u = SALVOS.user; if (!u || !ids.length) return {}; try { return await u.profiles(ids); } catch (e) { return {}; } }
+async function renderSalvos(){
+  // linhas AB do talhão escolhido
+  const ls = linhasDoTalhao(), sel = $("linhaSel"), atual = sel.value;
+  sel.innerHTML = ls.length ? '<option value="">Escolha uma linha salva</option>' + ls.map(l => `<option value="${esc(l.id)}">${esc(l.nome)} · ${esc(dataHora(l.criadoEm))}</option>`).join("") : '<option value="">Nenhuma linha salva neste talhão</option>';
+  if (ls.some(l => l.id === atual)) sel.value = atual; else if (S.linhaId && ls.some(l => l.id === S.linhaId)) sel.value = S.linhaId;
+  $("btnApagarLinha").hidden = !sel.value || !SALVOS.podeEscrever;
+  $("btnSalvarLinha").hidden = !SALVOS.podeEscrever;
+  if (!$("linhasMsg").dataset.fixo) $("linhasMsg").textContent = SALVOS.pronto ? (SALVOS.podeEscrever ? SALVOS.ondeTxt : "Você pode usar as linhas salvas, mas não salvar novas.") : "Carregando…";
+  // ensaios
+  const todos = $("ensFiltro").querySelector('[aria-pressed="true"]').dataset.v === "todos";
+  const es = SALVOS.ensaios.filter(e => todos || e.talhao === S.talhao).sort((a, b) => String(b.atualizadoEm || b.criadoEm).localeCompare(String(a.atualizadoEm || a.criadoEm)));
+  const tok = SALVOS.tok = (SALVOS.tok || 0) + 1;
+  const nomes = await nomesDe([...new Set(es.map(e => e.por).filter(Boolean))]);
+  if (tok !== SALVOS.tok) return; // uma atualização mais nova já desenhou a lista
+  $("ensLista").innerHTML = es.length ? es.map(e => { const pl = e.plano || {}, nt = (pl.trats || []).length;
+    return `<div class="${e.id === S.ensaioId ? "atual" : ""}"><div class="ini"><span class="av"><svg class="nd-ic" aria-hidden="true"><use href="#i-file-text"/></svg></span><div>
+      <span class="t">${esc(e.nome)}</span><span class="s">${esc(e.talhao)} · ${nt} tratamentos · ${pl.desenho === "faixas" ? "faixas" : `${pl.nC || "?"} × ${pl.nR || "?"} quadrados`}${e.resumo ? " · " + esc(e.resumo) : ""} · ${esc(dataHora(e.atualizadoEm || e.criadoEm))}${e.por && nomes[e.por] && nomes[e.por].name ? " · " + esc(nomes[e.por].name) : ""}</span></div></div>
+      <div class="acoes-l"><button class="nd-btn nd-onda" type="button" data-abrir="${esc(e.id)}">Abrir</button>${SALVOS.podeEscrever ? `<button class="nd-btn leve nd-onda" type="button" data-apagar="${esc(e.id)}">${SALVOS.confApagar === e.id ? "Toque de novo para apagar" : "Apagar"}</button>` : ""}</div></div>`; }).join("")
+    : `<div class="nd-vazio"><h3>Nenhum ensaio salvo${todos ? "" : " neste talhão"}</h3><p>Monte o ensaio e toque em Salvar ensaio. Ele aparece aqui para abrir depois, com posição, tratamentos e doses.</p></div>`;
+  const aberto = S.ensaioId && SALVOS.ensaios.find(e => e.id === S.ensaioId);
+  $("btnSalvarEnsaio").querySelector("span").textContent = aberto ? `Salvar alterações em "${aberto.nome}"` : "Salvar ensaio";
+  $("btnSalvarNovo").hidden = !aberto || !SALVOS.podeEscrever; $("btnSalvarEnsaio").hidden = !SALVOS.podeEscrever;
+  if (!$("ensMsg").dataset.fixo) $("ensMsg").textContent = SALVOS.pronto ? SALVOS.ondeTxt : "Carregando…";
+}
+function msgSalvos(id, texto){ const el = $(id); el.textContent = texto; el.dataset.fixo = "1"; clearTimeout(el._t); el._t = setTimeout(() => { delete el.dataset.fixo; renderSalvos(); }, 6000); }
+function erroSalvar(e){ return e && e.code === "quota_exceeded" ? "O espaço do simulador encheu. Apague ensaios antigos e tente de novo." : e && e.code === "invalid_argument" ? "Você não tem permissão para salvar neste simulador." : "Não consegui salvar agora. Verifique a internet e tente de novo."; }
+function usarLinha(l, silencioso){
+  if (!l) return;
+  S.abTxt = null; S.pontoA = l.pontoA || null; S.pontoB = l.pontoB || null; S.linhaId = l.id;
+  if (S.pontoA && S.pontoB) aplicarAB(); else if (isFinite(l.ang)) { S.ang = l.ang; S.rumoFixo = true; }
+  if (isFinite(l.W) && l.W > 0) S.W = l.W;
+  fixarPosicaoAtual(); salvar(); preencherCampos(); atualizar(); renderSalvos();
+  if (!silencioso) aviso(`Linha "${l.nome}" aplicada`); else msgSalvos("linhasMsg", `Linha AB "${l.nome}" carregada automaticamente.`);
+}
+function usarLinhaMaisRecente(silencioso){ const l = linhasDoTalhao()[0]; if (l) usarLinha(l, silencioso); }
+$("linhaSel").addEventListener("change", () => { const l = SALVOS.linhas.find(x => x.id === $("linhaSel").value); $("btnApagarLinha").hidden = !l || !SALVOS.podeEscrever; if (l) usarLinha(l); });
+$("btnSalvarLinha").addEventListener("click", () => {
+  if (!S.pontoA) { msgSalvos("linhasMsg", "Preencha pelo menos o Ponto A antes de salvar a linha."); return; }
+  $("linhaNome").value = `${S.talhao} · linha AB ${linhasDoTalhao().length + 1}`; $("linhaForm").hidden = false; $("linhaNome").focus(); $("linhaNome").select();
+});
+$("linhaCancel").addEventListener("click", () => { $("linhaForm").hidden = true; });
+$("linhaOk").addEventListener("click", async () => {
+  const nome = $("linhaNome").value.trim() || `${S.talhao} · linha AB`, b = $("linhaOk"), id = idNovo();
+  b.disabled = true;
+  try { await ARMAZEM.gravar("linhas", id, {talhao:S.talhao, nome, pontoA:S.pontoA, pontoB:S.pontoB || null, ang:S.ang, W:S.W, por:SALVOS.uid, criadoEm:agoraISO()});
+    S.linhaId = id; salvar(); $("linhaForm").hidden = true; aviso(`Linha "${nome}" salva`); renderSalvos(); }
+  catch (e) { msgSalvos("linhasMsg", erroSalvar(e)); }
+  finally { b.disabled = false; }
+});
+$("btnApagarLinha").addEventListener("click", async () => {
+  const b = $("btnApagarLinha"), l = SALVOS.linhas.find(x => x.id === $("linhaSel").value); if (!l) return;
+  if (!b.dataset.conf) { b.dataset.conf = "1"; b.querySelector("span").textContent = `Toque de novo para apagar "${l.nome}"`; setTimeout(() => { delete b.dataset.conf; b.querySelector("span").textContent = "Apagar linha escolhida"; }, 4000); return; }
+  delete b.dataset.conf; b.querySelector("span").textContent = "Apagar linha escolhida";
+  try { await ARMAZEM.apagar("linhas", l.id); if (S.linhaId === l.id) { S.linhaId = null; salvar(); } aviso(`Linha "${l.nome}" apagada`); }
+  catch (e) { msgSalvos("linhasMsg", "Não consegui apagar agora. Tente de novo."); }
+});
+function planoParaSalvar(){ const pl = JSON.parse(JSON.stringify(S)); delete pl.ensaioId; delete pl.abTxt; return pl; }
+function resumoEnsaio(){ if (!GRADE) return ""; const ok = GRADE.quads.filter(q => q.ok); return `${fmt(ok.length * GRADE.areaQ, 2)} ha`; }
+function abrirFormEnsaio(novo){ $("ensaioForm").hidden = false; $("ensaioForm").dataset.novo = novo ? "1" : ""; $("ensaioNome").value = S.codigo || `TAB ${S.talhao} 26/27`; $("ensaioNome").focus(); $("ensaioNome").select(); }
+$("btnSalvarEnsaio").addEventListener("click", async () => {
+  const aberto = S.ensaioId && SALVOS.ensaios.find(e => e.id === S.ensaioId);
+  if (!aberto) { abrirFormEnsaio(true); return; }
+  try { await ARMAZEM.gravar("ensaios", aberto.id, {nome:aberto.nome, talhao:S.talhao, plano:planoParaSalvar(), resumo:resumoEnsaio(), criadoEm:aberto.criadoEm || agoraISO(), atualizadoEm:agoraISO(), por:SALVOS.uid || aberto.por || null});
+    aviso(`Ensaio "${aberto.nome}" salvo`); }
+  catch (e) { msgSalvos("ensMsg", erroSalvar(e)); }
+});
+$("btnSalvarNovo").addEventListener("click", () => abrirFormEnsaio(true));
+$("ensaioCancel").addEventListener("click", () => { $("ensaioForm").hidden = true; });
+$("ensaioOk").addEventListener("click", async () => {
+  const nome = $("ensaioNome").value.trim() || `TAB ${S.talhao}`, b = $("ensaioOk"), id = idNovo(); b.disabled = true;
+  try { const agora = agoraISO();
+    await ARMAZEM.gravar("ensaios", id, {nome, talhao:S.talhao, plano:planoParaSalvar(), resumo:resumoEnsaio(), por:SALVOS.uid, criadoEm:agora, atualizadoEm:agora});
+    S.ensaioId = id; if (!S.codigo) S.codigo = nome; salvar(); preencherCampos(); $("ensaioForm").hidden = true; aviso(`Ensaio "${nome}" salvo`); renderSalvos(); }
+  catch (e) { msgSalvos("ensMsg", erroSalvar(e)); }
+  finally { b.disabled = false; }
+});
+$("ensFiltro").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; [...$("ensFiltro").children].forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderSalvos(); });
+$("ensLista").addEventListener("click", async e => {
+  const ab = e.target.closest("[data-abrir]"), ap = e.target.closest("[data-apagar]");
+  if (ab) { const en = SALVOS.ensaios.find(x => x.id === ab.dataset.abrir); if (!en || !en.plano) return;
+    if (!TALHOES.some(t => t.nome === en.talhao)) { msgSalvos("ensMsg", `O talhão ${en.talhao} não está no mapa. Importe o limite dele primeiro.`); return; }
+    S = {...PADRAO, ...en.plano}; migrarPlano(); S.ensaioId = en.id; S.abTxt = null; salvar(); escolherTalhao(en.talhao, false); renderSalvos(); aviso(`Ensaio "${en.nome}" aberto`); window.scrollTo({top:0, behavior:"smooth"}); }
+  if (ap) { const en = SALVOS.ensaios.find(x => x.id === ap.dataset.apagar); if (!en) return;
+    if (SALVOS.confApagar !== en.id) { SALVOS.confApagar = en.id; renderSalvos(); clearTimeout(SALVOS._tc); SALVOS._tc = setTimeout(() => { SALVOS.confApagar = null; renderSalvos(); }, 4000); return; }
+    SALVOS.confApagar = null;
+    try { await ARMAZEM.apagar("ensaios", en.id); if (S.ensaioId === en.id) { S.ensaioId = null; salvar(); } aviso(`Ensaio "${en.nome}" apagado`); }
+    catch (err) { msgSalvos("ensMsg", "Não consegui apagar agora. Tente de novo."); } }
+});
+
 /* ---------- relatório em PDF: croqui, referências da linha AB e áreas por teste (base Nadiana: pdf.js) ---------- */
 const GH_BASE = "https://fabianodsf12-beep.github.io/nadiana-design/v1/";
 const JSPDF = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
@@ -1269,6 +1433,7 @@ async function carregarMapa(){
 
 (async function iniciar(){
   preencherCampos();
+  iniciarSalvos();
   iniciarMapa();
   juntarTalhoes([]); preencherLista(); desenharTalhoes();
   const faz = await carregarMapa();
