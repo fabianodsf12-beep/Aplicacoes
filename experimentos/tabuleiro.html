@@ -728,7 +728,7 @@ document.querySelector("#abBox").addEventListener("paste", e => { // "lat, lon" 
 $("btnLimparAB").addEventListener("click", () => { AB_CAMPOS.forEach(k => { $(k).value = ""; }); aplicarPontosAB(false); aviso("Pontos A e B apagados"); });
 document.addEventListener("visibilitychange", () => { if (document.hidden && document.querySelector("#abBox").contains(document.activeElement)) aplicarPontosAB(false); });
 
-campoNum("W", "W", 6, 200); campoNum("L", "L", 10, 500); campoNum("nC", "nC", 1, 80, true); campoNum("nR", "nR", 1, 80, true); campoNum("bord", "bord", 0, 200);
+campoNum("W", "W", 6, 200); campoNum("L", "L", 10, 5000); campoNum("nC", "nC", 1, 80, true); campoNum("nR", "nR", 1, 80, true); campoNum("bord", "bord", 0, 200);
 $("alvo").addEventListener("change", () => { const v = num($("alvo").value); if (isFinite(v) && v > 0) { S.alvo = v; ajustarTamanho(); salvar(); preencherCampos(); atualizar(); } else preencherCampos(); });
 $("codigo").addEventListener("input", () => { S.codigo = $("codigo").value; salvar(); });
 $("unid").addEventListener("change", () => { S.unid = $("unid").value; salvar(); renderTrats(); atualizar(); });
