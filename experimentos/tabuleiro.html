@@ -131,9 +131,15 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
               <button class="nd-btn nd-onda" type="button" id="btnAuto"><svg class="nd-ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg>Ajustar ao talhão</button>
             </div>
             <p class="dica">Use o rumo da linha AB do pulverizador (no Operations Center, em Linhas de orientação), por exemplo 358,2665. Graus a partir do norte: 0 = norte–sul, 90 = leste–oeste. Sem a linha, marque dois pontos sobre uma linha de plantio na imagem.</p>
-            <label class="nd-campo">Ponto A da linha AB (opcional)
-              <input class="nd-inp" id="pontoA" autocomplete="off" inputmode="decimal" placeholder="-17,801234, -50,901234">
-            </label>
+            <div class="dois">
+              <label class="nd-campo">Ponto A da linha AB
+                <input class="nd-inp" id="pontoA" autocomplete="off" inputmode="decimal" placeholder="-10,5827557; -55,9401554">
+              </label>
+              <label class="nd-campo">Ponto B da linha AB
+                <input class="nd-inp" id="pontoB" autocomplete="off" inputmode="decimal" placeholder="-10,5630000; -55,9407000">
+              </label>
+            </div>
+            <p class="dica" id="abInfo" hidden></p>
             <div class="nd-campo" id="ancoraBox" hidden>Posição do ensaio
               <div class="nd-seg" id="ancora" role="group" aria-label="Posição do ensaio">
                 <button type="button" data-v="" aria-pressed="true">Livre</button>
@@ -144,7 +150,7 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
             <label class="nd-campo" id="pista1Box" hidden>Primeira pista do ensaio
               <input class="nd-inp" id="pista1" inputmode="numeric">
             </label>
-            <p class="dica" id="pontoADica">Latitude e longitude do Ponto A. Com ele, cada coluna do ensaio cai exatamente numa pista do pulverizador, e o mapa mostra o número da pista a partir da linha AB.</p>
+            <p class="dica" id="pontoADica">Latitude e longitude dos pontos A e B da linha no Operations Center, com 7 casas decimais (1 cm). Com A e B o rumo é calculado pelos dois pontos, a mesma reta que o monitor segue; cada coluna do ensaio cai exatamente numa pista e o mapa mostra o número da pista a partir da linha AB. Só com o A, vale o rumo digitado.</p>
             <div class="dois">
               <label class="nd-campo">Espaçamento entre pistas
                 <span class="un"><input class="nd-inp" id="W" inputmode="decimal"><span>m</span></span>
@@ -269,7 +275,7 @@ const COR = {
 };
 
 /* ---------- estado (guardado no aparelho) ---------- */
-const PADRAO = {talhao:"RT-40", codigo:"", ang:null, alvo:50, W:36, L:72, nC:14, nR:14, bord:36, centro:null, pontoA:null, rumoFixo:false, ancora:"", pista1:1, modo:"produtos", unid:"L/ha", inverter:false, semente:1,
+const PADRAO = {talhao:"RT-40", codigo:"", ang:null, alvo:50, W:36, L:72, nC:14, nR:14, bord:36, centro:null, pontoA:null, pontoB:null, rumoFixo:false, ancora:"", pista1:1, modo:"produtos", unid:"L/ha", inverter:false, semente:1,
   trats:[{cod:"A", nome:"Padrão fazenda", dose:""}, {cod:"T", nome:"Testemunha", dose:"0"}]};
 let S = {...PADRAO};
 try { const g = JSON.parse(lsGet("tabuleiro.plano") || "null"); if (g && typeof g === "object") S = {...PADRAO, ...g}; } catch (e) {}
@@ -450,6 +456,7 @@ function desenharGrade(){
     const P = projecao(S.pontoA[0], S.pontoA[1]), {d} = eixos(S.ang), f = k => { const ll = P.inv([d[0] * k, d[1] * k]); return [ll[1], ll[0]]; };
     L.polyline([f(-3000), f(3000)], {color:COR.branco, weight:2, dashArray:"10 6", interactive:false}).addTo(LB);
     L.circleMarker(S.pontoA, {radius:6, color:COR.branco, weight:2, fillColor:COR.limite, fillOpacity:1}).bindTooltip("Ponto A da linha AB").addTo(LB);
+    if (S.pontoB) L.circleMarker(S.pontoB, {radius:6, color:COR.branco, weight:2, fillColor:COR.limite, fillOpacity:1}).bindTooltip("Ponto B da linha AB").addTo(LB);
   }
   const ic = L.divIcon({className:"", html:'<div class="centro-ic" title="Arraste para mudar o ensaio de lugar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 2v20M2 12h20M12 2l-3 3M12 2l3 3M12 22l-3-3M12 22l3-3M2 12l3-3M2 12l3 3M22 12l-3-3M22 12l-3 3"/></svg></div>', iconSize:[28,28], iconAnchor:[14,14]});
   MK = L.marker(S.centro, {draggable:true, icon:ic, keyboard:true, title:"Centro do ensaio", alt:"Centro do ensaio"}).addTo(LB);
@@ -467,6 +474,10 @@ function enquadrar(){
 function preencherCampos(){
   $("codigo").value = S.codigo || ""; $("codigo").placeholder = `TAB ${S.talhao || "talhão"} 26/27`;
   $("ang").value = S.ang == null ? "" : fmtMax(S.ang, 4);
+  const ab = rumoAB(); $("ang").readOnly = !!ab;
+  $("pontoB").value = S.pontoB ? fmtMax(S.pontoB[0], 7) + "; " + fmtMax(S.pontoB[1], 7) : "";
+  $("abInfo").hidden = !ab;
+  if (ab) $("abInfo").textContent = `Rumo calculado pelos pontos A e B: ${fmtMax(ab.ang, 4)} graus, linha de ${fmt(ab.dist, 0)} m. Compare com o rumo do Operations Center. Para digitar o rumo, apague o Ponto B.`;
   $("ancoraBox").hidden = !S.pontoA; $("pista1Box").hidden = !S.pontoA || !S.ancora; $("pista1").value = S.pista1;
   [...$("ancora").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === (S.pontoA ? S.ancora : ""))));
   if (S.ang != null) { const lado = a => ["norte","nordeste","leste","sudeste","sul","sudoeste","oeste","noroeste"][Math.round((((a % 360) + 360) % 360) / 45) % 8];
@@ -528,7 +539,7 @@ function atualizar(){
 }
 function escolherTalhao(nome, ajustar){
   S.talhao = nome; $("talhao").value = nome;
-  if (ajustar) { S.ang = null; S.rumoFixo = false; S.pontoA = null; ajustarAoTalhao(); }
+  if (ajustar) { S.ang = null; S.rumoFixo = false; S.pontoA = null; S.pontoB = null; ajustarAoTalhao(); }
   salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar();
   $("mapMsg").textContent = "Arraste o círculo para mudar o ensaio de lugar. Toque num quadrado para ver o tratamento.";
 }
@@ -545,14 +556,35 @@ const campoNum = (id, k, min, max, inteiro) => $(id).addEventListener("change", 
   if (inteiro) v = Math.round(v);
   S[k] = Math.max(min, Math.min(max, v)); salvar(); preencherCampos(); atualizar();
 });
+function lerCoord(t){ const ns = (String(t).match(/-?\d+(?:[.,]\d+)?/g) || []).map(x => Number(x.replace(",", ".")));
+  return ns.length === 2 && Math.abs(ns[0]) <= 90 && Math.abs(ns[1]) <= 180 ? ns : null; }
+function rumoAB(){ // rumo de A para B, em graus a partir do norte, no plano local do meio da linha (elipsoide WGS84)
+  if (!S.pontoA || !S.pontoB) return null;
+  const P = projecao((S.pontoA[0] + S.pontoB[0]) / 2, (S.pontoA[1] + S.pontoB[1]) / 2);
+  const a = P.fwd([S.pontoA[1], S.pontoA[0]]), b = P.fwd([S.pontoB[1], S.pontoB[0]]), dx = b[0] - a[0], dy = b[1] - a[1];
+  return {ang: ((Math.atan2(dx, dy) / RAD) % 360 + 360) % 360, dist: Math.hypot(dx, dy)};
+}
+function aplicarAB(){ const r = rumoAB(); if (!r) return; S.ang = r.ang; S.rumoFixo = true; }
+$("pontoB").addEventListener("change", () => {
+  const t = $("pontoB").value.trim();
+  if (!t) { S.pontoB = null; salvar(); preencherCampos(); atualizar(); return; }
+  const ns = lerCoord(t);
+  if (!ns) { aviso("Ponto B inválido. Escreva latitude e longitude, por exemplo -10,5630000; -55,9407000."); preencherCampos(); return; }
+  S.pontoB = ns; const r = rumoAB();
+  if (r && r.dist < 50) { aviso("Os pontos A e B estão muito perto. Use os pontos das pontas da linha."); S.pontoB = null; preencherCampos(); return; }
+  aplicarAB(); salvar(); preencherCampos(); atualizar(); // mantém passadas e quadrados que já estavam
+});
 $("ang").addEventListener("change", () => { const v = num($("ang").value); if (!isFinite(v)) { preencherCampos(); return; }
   S.ang = ((v % 360) + 360) % 360; S.rumoFixo = true; ajustarTamanho(); salvar(); preencherCampos(); atualizar(); });
 $("pontoA").addEventListener("change", () => {
   const t = $("pontoA").value.trim();
   if (!t) { S.pontoA = null; S.ancora = ""; salvar(); preencherCampos(); atualizar(); return; }
-  const ns = (t.match(/-?\d+(?:[.,]\d+)?/g) || []).map(x => Number(x.replace(",", ".")));
-  if (ns.length !== 2 || Math.abs(ns[0]) > 90 || Math.abs(ns[1]) > 180) { aviso("Ponto A inválido. Escreva latitude e longitude, por exemplo -17,801234; -50,901234."); preencherCampos(); return; }
-  S.pontoA = ns; salvar(); preencherCampos(); atualizar();
+  const ns = lerCoord(t);
+  if (!ns) { aviso("Ponto A inválido. Escreva latitude e longitude, por exemplo -10,5827557; -55,9401554."); preencherCampos(); return; }
+  S.pontoA = ns; const r = rumoAB();
+  if (r && r.dist < 50) { aviso("Os pontos A e B estão muito perto. Use os pontos das pontas da linha."); S.pontoB = null; }
+  if (rumoAB()) aplicarAB();
+  salvar(); preencherCampos(); atualizar();
   if (MAP) MAP.panTo([ns[0], ns[1]]);
 });
 campoNum("W", "W", 6, 200); campoNum("L", "L", 10, 500); campoNum("nC", "nC", 1, 80, true); campoNum("nR", "nR", 1, 80, true); campoNum("bord", "bord", 0, 200);
@@ -562,6 +594,7 @@ $("unid").addEventListener("change", () => { S.unid = $("unid").value; salvar();
 $("btnAuto").addEventListener("click", () => { if (!talhaoAtual()) { aviso("Escolha o talhão primeiro."); return; } ajustarAoTalhao(); salvar(); preencherCampos(); atualizar(); aviso("Ensaio ajustado ao talhão"); });
 $("btnMedir").addEventListener("click", () => {
   if (!MAP) return;
+  if (rumoAB()) { aviso("O rumo vem dos pontos A e B. Apague o Ponto B para marcar a direção no mapa."); return; }
   if (medir) { medir = null; LM.clearLayers(); $("btnMedir").setAttribute("aria-pressed", "false"); MAP.getContainer().style.cursor = ""; $("mapMsg").textContent = ""; return; }
   medir = []; LM.clearLayers(); $("btnMedir").setAttribute("aria-pressed", "true"); MAP.getContainer().style.cursor = "crosshair";
   $("mapMsg").textContent = "Toque no primeiro ponto, em cima de uma linha de plantio.";
@@ -786,7 +819,7 @@ $("btnCsv").addEventListener("click", () => {
 });
 $("btnGj").addEventListener("click", () => {
   if (!exigirGrade()) return;
-  const gj = {type:"FeatureCollection", properties:{ensaio:S.codigo || null, talhao:S.talhao, rumo_graus:S.ang, ponto_a:S.pontoA, largura_m:S.W, comprimento_m:S.L, bordadura_m:S.bord, unidade:S.unid, tratamentos:S.trats, plano:{centro:S.centro, ang:S.ang, rumoFixo:S.rumoFixo, pontoA:S.pontoA, ancora:S.ancora, pista1:S.pista1, modo:S.modo, W:S.W, L:S.L, nC:S.nC, nR:S.nR, bord:S.bord, unid:S.unid, inverter:S.inverter, semente:S.semente, alvo:S.alvo, codigo:S.codigo, talhao:S.talhao, trats:S.trats}, criado:new Date().toISOString()},
+  const gj = {type:"FeatureCollection", properties:{ensaio:S.codigo || null, talhao:S.talhao, rumo_graus:S.ang, ponto_a:S.pontoA, ponto_b:S.pontoB, largura_m:S.W, comprimento_m:S.L, bordadura_m:S.bord, unidade:S.unid, tratamentos:S.trats, plano:{centro:S.centro, ang:S.ang, rumoFixo:S.rumoFixo, pontoA:S.pontoA, pontoB:S.pontoB, ancora:S.ancora, pista1:S.pista1, modo:S.modo, W:S.W, L:S.L, nC:S.nC, nR:S.nR, bord:S.bord, unid:S.unid, inverter:S.inverter, semente:S.semente, alvo:S.alvo, codigo:S.codigo, talhao:S.talhao, trats:S.trats}, criado:new Date().toISOString()},
     features: GRADE.quads.map(q => ({type:"Feature", properties:{id:q.id || null, passada:q.c, pista_ab:q.pista, posicao:q.r, situacao:q.ok ? "ensaio" : "fora", trat:q.ok ? S.trats[q.ti].cod : null, dose:q.ok && isFinite(num(S.trats[q.ti].dose)) ? num(S.trats[q.ti].dose) : null},
       geometry:{type:"Polygon", coordinates:[fechado(q).map(p => [+p[0].toFixed(8), +p[1].toFixed(8)])]}}))};
   baixar(new Blob([JSON.stringify(gj)], {type:"application/geo+json"}), nomeBase() + ".geojson");
