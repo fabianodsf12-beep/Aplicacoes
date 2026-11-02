@@ -248,6 +248,12 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
             </div>
             <div class="trs" id="trs"></div>
             <div class="dois">
+              <label class="nd-campo">Vazão de calda
+                <span class="un"><input class="nd-inp" id="vazao" inputmode="decimal" placeholder="ex.: 100" autocomplete="off"><span>L/ha</span></span>
+              </label>
+            </div>
+            <p class="dica">Volume de calda por hectare nas zonas aplicadas. Vai na coluna VAZAO dos arquivos de aplicação (0 na testemunha), junto com a DOSE do produto. No Operations Center, escolha qual das duas é a taxa da prescrição.</p>
+            <div class="dois">
               <label class="nd-campo">Unidade da dose
                 <select class="nd-inp" id="unid"><option>L/ha</option><option>mL/ha</option><option>kg/ha</option><option>g/ha</option></select>
               </label>
@@ -363,7 +369,7 @@ const COR = {
 };
 
 /* ---------- estado (guardado no aparelho) ---------- */
-const PADRAO = {talhao:"RT-40", codigo:"", ang:null, alvo:50, W:36, L:72, nC:14, nR:14, bord:36, centro:null, pontoA:null, pontoB:null, abTxt:null, rumoFixo:false, pista1:1, inicioLado:"A", inicioDist:36, posLivre:true, modo:"produtos", unid:"L/ha", inverter:false, semente:1,
+const PADRAO = {talhao:"RT-40", codigo:"", ang:null, alvo:50, W:36, L:72, nC:14, nR:14, bord:36, centro:null, pontoA:null, pontoB:null, abTxt:null, rumoFixo:false, pista1:1, inicioLado:"A", inicioDist:36, posLivre:true, modo:"produtos", unid:"L/ha", vazao:"", inverter:false, semente:1,
   trats:[{cod:"A", nome:"Padrão fazenda", dose:""}, {cod:"T", nome:"Testemunha", dose:"0"}]};
 let S = {...PADRAO};
 try { const g = JSON.parse(lsGet("tabuleiro.plano") || "null"); if (g && typeof g === "object") S = {...PADRAO, ...g}; } catch (e) {}
@@ -624,7 +630,7 @@ $("pista1").value = S.pontoA ? Math.round(S.pista1) : "";
     $("distMenos").setAttribute("aria-label", `Um quadrado para ${sentidoMenos}`); $("distMais").setAttribute("aria-label", `Um quadrado para ${sentidoMais}`); }
   $("alvo").value = fmt(num(S.alvo) || 50, 0);
   $("W").value = fmt(S.W, S.W % 1 ? 1 : 0); $("L").value = fmt(S.L, S.L % 1 ? 1 : 0); $("nC").value = S.nC; $("nR").value = S.nR; $("bord").value = fmt(S.bord, S.bord % 1 ? 1 : 0);
-  $("unid").value = S.unid;
+  $("unid").value = S.unid; $("vazao").value = S.vazao === "" || S.vazao == null ? "" : fmtMax(num(S.vazao), 2);
   renderTrats();
 }
 function renderTrats(){
@@ -671,7 +677,7 @@ function renderResumo(){
   if (!S.pontoA) msgs.push(["aviso", "Sem Ponto A", "Sem o Ponto A da linha AB o ensaio não fica preso às pistas e os arquivos de aplicação ficam bloqueados."]);
   if (S.L < 60) msgs.push(["aviso", "Quadrado curto", "Com menos de 60 m de comprimento o monitor de colheita não estabiliza dentro do quadrado."]);
   if (S.W % 36 && 36 % S.W) msgs.push(["", "Largura fora da barra", "Com desligamento bico a bico o pulverizador acompanha qualquer largura, mas na colheita é melhor que a largura seja múltiplo da plataforma."]);
-  if (S.trats.some(t => !isFinite(num(t.dose)))) msgs.push(["", "Dose em aberto", "O desenho já pode ser baixado em KML e planilha. A prescrição precisa da dose de cada tratamento."]);
+  if (S.trats.some(t => !isFinite(num(t.dose))) || !vazaoOk()) msgs.push(["", "Dose ou vazão em aberto", `Falta ${[S.trats.some(t => !isFinite(num(t.dose))) ? "a dose de algum tratamento" : "", !vazaoOk() ? "a vazão de calda" : ""].filter(Boolean).join(" e ")}. O desenho, o KML, a planilha e o PDF já saem; os arquivos de aplicação só saem com as duas preenchidas.`]);
   av.innerHTML = msgs.map(([c, t, d]) => `<div class="nd-msg ${c}"><svg class="nd-ic" aria-hidden="true"><use href="#i-${c === "erro" ? "circle-x" : c === "aviso" ? "triangle-alert" : "info"}"/></svg><div><b>${t}</b>${d}</div></div>`).join("");
 }
 function atualizar(){
@@ -772,6 +778,9 @@ document.addEventListener("visibilitychange", () => { if (document.hidden && doc
 campoNum("W", "W", 6, 200); campoNum("L", "L", 10, 5000); campoNum("nC", "nC", 1, 80, true); campoNum("nR", "nR", 1, 80, true); campoNum("bord", "bord", 0, 200);
 $("alvo").addEventListener("change", () => { const v = num($("alvo").value); if (isFinite(v) && v > 0) { S.alvo = v; ajustarTamanho(); salvar(); preencherCampos(); atualizar(); } else preencherCampos(); });
 $("codigo").addEventListener("input", () => { S.codigo = $("codigo").value; salvar(); });
+$("vazao").addEventListener("change", () => { const t = $("vazao").value.trim(), v = num(t);
+  if (!t) S.vazao = ""; else if (isFinite(v) && v > 0 && v < 2000) S.vazao = v; else { aviso("Vazão inválida. Use L/ha, por exemplo 100."); }
+  $("vazao").removeAttribute("aria-invalid"); salvar(); preencherCampos(); atualizar(); });
 $("unid").addEventListener("change", () => { S.unid = $("unid").value; salvar(); renderTrats(); atualizar(); });
 $("btnAuto").addEventListener("click", () => { if (!talhaoAtual()) { aviso("Escolha o talhão primeiro."); return; } ajustarAoTalhao(); salvar(); preencherCampos(); atualizar(); aviso("Ensaio ajustado ao talhão"); });
 $("btnMedir").addEventListener("click", () => {
@@ -787,7 +796,7 @@ $("trs").addEventListener("change", e => {
   let v = el.value.trim();
   if (k === "cod") { v = v.toUpperCase().replace(/[^A-Z0-9+]/g, "").slice(0, 4); if (!v || S.trats.some((t, j) => j !== i && t.cod === v)) { aviso("Use um código diferente para cada tratamento."); el.value = S.trats[i].cod; return; } }
   if (k === "dose" && v && !(num(v) >= 0)) { aviso("Dose inválida. Use número, por exemplo 1,5."); el.value = S.trats[i].dose; return; }
-  S.trats[i][k] = v; salvar(); renderTrats(); atualizar();
+  S.trats[i][k] = v; salvar(); renderTrats(); atualizar(); arqMsg("", "");
 });
 $("trs").addEventListener("click", e => { const b = e.target.closest("[data-rm]"); if (!b || S.trats.length <= 2) return; S.trats.splice(+b.dataset.rm, 1); salvar(); renderTrats(); atualizar(); });
 $("btnAddTr").addEventListener("click", () => { if (S.trats.length >= 5) return; const cods = ["A","B","C","D","E"]; const cod = cods.find(c => !S.trats.some(t => t.cod === c));
@@ -913,34 +922,47 @@ function aneisDaZona(ti){
     return ll;
   });
 }
-const CAMPOS_ZONA = () => [{nome:"ZONA", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, ...(S.modo === "doses" ? [{nome:"DOSE", tipo:"N", tam:12, dec:3}] : []), {nome:"UNIDADE", tipo:"C", tam:6},
+const vazaoOk = () => num(S.vazao) > 0;
+function faltaAplicacao(lista){ // trava os arquivos de aplicação: nenhum sai com DOSE ou VAZAO vazios (NULL)
+  const falta = [], campos = [];
+  lista.forEach(t => { const i = S.trats.indexOf(t); if (!isFinite(num(t.dose))) { falta.push(`dose do ${t.cod}${t.nome ? " (" + t.nome + ")" : ""}`); campos.push(document.querySelector(`[data-i="${i}"][data-k="dose"]`)); } });
+  if (!vazaoOk()) { falta.push("vazão de calda"); campos.push($("vazao")); }
+  if (!falta.length) return false;
+  const txt = falta.length > 1 ? falta.slice(0, -1).join(", ") + " e " + falta[falta.length - 1] : falta[0];
+  arqMsg("erro", `<b>Falta preencher ${esc(txt)}</b>No passo 3 Tratamentos. Sem isso a coluna sairia vazia (NULL) no arquivo.`);
+  campos.filter(Boolean).forEach(c => c.setAttribute("aria-invalid", "true"));
+  const c0 = campos.find(Boolean); if (c0) { c0.scrollIntoView({behavior:"smooth", block:"center"}); setTimeout(() => c0.focus({preventScroll:true}), 300); }
+  return true;
+}
+const CAMPOS_ZONA = () => [{nome:"ZONA", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, ...(S.modo === "doses" ? [{nome:"DOSE", tipo:"N", tam:12, dec:3}] : []), {nome:"UNIDADE", tipo:"C", tam:6}, {nome:"VAZAO", tipo:"N", tam:10, dec:2},
   ...S.trats.filter(t => S.modo === "produtos" && !ehTest(t)).map(t => ({nome:("D_" + semAcento(t.cod).replace(/[^A-Za-z0-9]/g, "")).slice(0, 10), tipo:"N", tam:12, dec:3})),
   {nome:"QUADRADOS", tipo:"N", tam:5}, {nome:"AREA_HA", tipo:"N", tam:10, dec:2}];
 function baixarZonas(){
   if (!exigirGrade()) return;
   const prods = S.trats.filter(t => !ehTest(t));
+  if (faltaAplicacao(prods)) return;
   const fe = S.trats.map((t, ti) => {
     const nq = GRADE.quads.filter(q => q.ok && q.ti === ti).length; if (!nq) return null;
-    const d = num(t.dose), props = {ZONA:t.cod, NOME:t.nome || t.cod, DOSE:isFinite(d) ? d : null, UNIDADE:S.unid, QUADRADOS:nq, AREA_HA:nq * GRADE.areaQ};
+    const d = num(t.dose), props = {ZONA:t.cod, NOME:t.nome || t.cod, DOSE:isFinite(d) ? d : null, UNIDADE:S.unid, VAZAO:ehTest(t) ? 0 : num(S.vazao), QUADRADOS:nq, AREA_HA:nq * GRADE.areaQ};
     prods.forEach(pt => { const dp = num(pt.dose); props[("D_" + semAcento(pt.cod).replace(/[^A-Za-z0-9]/g, "")).slice(0, 10)] = pt === t ? (isFinite(dp) ? dp : null) : 0; });
     return {aneis:aneisDaZona(ti), props};
   }).filter(Boolean);
   const b = nomeBase() + "_zonas";
   baixar(zipShp(shapefile(fe, CAMPOS_ZONA()), b), b + ".zip");
-  const semDose = S.trats.some(t => !isFinite(num(t.dose)));
-  arqMsg("", `<b>Zonas baixadas</b>${fe.length} zonas (${fe.map(f => esc(f.props.ZONA)).join(", ")}), uma por tratamento, coluna ZONA. ${semDose ? "Sem dose ainda: defina a dose de cada zona no Operations Center." : "As colunas D_ trazem a dose de cada produto por zona."}${S.modo === "produtos" ? " Cada passada usa uma coluna: D_A na passada do produto A, D_B na do B, e assim por diante." : ""}`);
+  arqMsg("", `<b>Zonas baixadas</b>${fe.length} zonas (${fe.map(f => esc(f.props.ZONA)).join(", ")}), uma por tratamento, coluna ZONA. VAZAO ${fmtMax(num(S.vazao), 2)} L/ha (0 na testemunha). ${S.modo === "produtos" ? "As colunas D_ trazem a dose de cada produto por zona." : "DOSE traz a dose de cada zona."}${S.modo === "produtos" ? " Cada passada usa uma coluna: D_A na passada do produto A, D_B na do B, e assim por diante." : ""}`);
 }
 /* Produtos diferentes: um arquivo por teste, só com a zona dele (os quadrados sorteados para aquele teste) */
 function baixarZonaTeste(ti){
   if (!exigirGrade()) return;
   const t = S.trats[ti], nq = GRADE.quads.filter(q => q.ok && q.ti === ti).length;
   if (!t || !nq) { arqMsg("erro", "<b>Zona vazia</b>Esse teste não tem quadrados dentro do talhão."); return; }
+  if (faltaAplicacao([t])) return;
   const d = num(t.dose), cod = semAcento(t.cod).replace(/[^A-Za-z0-9]/g, "");
-  const fe = [{aneis:aneisDaZona(ti), props:{ZONA:t.cod, NOME:t.nome || t.cod, DOSE:isFinite(d) ? d : null, UNIDADE:S.unid, QUADRADOS:nq, AREA_HA:nq * GRADE.areaQ}}];
-  const campos = [{nome:"ZONA", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, {nome:"DOSE", tipo:"N", tam:12, dec:3}, {nome:"UNIDADE", tipo:"C", tam:6}, {nome:"QUADRADOS", tipo:"N", tam:5}, {nome:"AREA_HA", tipo:"N", tam:10, dec:2}];
+  const fe = [{aneis:aneisDaZona(ti), props:{ZONA:t.cod, NOME:t.nome || t.cod, DOSE:d, UNIDADE:S.unid, VAZAO:num(S.vazao), QUADRADOS:nq, AREA_HA:nq * GRADE.areaQ}}];
+  const campos = [{nome:"ZONA", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, {nome:"DOSE", tipo:"N", tam:12, dec:3}, {nome:"UNIDADE", tipo:"C", tam:6}, {nome:"VAZAO", tipo:"N", tam:10, dec:2}, {nome:"QUADRADOS", tipo:"N", tam:5}, {nome:"AREA_HA", tipo:"N", tam:10, dec:2}];
   const b = nomeBase() + "_zona_" + cod;
   baixar(zipShp(shapefile(fe, campos), b), b + ".zip");
-  arqMsg("", `<b>Zona ${esc(t.cod)} baixada</b>${fmt(nq)} quadrados, ${fmt(nq * GRADE.areaQ, 2)} ha, só do ${esc(t.nome || t.cod)}. ${isFinite(d) ? "Dose " + fmt(d, 2) + " " + esc(S.unid) + " na coluna DOSE." : "Sem dose ainda: informe a dose no Operations Center."} Fora da zona, bicos fechados.`);
+  arqMsg("", `<b>Zona ${esc(t.cod)} baixada</b>${fmt(nq)} quadrados, ${fmt(nq * GRADE.areaQ, 2)} ha, só do ${esc(t.nome || t.cod)}. DOSE ${fmtMax(d, 3)} ${esc(S.unid)} e VAZAO ${fmtMax(num(S.vazao), 2)} L/ha. Fora da zona, bicos fechados.`);
 }
 function renderRxBtns(){
   const ic = '<svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>';
@@ -964,27 +986,27 @@ function travarSemPontoA(){
   $("rxTrava").hidden = !sem;
 }
 $("rxBtns").addEventListener("click", e => { const z = e.target.closest("[data-zona]"); if (z) { baixarZonaTeste(+z.dataset.zona); return; } if (e.target.closest("[data-zonas]")) { baixarZonas(); return; } const b = e.target.closest("[data-rx]"); if (!b) return; if (S.modo === "doses") baixarRxDoses(); else baixarRxProduto(+b.dataset.rx); });
-const CAMPOS_RX = [{nome:"ID", tipo:"N", tam:6}, {nome:"TRAT", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, {nome:"DOSE", tipo:"N", tam:12, dec:3}, {nome:"COLUNA", tipo:"N", tam:4}, {nome:"LINHA", tipo:"N", tam:4}, {nome:"PISTA", tipo:"N", tam:5}];
+const CAMPOS_RX = [{nome:"ID", tipo:"N", tam:6}, {nome:"TRAT", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, {nome:"DOSE", tipo:"N", tam:12, dec:3}, {nome:"VAZAO", tipo:"N", tam:10, dec:2}, {nome:"COLUNA", tipo:"N", tam:4}, {nome:"LINHA", tipo:"N", tam:4}, {nome:"PISTA", tipo:"N", tam:5}];
 const zipShp = (s, b) => zip([{nome:b + ".shp", dados:s.shp}, {nome:b + ".shx", dados:s.shx}, {nome:b + ".dbf", dados:s.dbf}, {nome:b + ".prj", dados:s.prj}]);
 function baixarRxProduto(i){
   if (!exigirGrade()) return;
   const t = S.trats[i]; if (!t) return;
-  if (!isFinite(num(t.dose))) { arqMsg("erro", `<b>Falta dose</b>Informe a dose do tratamento ${esc(t.cod)} para gerar a prescrição dele.`); return; }
+  if (faltaAplicacao([t])) return;
   const fe = GRADE.quads.map(q => ({anel:fechado(q), props: q.ok
-    ? {ID:q.id, TRAT:S.trats[q.ti].cod, NOME:q.ti === i ? t.nome : "Sem aplicacao", DOSE:q.ti === i ? num(t.dose) : 0, COLUNA:q.c, LINHA:q.r, PISTA:q.pista}
-    : {ID:0, TRAT:"BORD", NOME:"Bordadura", DOSE:0, COLUNA:q.c, LINHA:q.r, PISTA:q.pista}}));
+    ? {ID:q.id, TRAT:S.trats[q.ti].cod, NOME:q.ti === i ? t.nome : "Sem aplicacao", DOSE:q.ti === i ? num(t.dose) : 0, VAZAO:q.ti === i ? num(S.vazao) : 0, COLUNA:q.c, LINHA:q.r, PISTA:q.pista}
+    : {ID:0, TRAT:"BORD", NOME:"Bordadura", DOSE:0, VAZAO:0, COLUNA:q.c, LINHA:q.r, PISTA:q.pista}}));
   const b = nomeBase() + "_" + semAcento(t.cod).replace(/[^A-Za-z0-9]/g, "");
   baixar(zipShp(shapefile(fe, CAMPOS_RX), b), b + "_prescricao.zip");
   const nq = GRADE.quads.filter(q => q.ok && q.ti === i).length;
-  arqMsg("", `<b>Prescrição ${esc(t.cod)} baixada</b>${fmt(nq)} quadrados com ${fmt(num(t.dose), 2)} ${esc(S.unid)}; os demais com dose 0.`);
+  arqMsg("", `<b>Prescrição ${esc(t.cod)} baixada</b>${fmt(nq)} quadrados com ${fmt(num(t.dose), 2)} ${esc(S.unid)}; os demais com dose 0. VAZAO ${fmtMax(num(S.vazao), 2)} L/ha nos quadrados dele.`);
 }
 function baixarRxDoses(){
   if (!exigirGrade()) return;
-  if (S.trats.some(t => !isFinite(num(t.dose)))) { arqMsg("erro", "<b>Falta dose</b>Informe a dose de cada tratamento (0 na testemunha) para gerar a prescrição."); return; }
+  if (faltaAplicacao(S.trats)) return;
   const doseBord = (S.trats.find(t => num(t.dose) > 0) || {dose:0}).dose;
   const fe = GRADE.quads.map(q => ({anel:fechado(q), props: q.ok
-    ? {ID:q.id, TRAT:S.trats[q.ti].cod, NOME:S.trats[q.ti].nome, DOSE:num(S.trats[q.ti].dose), COLUNA:q.c, LINHA:q.r, PISTA:q.pista}
-    : {ID:0, TRAT:"BORD", NOME:"Bordadura", DOSE:num(doseBord), COLUNA:q.c, LINHA:q.r, PISTA:q.pista}}));
+    ? {ID:q.id, TRAT:S.trats[q.ti].cod, NOME:S.trats[q.ti].nome, DOSE:num(S.trats[q.ti].dose), VAZAO:ehTest(S.trats[q.ti]) ? 0 : num(S.vazao), COLUNA:q.c, LINHA:q.r, PISTA:q.pista}
+    : {ID:0, TRAT:"BORD", NOME:"Bordadura", DOSE:num(doseBord), VAZAO:num(S.vazao), COLUNA:q.c, LINHA:q.r, PISTA:q.pista}}));
   const b = nomeBase();
   baixar(zipShp(shapefile(fe, CAMPOS_RX), b), b + "_prescricao.zip");
   arqMsg("", `<b>Prescrição baixada</b>${fmt(GRADE.quads.filter(q => q.ok).length)} quadrados do ensaio e ${fmt(GRADE.quads.filter(q => !q.ok).length)} de bordadura (com a dose padrão), coluna DOSE em ${esc(S.unid)}.`);
@@ -1178,8 +1200,9 @@ async function gerarPDF(){
     r.secao("Área de cada teste");
     let totQ = 0, totA = 0;
     const linhas = S.trats.map((tr, i) => { const a = cont[i] * aQ, d = num(tr.dose), pr = isFinite(d) ? d * a : NaN; totQ += cont[i]; totA += a;
-      return [tr.cod, tr.nome || "—", fmt(cont[i]), fmt(a, 2) + " ha", ehTest(tr) ? "0 (sem aplicação)" : isFinite(d) ? fmtMax(d, 3) + " " + S.unid : "a definir", isFinite(pr) && !ehTest(tr) ? fmt(pr, pr < 100 ? 1 : 0) + " " + un : "—"]; });
-    r.tabela({cabecalho:["Código", "Tratamento", "Quadrados", "Área", "Dose", "Produto"], linhas, numericas:[2, 3, 5], total:["", "Total", fmt(totQ), fmt(totA, 2) + " ha", "", ""]});
+      return [tr.cod, tr.nome || "—", fmt(cont[i]), fmt(a, 2) + " ha", ehTest(tr) || !vazaoOk() ? "—" : fmt(num(S.vazao) * a, 0) + " L", ehTest(tr) ? "0 (sem aplicação)" : isFinite(d) ? fmtMax(d, 3) + " " + S.unid : "a definir", isFinite(pr) && !ehTest(tr) ? fmt(pr, pr < 100 ? 1 : 0) + " " + un : "—"]; });
+    const caldaTot = vazaoOk() ? S.trats.reduce((s2, tr, i) => s2 + (ehTest(tr) ? 0 : num(S.vazao) * cont[i] * aQ), 0) : NaN;
+    r.tabela({cabecalho:["Código", "Tratamento", "Quadrados", "Área", "Calda", "Dose", "Produto"], linhas, numericas:[2, 3, 4, 6], total:["", "Total", fmt(totQ), fmt(totA, 2) + " ha", isFinite(caldaTot) ? fmt(caldaTot, 0) + " L" : "", "", ""]});
     r.texto(S.modo === "produtos"
       ? `${prods.length} aplicações, uma por teste, cada uma com o seu produto no tanque e o arquivo da zona daquele teste. A testemunha fica fora de todas as zonas e não recebe nada.`
       : "Uma aplicação só, com a dose mudando de zona para zona (arquivo único com todas as zonas).");
@@ -1193,6 +1216,7 @@ async function gerarPDF(){
       ["Ponto B da linha AB", coordTxt(S.pontoB)],
       ["Rumo da pista", `${fmtMax(S.ang, 4)}°${ab ? ` (calculado por A e B, linha de ${fmt(ab.dist, 0)} m)` : " (digitado)"}`],
       ["Espaçamento entre pistas", `${fmtMax(S.W, 2)} m`],
+      ["Vazão de calda", vazaoOk() ? `${fmtMax(num(S.vazao), 2)} L/ha nas zonas aplicadas (0 na testemunha)` : "não informada"],
       ["Quadrado", `${fmtMax(S.W, 2)} × ${fmtMax(S.L, 2)} m (${fmtMax(aQ, 4)} ha)`],
       ["Pistas do ensaio", x.pIni != null ? `${x.pIni} a ${x.pFim}, ${ladoAnc}` : "sem Ponto A: colunas sem número de pista"],
       ["Início", x.dA == null ? "—" : x.dA >= 0 ? `a ${fmt(x.dA, 0)} m da cabeceira ${x.ladoA} (lado A)` : `${fmt(-x.dA, 0)} m antes da cabeceira ${x.ladoA} (lado A)`],
