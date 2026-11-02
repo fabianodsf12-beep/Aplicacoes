@@ -120,6 +120,29 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
         </div>
 
         <div class="side">
+          <section class="nd-cartao" id="ensaiosBox">
+            <h2>Ensaios</h2>
+            <label class="nd-campo">Ensaios salvos
+              <select class="nd-inp" id="ensSel"><option value="">Carregando…</option></select>
+            </label>
+            <p class="dica" id="ensInfo"></p>
+            <div class="nd-seg" id="ensFiltro" role="group" aria-label="Quais ensaios mostrar na lista">
+              <button type="button" data-v="talhao" aria-pressed="true">Deste talhão</button>
+              <button type="button" data-v="todos" aria-pressed="false">Todos os talhões</button>
+            </div>
+            <div class="acoes-l">
+              <button class="nd-btn nd-onda" type="button" id="btnNovoEnsaio"><svg class="nd-ic gira" aria-hidden="true"><use href="#i-plus"/></svg><span>Novo ensaio</span></button>
+              <button class="nd-btn primario nd-onda" type="button" id="btnSalvarEnsaio"><svg class="nd-ic" aria-hidden="true"><use href="#i-check"/></svg><span>Salvar ensaio</span></button>
+              <button class="nd-btn nd-onda" type="button" id="btnSalvarNovo" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-copy"/></svg>Salvar como novo</button>
+              <button class="nd-btn leve nd-onda" type="button" id="btnApagarEnsaio" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-trash-2"/></svg><span>Apagar ensaio aberto</span></button>
+            </div>
+            <div class="salvar-form" id="ensaioForm" hidden>
+              <label class="nd-campo">Nome do ensaio<input class="nd-inp" id="ensaioNome" autocomplete="off" maxlength="80"></label>
+              <div class="acoes-l"><button class="nd-btn primario nd-onda" type="button" id="ensaioOk">Salvar</button><button class="nd-btn leve nd-onda" type="button" id="ensaioCancel">Cancelar</button></div>
+            </div>
+            <p class="dica" id="ensMsg"></p>
+          </section>
+
           <section class="nd-cartao">
             <h2 class="passo"><span class="n">1</span>Talhão</h2>
             <label class="nd-campo">Talhão do ensaio
@@ -264,29 +287,6 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
               <tbody id="tbTr"></tbody>
             </table></div>
             <div id="avisos" class="trs"></div>
-          </section>
-
-          <section class="nd-cartao" id="ensaiosBox">
-            <h2>Ensaios</h2>
-            <label class="nd-campo">Ensaios salvos
-              <select class="nd-inp" id="ensSel"><option value="">Carregando…</option></select>
-            </label>
-            <p class="dica" id="ensInfo"></p>
-            <div class="nd-seg" id="ensFiltro" role="group" aria-label="Quais ensaios mostrar na lista">
-              <button type="button" data-v="talhao" aria-pressed="true">Deste talhão</button>
-              <button type="button" data-v="todos" aria-pressed="false">Todos os talhões</button>
-            </div>
-            <div class="acoes-l">
-              <button class="nd-btn nd-onda" type="button" id="btnNovoEnsaio"><svg class="nd-ic gira" aria-hidden="true"><use href="#i-plus"/></svg><span>Novo ensaio</span></button>
-              <button class="nd-btn primario nd-onda" type="button" id="btnSalvarEnsaio"><svg class="nd-ic" aria-hidden="true"><use href="#i-check"/></svg><span>Salvar ensaio</span></button>
-              <button class="nd-btn nd-onda" type="button" id="btnSalvarNovo" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-copy"/></svg>Salvar como novo</button>
-              <button class="nd-btn leve nd-onda" type="button" id="btnApagarEnsaio" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-trash-2"/></svg><span>Apagar ensaio aberto</span></button>
-            </div>
-            <div class="salvar-form" id="ensaioForm" hidden>
-              <label class="nd-campo">Nome do ensaio<input class="nd-inp" id="ensaioNome" autocomplete="off" maxlength="80"></label>
-              <div class="acoes-l"><button class="nd-btn primario nd-onda" type="button" id="ensaioOk">Salvar</button><button class="nd-btn leve nd-onda" type="button" id="ensaioCancel">Cancelar</button></div>
-            </div>
-            <p class="dica" id="ensMsg"></p>
           </section>
 
           <section class="nd-cartao">
