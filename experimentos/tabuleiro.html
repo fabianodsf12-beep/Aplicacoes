@@ -46,13 +46,13 @@
 .leg i.ab,.ctl.legmap i.ab{height:0;border:0;border-top:2px dashed var(--muted);border-radius:0;background:transparent}
 details.alt summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:500;color:var(--muted)}
 details.alt .trs{padding-top:var(--space-2)}
-.mover{display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--space-3)}
-.mover .nd-rotulo{flex-basis:100%;color:var(--muted)}
-.setas{display:flex;flex-wrap:wrap;gap:var(--space-2)}
-.setas .nd-btn{padding:0 var(--space-3)}
-.nd-ic.cima{transform:rotate(180deg)}
-.mover .passo{min-width:160px}
-.mover .dica{flex-basis:100%}
+.posicao{display:flex;flex-direction:column;gap:var(--space-3_5);border:1px solid var(--line2);border-radius:var(--radius-xl);padding:var(--space-3) var(--space-3_5) var(--space-3_5)}
+.mais-menos{display:grid;grid-template-columns:52px minmax(0,1fr) 52px;gap:var(--space-2);align-items:center}
+.mais-menos .nd-btn{min-height:48px;padding:0;font-family:var(--font-display);font-size:26px;font-weight:600;line-height:1}
+.mais-menos .nd-inp{text-align:center;font-family:var(--font-display);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.mais-menos .un{display:flex;align-items:center;gap:var(--space-2);min-width:0}
+.mais-menos .un span{color:var(--muted)}
+.posicao[aria-disabled="true"] .mais-menos{opacity:.5}
 #posInfo{margin:0}
 fieldset.ab{border:1px solid var(--line2);border-radius:var(--radius-xl);padding:var(--space-3) var(--space-3_5) var(--space-3_5);margin:0;display:flex;flex-direction:column;gap:var(--space-3);min-width:0}
 fieldset.ab legend{padding:0 var(--space-1);font-weight:600;font-size:14px}
@@ -82,7 +82,7 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 .ctl.legmap i{width:12px;height:12px;border-radius:var(--radius-xs);background:var(--c);flex:0 0 auto;border:1px solid var(--line)}
 .ctl.legmap i.fora{background:transparent;border:1.5px dashed var(--muted)}
 @media (max-width:600px){.ctl.legmap{display:none}} /* no celular a legenda fica embaixo do mapa */
-.centro-ic{width:28px;height:28px;border-radius:var(--radius-pill);background:var(--panel);border:3px solid var(--brand);box-shadow:var(--sombra-2);display:flex;align-items:center;justify-content:center;color:var(--brand);cursor:grab}
+.centro-ic{pointer-events:none;width:28px;height:28px;border-radius:var(--radius-pill);background:var(--panel);border:3px solid var(--brand);box-shadow:var(--sombra-2);display:flex;align-items:center;justify-content:center;color:var(--brand);cursor:grab}
 .centro-ic svg{width:16px;height:16px}
 </style>
 </head>
@@ -114,19 +114,6 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
           <div id="mapa" role="region" aria-label="Mapa do ensaio"></div>
           <p class="mapmsg" id="mapMsg" aria-live="polite">Carregando o mapa dos talhões…</p>
           <div class="leg" id="legenda" aria-label="Legenda"></div>
-          <div class="mover" role="group" aria-label="Mover o ensaio">
-            <span class="nd-rotulo">Mover o ensaio</span>
-            <div class="setas">
-              <button class="nd-btn nd-onda" type="button" id="mvEsq" data-mv="esq" title="Uma pista para o lado"><svg class="nd-ic" aria-hidden="true"><use href="#i-chevron-left"/></svg><span>Oeste</span></button>
-              <button class="nd-btn nd-onda" type="button" id="mvTras" data-mv="tras" title="Um passo para trás"><svg class="nd-ic" aria-hidden="true"><use href="#i-chevron-down"/></svg><span>Sul</span></button>
-              <button class="nd-btn nd-onda" type="button" id="mvFrente" data-mv="frente" title="Um passo para frente"><svg class="nd-ic cima" aria-hidden="true"><use href="#i-chevron-down"/></svg><span>Norte</span></button>
-              <button class="nd-btn nd-onda" type="button" id="mvDir" data-mv="dir" title="Uma pista para o lado"><svg class="nd-ic" aria-hidden="true"><use href="#i-chevron-right"/></svg><span>Leste</span></button>
-            </div>
-            <label class="nd-campo passo">Passo ao longo da pista
-              <select class="nd-inp" id="passo"><option value="5">5 m</option><option value="10">10 m</option><option value="meio">Meio quadrado</option><option value="quad">1 quadrado</option></select>
-            </label>
-            <p class="dica">Para os lados, o ensaio anda uma pista inteira por vez; ao longo da pista, anda o passo escolhido.</p>
-          </div>
           <p class="nd-corpo-pequeno" id="posInfo" aria-live="polite"></p>
         </div>
 
@@ -180,27 +167,35 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
               <p class="dica">Cole cada número no seu campo, com 7 casas decimais. Se colar "latitude, longitude" juntas num campo, o app separa sozinho. O que você cola fica guardado na hora, mesmo saindo da página.</p>
             </fieldset>
             <p class="dica" id="abInfo" hidden></p>
-            <div class="nd-campo" id="ancoraBox" hidden>Posição do ensaio
-              <div class="nd-seg" id="ancora" role="group" aria-label="Posição do ensaio">
-                <button type="button" data-v="" aria-pressed="true">Livre</button>
-                <button type="button" data-v="dir" aria-pressed="false" id="ancDir">À direita da AB</button>
-                <button type="button" data-v="esq" aria-pressed="false" id="ancEsq">À esquerda da AB</button>
+            <div class="posicao" id="posBox">
+              <div class="nd-campo">
+                <label for="pista1">Primeira pista do ensaio</label>
+                <div class="mais-menos">
+                  <button class="nd-btn nd-onda" type="button" data-pista="-1" id="pistaMenos" aria-label="Uma pista para a esquerda">−</button>
+                  <input class="nd-inp" id="pista1" type="number" step="1" inputmode="numeric">
+                  <button class="nd-btn nd-onda" type="button" data-pista="1" id="pistaMais" aria-label="Uma pista para a direita">+</button>
+                </div>
+                <span class="dica" id="pistaDica">Positivo: à direita da linha AB. Negativo: à esquerda. 0: a própria linha AB. Cada toque anda uma pista.</span>
               </div>
-            </div>
-            <label class="nd-campo" id="pista1Box" hidden>Primeira pista do ensaio
-              <input class="nd-inp" id="pista1" inputmode="numeric">
-            </label>
-            <div class="nd-campo">Início ao longo da pista
-              <div class="nd-seg" id="inicioLado" role="group" aria-label="Início do ensaio ao longo da pista">
-                <button type="button" data-v="" aria-pressed="true">Livre</button>
-                <button type="button" data-v="A" aria-pressed="false" id="iniA">Lado A</button>
-                <button type="button" data-v="B" aria-pressed="false" id="iniB">Lado B</button>
+              <div class="nd-campo">
+                <span>Cabeceira de referência</span>
+                <div class="nd-seg" id="inicioLado" role="group" aria-label="Cabeceira de referência">
+                  <button type="button" data-v="A" aria-pressed="true" id="iniA">Lado A</button>
+                  <button type="button" data-v="B" aria-pressed="false" id="iniB">Lado B</button>
+                </div>
               </div>
+              <div class="nd-campo">
+                <label for="inicioDist">Distância da cabeceira</label>
+                <div class="mais-menos">
+                  <button class="nd-btn nd-onda" type="button" data-dist="-1" id="distMenos" aria-label="Um quadrado para trás">−</button>
+                  <span class="un"><input class="nd-inp" id="inicioDist" type="number" step="1" inputmode="numeric"><span>m</span></span>
+                  <button class="nd-btn nd-onda" type="button" data-dist="1" id="distMais" aria-label="Um quadrado para frente">+</button>
+                </div>
+                <span class="dica" id="distDica">Cada toque anda um quadrado ao longo da pista. Cabeceira é onde a primeira pista encontra a divisa ou o carreador.</span>
+              </div>
+              <p class="nd-corpo-pequeno" id="posInfo2" aria-live="polite"></p>
+              <div class="acoes-l"><button class="nd-btn nd-onda" type="button" id="btnCentro"><svg class="nd-ic" aria-hidden="true"><use href="#i-map-pin"/></svg>Centralizar no talhão</button></div>
             </div>
-            <label class="nd-campo" id="inicioDistBox" hidden>Distância da cabeceira
-              <span class="un"><input class="nd-inp" id="inicioDist" inputmode="decimal"><span>m</span></span>
-            </label>
-            <p class="dica">Cabeceira é onde a pista inicial encontra a divisa do talhão ou o carreador, do lado escolhido. Com "Livre", vale a posição do círculo no mapa.</p>
             <p class="dica" id="pontoADica">Latitude e longitude dos pontos A e B da linha no Operations Center, com 7 casas decimais (1 cm). Com A e B o rumo é calculado pelos dois pontos, a mesma reta que o monitor segue; cada coluna do ensaio cai exatamente numa pista e o mapa mostra o número da pista a partir da linha AB. Só com o A, vale o rumo digitado.</p>
             <div class="dois">
               <label class="nd-campo">Espaçamento entre pistas
@@ -219,7 +214,7 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
                 <span class="un"><input class="nd-inp" id="bord" inputmode="decimal"><span>m</span></span>
               </label>
             </div>
-            <p class="dica">O espaçamento entre pistas é a largura do quadrado: 36 m = uma passada da barra do M4030, igual ao da linha AB. Comprimento de 60 m ou mais, por causa do atraso do monitor de colheita. Quadrados a menos que a bordadura da divisa do talhão ficam de fora. Arraste o círculo do mapa para mudar o ensaio de lugar.</p>
+            <p class="dica">O espaçamento entre pistas é a largura do quadrado: 36 m = uma passada da barra do M4030, igual ao da linha AB. Comprimento de 60 m ou mais, por causa do atraso do monitor de colheita. Quadrados a menos que a bordadura da divisa do talhão ficam de fora.</p>
           </section>
 
           <section class="nd-cartao">
@@ -329,10 +324,17 @@ const COR = {
 };
 
 /* ---------- estado (guardado no aparelho) ---------- */
-const PADRAO = {talhao:"RT-40", codigo:"", ang:null, alvo:50, W:36, L:72, nC:14, nR:14, bord:36, centro:null, pontoA:null, pontoB:null, abTxt:null, rumoFixo:false, ancora:"", pista1:1, inicioLado:"", inicioDist:30, passo:"10", modo:"produtos", unid:"L/ha", inverter:false, semente:1,
+const PADRAO = {talhao:"RT-40", codigo:"", ang:null, alvo:50, W:36, L:72, nC:14, nR:14, bord:36, centro:null, pontoA:null, pontoB:null, abTxt:null, rumoFixo:false, pista1:1, inicioLado:"A", inicioDist:36, posLivre:true, modo:"produtos", unid:"L/ha", inverter:false, semente:1,
   trats:[{cod:"A", nome:"Padrão fazenda", dose:""}, {cod:"T", nome:"Testemunha", dose:"0"}]};
 let S = {...PADRAO};
 try { const g = JSON.parse(lsGet("tabuleiro.plano") || "null"); if (g && typeof g === "object") S = {...PADRAO, ...g}; } catch (e) {}
+function migrarPlano(){ // planos salvos antes dos botões − e +: "à direita/à esquerda" vira pista com sinal
+  if (!("ancora" in S)) return;
+  if (S.ancora === "esq") S.pista1 = -((Math.round(S.pista1) || 0) + S.nC - 1);
+  if (S.inicioLado !== "A" && S.inicioLado !== "B") { S.inicioLado = "A"; S.posLivre = true; } else S.posLivre = !S.ancora;
+  delete S.ancora; delete S.passo;
+}
+migrarPlano();
 let importados = [];
 try { importados = JSON.parse(lsGet("tabuleiro.importados") || "[]") || []; } catch (e) { importados = []; }
 const salvar = () => lsSet("tabuleiro.plano", JSON.stringify(S));
@@ -415,19 +417,17 @@ function calcular(){
   let u0 = -S.nR * L / 2, v0 = -S.nC * W / 2, vA = null;
   if (S.pontoA) { // encaixa as colunas nas pistas: o centro de cada coluna fica a um número inteiro de pistas do Ponto A
     const a = P.fwd([S.pontoA[1], S.pontoA[0]]); vA = a[0] * p[0] + a[1] * p[1];
-    const k1 = Math.max(0, Math.round(S.pista1) || 0);
-    if (S.ancora === "dir") v0 = vA + (k1 - 0.5) * W;                    // pistas +k1 ... +k1+nC-1
-    else if (S.ancora === "esq") v0 = vA - (k1 + S.nC - 0.5) * W;        // pistas -(k1+nC-1) ... -k1
+    if (!S.posLivre && isFinite(Math.round(S.pista1))) v0 = vA + (Math.round(S.pista1) - 0.5) * W; // primeira coluna na pista "pista1" (negativa = à esquerda da AB)
     else { let desl = ((vA - (v0 + W / 2)) % W + W) % W; if (desl > W / 2) desl -= W; v0 += desl; }
   }
   // cabeceiras: onde a pista inicial cruza a divisa ou o carreador, atrás (lado A) e à frente (lado B) do centro
-  const refC = S.ancora === "esq" ? S.nC - 1 : 0, vRef = v0 + (refC + 0.5) * W, cortes = [];
+  const refC = 0, vRef = v0 + (refC + 0.5) * W, cortes = [];
   ringsUV.forEach(rg => { for (let i = 1; i < rg.length; i++) { const a = rg[i-1], c2 = rg[i]; if ((a[1] > vRef) !== (c2[1] > vRef)) cortes.push(a[0] + (vRef - a[1]) * (c2[0] - a[0]) / (c2[1] - a[1])); } });
   const atras = cortes.filter(x => x < 0), frente = cortes.filter(x => x > 0);
   const cabA = atras.length ? Math.max(...atras) : null, cabB = frente.length ? Math.min(...frente) : null;
-  const dIni = Math.max(0, num(S.inicioDist) || 0);
-  if (S.inicioLado === "A" && cabA != null) u0 = cabA + dIni;
-  else if (S.inicioLado === "B" && cabB != null) u0 = cabB - dIni - S.nR * L;
+  const dIni = isFinite(num(S.inicioDist)) ? num(S.inicioDist) : 0;
+  if (!S.posLivre && S.inicioLado === "A" && cabA != null) u0 = cabA + dIni;
+  else if (!S.posLivre && S.inicioLado === "B" && cabB != null) u0 = cabB - dIni - S.nR * L;
   const toLL = (u, v) => P.inv([u * d[0] + v * p[0], u * d[1] + v * p[1]]);
   const quads = []; let id = 0;
   for (let c = 0; c < S.nC; c++) for (let r = 0; r < S.nR; r++) {
@@ -443,16 +443,26 @@ function calcular(){
   GRADE = {quads, vA, toLL, u0, v0, cabA, cabB, refC, P, d, p, areaQ: W * L / 1e4, areaTal: areaRings(ringsXY) / 1e4,
     extU: Math.max(...uvs.map(q => q[0])) - Math.min(...uvs.map(q => q[0])), extV: Math.max(...uvs.map(q => q[1])) - Math.min(...uvs.map(q => q[1]))};
 }
+function fixarPosicaoAtual(){ // transforma a posição atual (centrada) em pista inicial e distância da cabeceira
+  S.posLivre = true; calcular();
+  if (GRADE) {
+    if (S.pontoA && GRADE.vA != null) S.pista1 = Math.round((GRADE.v0 + S.W / 2 - GRADE.vA) / S.W);
+    if (S.inicioLado !== "B") S.inicioLado = "A";
+    const cab = S.inicioLado === "A" ? GRADE.cabA : GRADE.cabB;
+    if (cab != null) S.inicioDist = Math.round(S.inicioLado === "A" ? GRADE.u0 - cab : cab - (GRADE.u0 + S.nR * S.L));
+  }
+  S.posLivre = !S.pontoA; calcular();
+}
 function ajustarAoTalhao(){
   const t = talhaoAtual(); if (!t) return;
   const lat0 = t.rings[0][0][1], lon0 = t.rings[0][0][0], P = projecao(lat0, lon0);
   const xy = t.rings.map(r => r.map(P.fwd));
   if (!S.rumoFixo || S.ang == null || !isFinite(S.ang)) { S.ang = direcaoDominante(xy); S.rumoFixo = false; }
   S.centro = (([x, y]) => { const ll = P.inv([x, y]); return [ll[1], ll[0]]; })(pontoInterno(xy));
-  ajustarTamanho();
+  S.posLivre = true; ajustarTamanho(); fixarPosicaoAtual();
 }
 function ajustarTamanho(){ // passadas e quadrados proporcionais à forma do talhão no rumo atual, perto da área alvo
-  calcular(); if (!GRADE) return;
+  const livre = S.posLivre; S.posLivre = true; calcular(); S.posLivre = livre; if (!GRADE) return;
   const A = Math.max(1, num(S.alvo) || 50) * 1e4, Lu = Math.max(GRADE.extU - 2 * S.bord, S.L * 2), Lv = Math.max(GRADE.extV - 2 * S.bord, S.W * 2);
   let nC = Math.round(Math.sqrt(A * Lv / Lu) / S.W); nC = Math.max(2, Math.min(nC, Math.floor(Lv / S.W)));
   let nR = Math.round(A / (nC * S.W) / S.L); nR = Math.max(2, Math.min(nR, Math.floor(Lu / S.L)));
@@ -506,19 +516,21 @@ const lado = a => LADOS[Math.round((((a % 360) + 360) % 360) / 45) % 8];
 function posicao(){ // onde o ensaio começa e termina, para conferir e para o operador
   if (!GRADE) return null;
   const ok = GRADE.quads.filter(q => q.ok); if (!ok.length) return null;
-  const uIni = Math.min(...ok.map(q => q.ua)), uFim = Math.max(...ok.map(q => q.ub));
-  const ps = ok.map(q => q.pista).filter(x => x != null);
+  // o ensaio inteiro (inclusive quadrados que caem fora), para bater com os números dos botões − e +
+  const uIni = GRADE.u0, uFim = GRADE.u0 + S.nR * S.L;
+  const ps = GRADE.quads.map(q => q.pista).filter(x => x != null);
   return {uIni, uFim, comp:uFim - uIni, pIni: ps.length ? Math.min(...ps) : null, pFim: ps.length ? Math.max(...ps) : null,
-    cols:[Math.min(...ok.map(q => q.c)), Math.max(...ok.map(q => q.c))],
+    cols:[1, S.nC],
     dA: GRADE.cabA != null ? uIni - GRADE.cabA : null, dB: GRADE.cabB != null ? GRADE.cabB - uFim : null,
     ladoA: lado(S.ang + 180), ladoB: lado(S.ang), ladoDir: lado(S.ang + 90), ladoEsq: lado(S.ang - 90)};
 }
 function textoPosicao(){
   const x = posicao(); if (!x) return "";
   const pistas = x.pIni != null ? `Pistas ${x.pIni} a ${x.pFim} da linha AB` : `Passadas ${x.cols[0]} a ${x.cols[1]} (sem Ponto A, sem encaixe nas pistas)`;
-  const ini = x.dA != null ? `começa a ${fmt(x.dA, 0)} m da cabeceira ${x.ladoA} (lado A)` : "começa sem cabeceira encontrada no lado A";
-  const fim = x.dB != null ? `termina a ${fmt(x.dB, 0)} m da cabeceira ${x.ladoB} (lado B)` : "termina sem cabeceira encontrada no lado B";
-  return `${pistas}; ${ini} e ${fim}. Comprimento de ${fmt(x.comp, 0)} m.`;
+  const ini = x.dA == null ? "começa sem cabeceira encontrada no lado A" : x.dA >= 0 ? `começa a ${fmt(x.dA, 0)} m da cabeceira ${x.ladoA} (lado A)` : `começa ${fmt(-x.dA, 0)} m antes da cabeceira ${x.ladoA} (lado A)`;
+  const fim = x.dB == null ? "termina sem cabeceira encontrada no lado B" : x.dB >= 0 ? `termina a ${fmt(x.dB, 0)} m da cabeceira ${x.ladoB} (lado B)` : `termina ${fmt(-x.dB, 0)} m depois da cabeceira ${x.ladoB} (lado B)`;
+  const fora = GRADE.quads.length - GRADE.quads.filter(q => q.ok).length;
+  return `${pistas}; ${ini} e ${fim}. Comprimento de ${fmt(x.comp, 0)} m. ${fmt(GRADE.quads.length - fora)} quadrados dentro${fora ? `, ${fmt(fora)} fora do talhão (tracejados)` : ", nenhum fora"}.`;
 }
 function corTrat(i){ const t = S.trats[i]; if (!t) return COR.test; if (ehTest(t)) return COR.test; let k = 0; for (let j = 0; j < i; j++) if (num(S.trats[j].dose) !== 0) k++; return COR.trat[k % 4]; }
 function desenharGrade(){
@@ -539,25 +551,10 @@ function desenharGrade(){
     L.circleMarker(S.pontoA, {radius:6, color:COR.branco, weight:2, fillColor:COR.limite, fillOpacity:1}).bindTooltip("Ponto A da linha AB").addTo(LB);
     if (S.pontoB) L.circleMarker(S.pontoB, {radius:6, color:COR.branco, weight:2, fillColor:COR.limite, fillOpacity:1}).bindTooltip("Ponto B da linha AB").addTo(LB);
   }
-  const ic = L.divIcon({className:"", html:'<div class="centro-ic" title="Arraste para mudar o ensaio de lugar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 2v20M2 12h20M12 2l-3 3M12 2l3 3M12 22l-3-3M12 22l3-3M2 12l3-3M2 12l3 3M22 12l-3-3M22 12l-3 3"/></svg></div>', iconSize:[28,28], iconAnchor:[14,14]});
-  MK = L.marker(S.centro, {draggable:true, icon:ic, keyboard:true, title:"Centro do ensaio", alt:"Centro do ensaio"}).addTo(LB);
-  MK.on("dragend", soltarCentro);
+  const ic = L.divIcon({className:"", html:'<div class="centro-ic" title="Centro do ensaio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 2v20M2 12h20M12 2l-3 3M12 2l3 3M12 22l-3-3M12 22l3-3M2 12l3-3M2 12l3 3M22 12l-3-3M22 12l-3 3"/></svg></div>', iconSize:[28,28], iconAnchor:[14,14]});
+  const cc = GRADE.toLL(GRADE.u0 + S.nR * S.L / 2, GRADE.v0 + S.nC * S.W / 2);
+  MK = L.marker([cc[1], cc[0]], {interactive:false, keyboard:false, icon:ic}).addTo(LB);
   if (MAP.getZoom() >= 17) LR.addTo(MAP);
-}
-function soltarCentro(){
-  const p = MK.getLatLng(), G = GRADE;
-  if (G) { // posição solta no sistema da grade atual (u ao longo da pista, v para os lados)
-    const q = G.P.fwd([p.lng, p.lat]), uS = q[0] * G.d[0] + q[1] * G.d[1], vS = q[0] * G.p[0] + q[1] * G.p[1];
-    if (S.pontoA && G.vA != null && S.ancora) { const pc = (vS - G.vA) / S.W, meio = (S.nC - 1) / 2;
-      S.pista1 = Math.max(0, Math.round(S.ancora === "dir" ? pc - meio : -pc - meio)); }
-    if (S.inicioLado === "A" && G.cabA != null) S.inicioDist = Math.max(0, Math.round(uS - S.nR * S.L / 2 - G.cabA));
-    if (S.inicioLado === "B" && G.cabB != null) S.inicioDist = Math.max(0, Math.round(G.cabB - (uS + S.nR * S.L / 2)));
-  }
-  S.centro = [p.lat, p.lng]; atualizar(); centralizarCirculo(); salvar(); preencherCampos(); atualizar();
-  $("mapMsg").textContent = S.pontoA ? "Ensaio encaixado nas pistas da linha AB. " + textoPosicao() : "Sem o Ponto A o ensaio não encaixa nas pistas. Informe o Ponto A da linha AB.";
-}
-function centralizarCirculo(){ // leva o círculo para o centro real do ensaio (depois do encaixe nas pistas)
-  if (!GRADE) return; const ll = GRADE.toLL(GRADE.u0 + S.nR * S.L / 2, GRADE.v0 + S.nC * S.W / 2); S.centro = [ll[1], ll[0]];
 }
 function enquadrar(){
   if (!MAP) return;
@@ -574,15 +571,18 @@ function preencherCampos(){
   preencherAB();
   $("abInfo").hidden = !ab;
   if (ab) $("abInfo").textContent = `Rumo calculado pelos pontos A e B: ${fmtMax(ab.ang, 4)} graus, linha de ${fmt(ab.dist, 0)} m. Compare com o rumo do Operations Center. Para digitar o rumo, apague o Ponto B.`;
-  $("ancoraBox").hidden = !S.pontoA; $("pista1Box").hidden = !S.pontoA || !S.ancora; $("pista1").value = S.pista1;
+  const semA = !S.pontoA; $("posBox").setAttribute("aria-disabled", String(semA)); ["pista1", "pistaMenos", "pistaMais"].forEach(k => { $(k).disabled = semA; });
+  if (semA) $("pistaDica").textContent = "Informe o Ponto A da linha AB para posicionar o ensaio pelas pistas.";
+$("pista1").value = S.pontoA ? Math.round(S.pista1) : "";
   [...$("inicioLado").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === S.inicioLado)));
-  $("inicioDistBox").hidden = !S.inicioLado; $("inicioDist").value = fmt(num(S.inicioDist) || 0, 0); $("passo").value = S.passo;
-  [...$("ancora").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === (S.pontoA ? S.ancora : ""))));
+  $("inicioDist").value = Math.round(num(S.inicioDist) || 0);
   if (S.ang != null) {
     $("iniA").textContent = `Lado A (${lado(S.ang + 180)})`; $("iniB").textContent = `Lado B (${lado(S.ang)})`;
-    $("mvEsq").querySelector("span").textContent = cap(lado(S.ang - 90)); $("mvDir").querySelector("span").textContent = cap(lado(S.ang + 90));
-    $("mvTras").querySelector("span").textContent = cap(lado(S.ang + 180)); $("mvFrente").querySelector("span").textContent = cap(lado(S.ang));
-    $("ancDir").textContent = `À direita (${lado(S.ang + 90)})`; $("ancEsq").textContent = `À esquerda (${lado(S.ang - 90)})`; }
+    if (!semA) $("pistaDica").textContent = `Positivo: à direita (${lado(S.ang + 90)}) da linha AB. Negativo: à esquerda (${lado(S.ang - 90)}). 0: a própria linha AB. Cada toque anda uma pista (${fmtMax(S.W, 2)} m).`;
+    $("pistaMenos").setAttribute("aria-label", `Uma pista para ${lado(S.ang - 90)}`); $("pistaMais").setAttribute("aria-label", `Uma pista para ${lado(S.ang + 90)}`);
+    const sentidoMais = S.inicioLado === "B" ? lado(S.ang + 180) : lado(S.ang), sentidoMenos = S.inicioLado === "B" ? lado(S.ang) : lado(S.ang + 180);
+    $("distDica").textContent = `+ afasta da cabeceira (${sentidoMais}), − aproxima (${sentidoMenos}). Cada toque anda um quadrado (${fmtMax(S.L, 2)} m). Aceita número negativo.`;
+    $("distMenos").setAttribute("aria-label", `Um quadrado para ${sentidoMenos}`); $("distMais").setAttribute("aria-label", `Um quadrado para ${sentidoMais}`); }
   $("alvo").value = fmt(num(S.alvo) || 50, 0);
   $("W").value = fmt(S.W, S.W % 1 ? 1 : 0); $("L").value = fmt(S.L, S.L % 1 ? 1 : 0); $("nC").value = S.nC; $("nR").value = S.nR; $("bord").value = fmt(S.bord, S.bord % 1 ? 1 : 0);
   $("unid").value = S.unid;
@@ -637,7 +637,7 @@ function renderResumo(){
 }
 function atualizar(){
   calcular(); desenharGrade(); renderLegenda(); renderResumo(); renderRxBtns(); travarSemPontoA();
-  $("posInfo").textContent = textoPosicao();
+  $("posInfo").textContent = $("posInfo2").textContent = textoPosicao();
   const t = talhaoAtual();
   $("talInfo").textContent = t && GRADE ? `${t.nome}: ${fmt(GRADE.areaTal, 2)} ha${t.origem === "importado" ? " (limite importado)" : ""}.` : "";
 }
@@ -645,7 +645,7 @@ function escolherTalhao(nome, ajustar){
   S.talhao = nome; $("talhao").value = nome;
   if (ajustar) { S.ang = null; S.rumoFixo = false; S.pontoA = null; S.pontoB = null; S.abTxt = null; ajustarAoTalhao(); }
   salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar();
-  $("mapMsg").textContent = "Arraste o círculo para mudar o ensaio de lugar. Toque num quadrado para ver o tratamento.";
+  $("mapMsg").textContent = "Mova o ensaio com os botões − e + da pista e da distância da cabeceira. Toque num quadrado para ver o tratamento.";
 }
 function preencherLista(){ // agrupa por bloco quando os limites trazem o bloco (FARM_NAME)
   const ord = (a, b) => a.localeCompare(b, "pt-BR", {numeric:true}), opt = n => `<option${n === S.talhao ? " selected" : ""}>${esc(n)}</option>`;
@@ -707,11 +707,13 @@ function aplicarPontosAB(avisar){
   S.abTxt = textoAB();
   const a = pontoDe(S.abTxt.aLat, S.abTxt.aLon), b = pontoDe(S.abTxt.bLat, S.abTxt.bLon);
   const antes = JSON.stringify([S.pontoA, S.pontoB]);
-  if (a !== false) { S.pontoA = a; if (!a) S.ancora = ""; }
+  const tinhaA = !!S.pontoA;
+  if (a !== false) { S.pontoA = a; if (!a) S.posLivre = true; }
   if (b !== false) S.pontoB = b;
   const r = rumoAB();
   if (r && r.dist < 50) { if (avisar) aviso("Os pontos A e B estão a menos de 50 m. Use os pontos das pontas da linha."); S.pontoB = null; }
   if (rumoAB()) aplicarAB();
+  if (S.pontoA && !tinhaA) fixarPosicaoAtual();
   salvar(); estadoAB();
   if (JSON.stringify([S.pontoA, S.pontoB]) !== antes) { preencherCampos(); atualizar(); if (a && avisar && MAP && !MAP.getBounds().contains([a[0], a[1]])) MAP.panTo([a[0], a[1]]); }
 }
@@ -750,31 +752,21 @@ $("trs").addEventListener("click", e => { const b = e.target.closest("[data-rm]"
 $("btnAddTr").addEventListener("click", () => { if (S.trats.length >= 5) return; const cods = ["A","B","C","D","E"]; const cod = cods.find(c => !S.trats.some(t => t.cod === c));
   S.trats.splice(S.trats.length - (S.trats.some(t => num(t.dose) === 0) ? 1 : 0), 0, {cod, nome:"", dose:""}); salvar(); renderTrats(); atualizar(); });
 $("modo").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.modo = b.dataset.v; salvar(); renderTrats(); atualizar(); });
-$("ancora").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.ancora = b.dataset.v; salvar(); preencherCampos(); atualizar(); });
-$("pista1").addEventListener("change", () => { const v = Math.round(num($("pista1").value)); if (isFinite(v) && v >= 0 && v < 500) S.pista1 = v; salvar(); preencherCampos(); atualizar(); });
-$("inicioLado").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.inicioLado = b.dataset.v; salvar(); preencherCampos(); atualizar(); });
-$("inicioDist").addEventListener("change", () => { const v = num($("inicioDist").value); if (isFinite(v) && v >= 0) S.inicioDist = v; salvar(); preencherCampos(); atualizar(); });
-$("passo").addEventListener("change", () => { S.passo = $("passo").value; salvar(); });
-function moverCentro(du, dv){ // metros ao longo da pista (du) e para os lados (dv)
-  if (!S.centro) return; const P = projecao(S.centro[0], S.centro[1]), {d, p} = eixos(S.ang);
-  const ll = P.inv([du * d[0] + dv * p[0], du * d[1] + dv * p[1]]); S.centro = [ll[1], ll[0]];
-}
-document.querySelector(".setas").addEventListener("click", e => {
-  const b = e.target.closest("[data-mv]"); if (!b || !talhaoAtual() || S.ang == null) return;
-  const passo = S.passo === "meio" ? S.L / 2 : S.passo === "quad" ? S.L : Number(S.passo) || 10, mv = b.dataset.mv;
-  if (mv === "esq" || mv === "dir") {
-    const sentido = mv === "dir" ? 1 : -1;
-    if (S.pontoA && S.ancora === "dir") S.pista1 = Math.max(0, (Math.round(S.pista1) || 0) + sentido);
-    else if (S.pontoA && S.ancora === "esq") S.pista1 = Math.max(0, (Math.round(S.pista1) || 0) - sentido);
-    else moverCentro(0, sentido * S.W);
-  } else {
-    const sentido = mv === "frente" ? 1 : -1;
-    if (S.inicioLado === "A") S.inicioDist = Math.max(0, (num(S.inicioDist) || 0) + sentido * passo);
-    else if (S.inicioLado === "B") S.inicioDist = Math.max(0, (num(S.inicioDist) || 0) - sentido * passo);
-    else moverCentro(sentido * passo, 0);
+function mudouPosicao(){ S.posLivre = !S.pontoA; salvar(); preencherCampos(); atualizar(); }
+$("pista1").addEventListener("change", () => { const v = Math.round(num($("pista1").value)); if (isFinite(v) && Math.abs(v) < 1000) S.pista1 = v; mudouPosicao(); });
+$("inicioDist").addEventListener("change", () => { const v = num($("inicioDist").value); if (isFinite(v) && Math.abs(v) < 20000) S.inicioDist = Math.round(v); mudouPosicao(); });
+$("posBox").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b || b.disabled) return;
+  if (b.dataset.pista) { S.pista1 = (Math.round(S.pista1) || 0) + Number(b.dataset.pista); mudouPosicao(); }
+  else if (b.dataset.dist) { S.inicioDist = Math.round((num(S.inicioDist) || 0) + Number(b.dataset.dist) * S.L); mudouPosicao(); }
+  else if (b.dataset.v) { // troca a cabeceira de referência sem mexer o ensaio de lugar
+    if (b.dataset.v !== S.inicioLado) { const x = posicao(); S.inicioLado = b.dataset.v; const dist = S.inicioLado === "A" ? x && x.dA : x && x.dB; if (dist != null) S.inicioDist = Math.round(dist); }
+    mudouPosicao();
   }
-  salvar(); preencherCampos(); atualizar();
 });
+$("btnCentro").addEventListener("click", () => { if (!talhaoAtual()) return; const t = talhaoAtual(), P = projecao(t.rings[0][0][1], t.rings[0][0][0]);
+  S.centro = (([x, y]) => { const ll = P.inv([x, y]); return [ll[1], ll[0]]; })(pontoInterno(t.rings.map(r => r.map(P.fwd))));
+  fixarPosicaoAtual(); salvar(); preencherCampos(); atualizar(); aviso("Ensaio no centro do talhão"); });
 $("btnInverter").addEventListener("click", () => { S.inverter = !S.inverter; salvar(); atualizar(); });
 $("btnSortear").addEventListener("click", () => { S.semente = (S.semente % 9999) + 1; salvar(); atualizar(); aviso("Novo sorteio feito"); });
 
@@ -987,7 +979,7 @@ $("btnCsv").addEventListener("click", () => {
 });
 $("btnGj").addEventListener("click", () => {
   if (!exigirGrade()) return;
-  const gj = {type:"FeatureCollection", properties:{ensaio:S.codigo || null, talhao:S.talhao, rumo_graus:S.ang, ponto_a:S.pontoA, ponto_b:S.pontoB, largura_m:S.W, comprimento_m:S.L, bordadura_m:S.bord, unidade:S.unid, tratamentos:S.trats, plano:{centro:S.centro, ang:S.ang, rumoFixo:S.rumoFixo, pontoA:S.pontoA, pontoB:S.pontoB, ancora:S.ancora, pista1:S.pista1, modo:S.modo, W:S.W, L:S.L, nC:S.nC, nR:S.nR, bord:S.bord, unid:S.unid, inverter:S.inverter, semente:S.semente, alvo:S.alvo, codigo:S.codigo, talhao:S.talhao, trats:S.trats}, criado:new Date().toISOString()},
+  const gj = {type:"FeatureCollection", properties:{ensaio:S.codigo || null, talhao:S.talhao, rumo_graus:S.ang, ponto_a:S.pontoA, ponto_b:S.pontoB, largura_m:S.W, comprimento_m:S.L, bordadura_m:S.bord, unidade:S.unid, tratamentos:S.trats, plano:{centro:S.centro, ang:S.ang, rumoFixo:S.rumoFixo, pontoA:S.pontoA, pontoB:S.pontoB, pista1:S.pista1, inicioLado:S.inicioLado, inicioDist:S.inicioDist, posLivre:S.posLivre, modo:S.modo, W:S.W, L:S.L, nC:S.nC, nR:S.nR, bord:S.bord, unid:S.unid, inverter:S.inverter, semente:S.semente, alvo:S.alvo, codigo:S.codigo, talhao:S.talhao, trats:S.trats}, criado:new Date().toISOString()},
     features: GRADE.quads.map(q => ({type:"Feature", properties:{id:q.id || null, passada:q.c, pista_ab:q.pista, posicao:q.r, situacao:q.ok ? "ensaio" : "fora", trat:q.ok ? S.trats[q.ti].cod : null, dose:q.ok && isFinite(num(S.trats[q.ti].dose)) ? num(S.trats[q.ti].dose) : null},
       geometry:{type:"Polygon", coordinates:[fechado(q).map(p => [+p[0].toFixed(8), +p[1].toFixed(8)])]}}))};
   baixar(new Blob([JSON.stringify(gj)], {type:"application/geo+json"}), nomeBase() + ".geojson");
@@ -1031,7 +1023,7 @@ async function gerarPDF(){
     r.secao("Referências da linha AB e do ensaio");
     const cantos = (() => { const uI = x.uIni, uF = x.uFim, vI = Math.min(...ok.map(q => q.va)), vF = Math.max(...ok.map(q => q.vb)), f = (u, v) => { const ll = GRADE.toLL(u, v); return [ll[1], ll[0]]; };
       return [["Canto início, lado " + x.ladoEsq, f(uI, vI)], ["Canto início, lado " + x.ladoDir, f(uI, vF)], ["Canto fim, lado " + x.ladoDir, f(uF, vF)], ["Canto fim, lado " + x.ladoEsq, f(uF, vI)]]; })();
-    const ladoAnc = S.ancora === "dir" ? `à direita (${x.ladoDir}) da linha AB` : S.ancora === "esq" ? `à esquerda (${x.ladoEsq}) da linha AB` : "posição livre, encaixada nas pistas";
+    const ladoAnc = x.pIni == null ? "" : x.pIni >= 0 ? `à direita (${x.ladoDir}) da linha AB` : x.pFim <= 0 ? `à esquerda (${x.ladoEsq}) da linha AB` : "dos dois lados da linha AB";
     r.tabela({cabecalho:["Item", "Valor"], linhas:[
       ["Ponto A da linha AB", coordTxt(S.pontoA)],
       ["Ponto B da linha AB", coordTxt(S.pontoB)],
@@ -1039,8 +1031,8 @@ async function gerarPDF(){
       ["Espaçamento entre pistas", `${fmtMax(S.W, 2)} m`],
       ["Quadrado", `${fmtMax(S.W, 2)} × ${fmtMax(S.L, 2)} m (${fmtMax(aQ, 4)} ha)`],
       ["Pistas do ensaio", x.pIni != null ? `${x.pIni} a ${x.pFim}, ${ladoAnc}` : "sem Ponto A: colunas sem número de pista"],
-      ["Início", x.dA != null ? `a ${fmt(x.dA, 0)} m da cabeceira ${x.ladoA} (lado A)` : "—"],
-      ["Fim", x.dB != null ? `a ${fmt(x.dB, 0)} m da cabeceira ${x.ladoB} (lado B); comprimento de ${fmt(x.comp, 0)} m` : `comprimento de ${fmt(x.comp, 0)} m`],
+      ["Início", x.dA == null ? "—" : x.dA >= 0 ? `a ${fmt(x.dA, 0)} m da cabeceira ${x.ladoA} (lado A)` : `${fmt(-x.dA, 0)} m antes da cabeceira ${x.ladoA} (lado A)`],
+      ["Fim", (x.dB == null ? "" : x.dB >= 0 ? `a ${fmt(x.dB, 0)} m da cabeceira ${x.ladoB} (lado B); ` : `${fmt(-x.dB, 0)} m depois da cabeceira ${x.ladoB} (lado B); `) + `comprimento de ${fmt(x.comp, 0)} m`],
       ["Bordadura", `${fmtMax(S.bord, 2)} m da divisa e dos carreadores`],
       ...cantos.map(([n, c]) => [n, coordTxt(c)])]});
     if (!S.pontoA) r.texto("Atenção: sem o Ponto A da linha AB, este croqui não está preso às pistas do pulverizador. Informe o Ponto A antes de gerar os arquivos de aplicação.");
@@ -1252,7 +1244,7 @@ $("arqLimite").addEventListener("change", async e => {
   const f = e.target.files[0]; e.target.value = ""; if (!f) return;
   try { const n = await importar(f);
     if (n.plano) { const pl = n.plano; if (!TALHOES.some(t => t.nome === pl.talhao)) throw new Error(`O plano é do talhão ${pl.talhao}, que não está no mapa. Importe o limite dele primeiro.`);
-      S = {...PADRAO, ...pl}; salvar(); escolherTalhao(pl.talhao, false); aviso(`Plano ${pl.codigo || pl.talhao} reaberto`); return; }
+      S = {...PADRAO, ...pl}; migrarPlano(); salvar(); escolherTalhao(pl.talhao, false); aviso(`Plano ${pl.codigo || pl.talhao} reaberto`); return; }
     preencherLista(); desenharTalhoes(); escolherTalhao(n[0].nome, true); aviso(n.length > 1 ? `${n.length} limites importados` : `Limite ${n[0].nome} importado`); }
   catch (err) { aviso(err.message || "Não consegui ler o arquivo."); $("talInfo").textContent = err.message || "Não consegui ler o arquivo."; }
 });
@@ -1283,8 +1275,8 @@ async function carregarMapa(){
   juntarTalhoes(faz); preencherLista(); desenharTalhoes();
   if (!TALHOES.length) { $("mapMsg").textContent = "Não consegui carregar o mapa da fazenda. Importe o limite do talhão em shapefile, GeoPackage, KML ou GeoJSON."; renderLegenda(); renderResumo(); return; }
   const t = talhaoAtual();
-  if (t) { if (!S.centro || S.ang == null) ajustarAoTalhao(); salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar();
-    $("mapMsg").textContent = "Arraste o círculo para mudar o ensaio de lugar. Toque num quadrado para ver o tratamento."; }
+  if (t) { if (!S.centro || S.ang == null) ajustarAoTalhao(); else if (S.posLivre && S.pontoA) fixarPosicaoAtual(); salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar();
+    $("mapMsg").textContent = "Mova o ensaio com os botões − e + da pista e da distância da cabeceira. Toque num quadrado para ver o tratamento."; }
   else { $("mapMsg").textContent = `${S.talhao ? S.talhao + " não está no mapa da fazenda. " : ""}Escolha o talhão na lista ou toque nele no mapa.`;
     if (MAP && TALHOES.length) MAP.fitBounds(L.latLngBounds(TALHOES.flatMap(x => x.rings.flat().map(p => [p[1], p[0]]))), {padding:[8,8]}); renderLegenda(); renderResumo(); }
 })();
