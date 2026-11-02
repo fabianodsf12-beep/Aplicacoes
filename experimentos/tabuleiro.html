@@ -46,6 +46,14 @@
 .leg i.ab,.ctl.legmap i.ab{height:0;border:0;border-top:2px dashed var(--muted);border-radius:0;background:transparent}
 details.alt summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:500;color:var(--muted)}
 details.alt .trs{padding-top:var(--space-2)}
+.mover{display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--space-3)}
+.mover .nd-rotulo{flex-basis:100%;color:var(--muted)}
+.setas{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.setas .nd-btn{padding:0 var(--space-3)}
+.nd-ic.cima{transform:rotate(180deg)}
+.mover .passo{min-width:160px}
+.mover .dica{flex-basis:100%}
+#posInfo{margin:0}
 .passos-jd{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:var(--space-2);font-size:15px}
 .mapmsg{font-size:14px;color:var(--muted);margin:0;min-height:20px}
 .modo{display:none}
@@ -97,6 +105,20 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
           <div id="mapa" role="region" aria-label="Mapa do ensaio"></div>
           <p class="mapmsg" id="mapMsg" aria-live="polite">Carregando o mapa dos talhões…</p>
           <div class="leg" id="legenda" aria-label="Legenda"></div>
+          <div class="mover" role="group" aria-label="Mover o ensaio">
+            <span class="nd-rotulo">Mover o ensaio</span>
+            <div class="setas">
+              <button class="nd-btn nd-onda" type="button" id="mvEsq" data-mv="esq" title="Uma pista para o lado"><svg class="nd-ic" aria-hidden="true"><use href="#i-chevron-left"/></svg><span>Oeste</span></button>
+              <button class="nd-btn nd-onda" type="button" id="mvTras" data-mv="tras" title="Um passo para trás"><svg class="nd-ic" aria-hidden="true"><use href="#i-chevron-down"/></svg><span>Sul</span></button>
+              <button class="nd-btn nd-onda" type="button" id="mvFrente" data-mv="frente" title="Um passo para frente"><svg class="nd-ic cima" aria-hidden="true"><use href="#i-chevron-down"/></svg><span>Norte</span></button>
+              <button class="nd-btn nd-onda" type="button" id="mvDir" data-mv="dir" title="Uma pista para o lado"><svg class="nd-ic" aria-hidden="true"><use href="#i-chevron-right"/></svg><span>Leste</span></button>
+            </div>
+            <label class="nd-campo passo">Passo ao longo da pista
+              <select class="nd-inp" id="passo"><option value="5">5 m</option><option value="10">10 m</option><option value="meio">Meio quadrado</option><option value="quad">1 quadrado</option></select>
+            </label>
+            <p class="dica">Para os lados, o ensaio anda uma pista inteira por vez; ao longo da pista, anda o passo escolhido.</p>
+          </div>
+          <p class="nd-corpo-pequeno" id="posInfo" aria-live="polite"></p>
         </div>
 
         <div class="side">
@@ -150,6 +172,17 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
             <label class="nd-campo" id="pista1Box" hidden>Primeira pista do ensaio
               <input class="nd-inp" id="pista1" inputmode="numeric">
             </label>
+            <div class="nd-campo">Início ao longo da pista
+              <div class="nd-seg" id="inicioLado" role="group" aria-label="Início do ensaio ao longo da pista">
+                <button type="button" data-v="" aria-pressed="true">Livre</button>
+                <button type="button" data-v="A" aria-pressed="false" id="iniA">Lado A</button>
+                <button type="button" data-v="B" aria-pressed="false" id="iniB">Lado B</button>
+              </div>
+            </div>
+            <label class="nd-campo" id="inicioDistBox" hidden>Distância da cabeceira
+              <span class="un"><input class="nd-inp" id="inicioDist" inputmode="decimal"><span>m</span></span>
+            </label>
+            <p class="dica">Cabeceira é onde a pista inicial encontra a divisa do talhão ou o carreador, do lado escolhido. Com "Livre", vale a posição do círculo no mapa.</p>
             <p class="dica" id="pontoADica">Latitude e longitude dos pontos A e B da linha no Operations Center, com 7 casas decimais (1 cm). Com A e B o rumo é calculado pelos dois pontos, a mesma reta que o monitor segue; cada coluna do ensaio cai exatamente numa pista e o mapa mostra o número da pista a partir da linha AB. Só com o A, vale o rumo digitado.</p>
             <div class="dois">
               <label class="nd-campo">Espaçamento entre pistas
@@ -210,6 +243,8 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 
           <section class="nd-cartao">
             <h2 class="passo"><span class="n">5</span>Arquivos</h2>
+            <button class="nd-btn grande nd-onda nd-estado" type="button" id="btnPdf" data-enviando="Gerando o PDF…" data-feito="PDF pronto"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-file-text"/></svg>Relatório em PDF (croqui, pontos e áreas)</button>
+            <div class="nd-msg aviso" id="rxTrava" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-triangle-alert"/></svg><div><b>Falta o Ponto A</b>Informe o Ponto A (e o B) da linha AB no passo 2 para baixar os arquivos de aplicação. Sem ele, as zonas podem cair entre duas pistas.</div></div>
             <div class="trs" id="rxBtns"></div>
             <div class="acoes-l">
               <button class="nd-btn nd-onda" type="button" id="btnLim"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>Testemunhas como limite</button>
@@ -259,6 +294,7 @@ const DATA_URL = "https://script.google.com/macros/s/AKfycbwxeuEaQ6gyYzEo3yWbs4S
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt = (v, c = 0) => Number(v).toLocaleString("pt-BR", {minimumFractionDigits:c, maximumFractionDigits:c});
+const cap = t => t ? t[0].toUpperCase() + t.slice(1) : t;
 const fmtMax = (v, c) => Number(v).toLocaleString("pt-BR", {maximumFractionDigits:c});
 const num = s => { s = String(s ?? "").trim(); if (!s) return NaN; if (s.includes(",")) s = s.replace(/\./g, "").replace(",", "."); return Number(s); };
 const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
@@ -275,7 +311,7 @@ const COR = {
 };
 
 /* ---------- estado (guardado no aparelho) ---------- */
-const PADRAO = {talhao:"RT-40", codigo:"", ang:null, alvo:50, W:36, L:72, nC:14, nR:14, bord:36, centro:null, pontoA:null, pontoB:null, rumoFixo:false, ancora:"", pista1:1, modo:"produtos", unid:"L/ha", inverter:false, semente:1,
+const PADRAO = {talhao:"RT-40", codigo:"", ang:null, alvo:50, W:36, L:72, nC:14, nR:14, bord:36, centro:null, pontoA:null, pontoB:null, rumoFixo:false, ancora:"", pista1:1, inicioLado:"", inicioDist:30, passo:"10", modo:"produtos", unid:"L/ha", inverter:false, semente:1,
   trats:[{cod:"A", nome:"Padrão fazenda", dose:""}, {cod:"T", nome:"Testemunha", dose:"0"}]};
 let S = {...PADRAO};
 try { const g = JSON.parse(lsGet("tabuleiro.plano") || "null"); if (g && typeof g === "object") S = {...PADRAO, ...g}; } catch (e) {}
@@ -357,8 +393,8 @@ function calcular(){
   const {d, p} = eixos(S.ang);
   const ringsUV = t.rings.map(r => r.map(ll => { const q = P.fwd(ll); return [q[0] * d[0] + q[1] * d[1], q[0] * p[0] + q[1] * p[1]]; }));
   const ringsXY = t.rings.map(r => r.map(P.fwd));
-  const W = S.W, L = S.L, b = S.bord, u0 = -S.nR * L / 2;
-  let v0 = -S.nC * W / 2, vA = null;
+  const W = S.W, L = S.L, b = S.bord;
+  let u0 = -S.nR * L / 2, v0 = -S.nC * W / 2, vA = null;
   if (S.pontoA) { // encaixa as colunas nas pistas: o centro de cada coluna fica a um número inteiro de pistas do Ponto A
     const a = P.fwd([S.pontoA[1], S.pontoA[0]]); vA = a[0] * p[0] + a[1] * p[1];
     const k1 = Math.max(0, Math.round(S.pista1) || 0);
@@ -366,6 +402,14 @@ function calcular(){
     else if (S.ancora === "esq") v0 = vA - (k1 + S.nC - 0.5) * W;        // pistas -(k1+nC-1) ... -k1
     else { let desl = ((vA - (v0 + W / 2)) % W + W) % W; if (desl > W / 2) desl -= W; v0 += desl; }
   }
+  // cabeceiras: onde a pista inicial cruza a divisa ou o carreador, atrás (lado A) e à frente (lado B) do centro
+  const refC = S.ancora === "esq" ? S.nC - 1 : 0, vRef = v0 + (refC + 0.5) * W, cortes = [];
+  ringsUV.forEach(rg => { for (let i = 1; i < rg.length; i++) { const a = rg[i-1], c2 = rg[i]; if ((a[1] > vRef) !== (c2[1] > vRef)) cortes.push(a[0] + (vRef - a[1]) * (c2[0] - a[0]) / (c2[1] - a[1])); } });
+  const atras = cortes.filter(x => x < 0), frente = cortes.filter(x => x > 0);
+  const cabA = atras.length ? Math.max(...atras) : null, cabB = frente.length ? Math.min(...frente) : null;
+  const dIni = Math.max(0, num(S.inicioDist) || 0);
+  if (S.inicioLado === "A" && cabA != null) u0 = cabA + dIni;
+  else if (S.inicioLado === "B" && cabB != null) u0 = cabB - dIni - S.nR * L;
   const toLL = (u, v) => P.inv([u * d[0] + v * p[0], u * d[1] + v * p[1]]);
   const quads = []; let id = 0;
   for (let c = 0; c < S.nC; c++) for (let r = 0; r < S.nR; r++) {
@@ -374,11 +418,11 @@ function calcular(){
     if (ok) { const x0 = ua - b, x1 = ub + b, y0 = va - b, y1 = vb + b;
       outer: for (const rg of ringsUV) for (let i = 1; i < rg.length; i++) if (segCaixa(rg[i-1], rg[i], x0, y0, x1, y1)) { ok = false; break outer; } }
     const ti = tratamentoDe(c, r);
-    quads.push({id: ok ? ++id : 0, c: c + 1, r: r + 1, ok, ti, pista: vA == null ? null : Math.round((va + W / 2 - vA) / W),
+    quads.push({id: ok ? ++id : 0, c: c + 1, r: r + 1, ok, ti, ua, ub, va, vb, pista: vA == null ? null : Math.round((va + W / 2 - vA) / W),
       ll: [toLL(ua, va), toLL(ub, va), toLL(ub, vb), toLL(ua, vb)], centro: toLL((ua + ub) / 2, (va + vb) / 2)});
   }
   const uvs = ringsUV.flat();
-  GRADE = {quads, vA, toLL, u0, v0, areaQ: W * L / 1e4, areaTal: areaRings(ringsXY) / 1e4,
+  GRADE = {quads, vA, toLL, u0, v0, cabA, cabB, refC, P, d, p, areaQ: W * L / 1e4, areaTal: areaRings(ringsXY) / 1e4,
     extU: Math.max(...uvs.map(q => q[0])) - Math.min(...uvs.map(q => q[0])), extV: Math.max(...uvs.map(q => q[1])) - Math.min(...uvs.map(q => q[1]))};
 }
 function ajustarAoTalhao(){
@@ -439,6 +483,25 @@ function desenharTalhoes(){
   });
 }
 const ehTest = t => num(t.dose) === 0;
+const LADOS = ["norte","nordeste","leste","sudeste","sul","sudoeste","oeste","noroeste"];
+const lado = a => LADOS[Math.round((((a % 360) + 360) % 360) / 45) % 8];
+function posicao(){ // onde o ensaio começa e termina, para conferir e para o operador
+  if (!GRADE) return null;
+  const ok = GRADE.quads.filter(q => q.ok); if (!ok.length) return null;
+  const uIni = Math.min(...ok.map(q => q.ua)), uFim = Math.max(...ok.map(q => q.ub));
+  const ps = ok.map(q => q.pista).filter(x => x != null);
+  return {uIni, uFim, comp:uFim - uIni, pIni: ps.length ? Math.min(...ps) : null, pFim: ps.length ? Math.max(...ps) : null,
+    cols:[Math.min(...ok.map(q => q.c)), Math.max(...ok.map(q => q.c))],
+    dA: GRADE.cabA != null ? uIni - GRADE.cabA : null, dB: GRADE.cabB != null ? GRADE.cabB - uFim : null,
+    ladoA: lado(S.ang + 180), ladoB: lado(S.ang), ladoDir: lado(S.ang + 90), ladoEsq: lado(S.ang - 90)};
+}
+function textoPosicao(){
+  const x = posicao(); if (!x) return "";
+  const pistas = x.pIni != null ? `Pistas ${x.pIni} a ${x.pFim} da linha AB` : `Passadas ${x.cols[0]} a ${x.cols[1]} (sem Ponto A, sem encaixe nas pistas)`;
+  const ini = x.dA != null ? `começa a ${fmt(x.dA, 0)} m da cabeceira ${x.ladoA} (lado A)` : "começa sem cabeceira encontrada no lado A";
+  const fim = x.dB != null ? `termina a ${fmt(x.dB, 0)} m da cabeceira ${x.ladoB} (lado B)` : "termina sem cabeceira encontrada no lado B";
+  return `${pistas}; ${ini} e ${fim}. Comprimento de ${fmt(x.comp, 0)} m.`;
+}
 function corTrat(i){ const t = S.trats[i]; if (!t) return COR.test; if (ehTest(t)) return COR.test; let k = 0; for (let j = 0; j < i; j++) if (num(S.trats[j].dose) !== 0) k++; return COR.trat[k % 4]; }
 function desenharGrade(){
   if (!MAP) return;
@@ -479,8 +542,13 @@ function preencherCampos(){
   $("abInfo").hidden = !ab;
   if (ab) $("abInfo").textContent = `Rumo calculado pelos pontos A e B: ${fmtMax(ab.ang, 4)} graus, linha de ${fmt(ab.dist, 0)} m. Compare com o rumo do Operations Center. Para digitar o rumo, apague o Ponto B.`;
   $("ancoraBox").hidden = !S.pontoA; $("pista1Box").hidden = !S.pontoA || !S.ancora; $("pista1").value = S.pista1;
+  [...$("inicioLado").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === S.inicioLado)));
+  $("inicioDistBox").hidden = !S.inicioLado; $("inicioDist").value = fmt(num(S.inicioDist) || 0, 0); $("passo").value = S.passo;
   [...$("ancora").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === (S.pontoA ? S.ancora : ""))));
-  if (S.ang != null) { const lado = a => ["norte","nordeste","leste","sudeste","sul","sudoeste","oeste","noroeste"][Math.round((((a % 360) + 360) % 360) / 45) % 8];
+  if (S.ang != null) {
+    $("iniA").textContent = `Lado A (${lado(S.ang + 180)})`; $("iniB").textContent = `Lado B (${lado(S.ang)})`;
+    $("mvEsq").querySelector("span").textContent = cap(lado(S.ang - 90)); $("mvDir").querySelector("span").textContent = cap(lado(S.ang + 90));
+    $("mvTras").querySelector("span").textContent = cap(lado(S.ang + 180)); $("mvFrente").querySelector("span").textContent = cap(lado(S.ang));
     $("ancDir").textContent = `À direita (${lado(S.ang + 90)})`; $("ancEsq").textContent = `À esquerda (${lado(S.ang - 90)})`; }
   $("pontoA").value = S.pontoA ? fmtMax(S.pontoA[0], 7) + "; " + fmtMax(S.pontoA[1], 7) : ""; $("alvo").value = fmt(num(S.alvo) || 50, 0);
   $("W").value = fmt(S.W, S.W % 1 ? 1 : 0); $("L").value = fmt(S.L, S.L % 1 ? 1 : 0); $("nC").value = S.nC; $("nR").value = S.nR; $("bord").value = fmt(S.bord, S.bord % 1 ? 1 : 0);
@@ -527,13 +595,16 @@ function renderResumo(){
   const nT = S.trats.length;
   if (nT > 2 && (S.nC % nT || S.nR % nT)) msgs.push(["aviso", "Blocos incompletos", `Com ${nT} tratamentos, use passadas e quadrados por passada em múltiplos de ${nT} (hoje ${S.nC} × ${S.nR}). Assim todo tratamento aparece o mesmo número de vezes em cada parte da área.`]);
   if (S.trats.filter(t => !ehTest(t)).length > 4) msgs.push(["aviso", "Cores repetidas", "Com 5 tratamentos, deixe um deles como testemunha (dose 0)."]);
+  if (S.W !== 36) msgs.push(["aviso", "Espaçamento diferente da barra", `O espaçamento entre pistas está em ${fmtMax(S.W, 2)} m. Ele tem que ser igual ao da linha AB no Operations Center (36 m no M4030), senão as colunas saem das pistas.`]);
+  if (!S.pontoA) msgs.push(["aviso", "Sem Ponto A", "Sem o Ponto A da linha AB o ensaio não fica preso às pistas e os arquivos de aplicação ficam bloqueados."]);
   if (S.L < 60) msgs.push(["aviso", "Quadrado curto", "Com menos de 60 m de comprimento o monitor de colheita não estabiliza dentro do quadrado."]);
   if (S.W % 36 && 36 % S.W) msgs.push(["", "Largura fora da barra", "Com desligamento bico a bico o pulverizador acompanha qualquer largura, mas na colheita é melhor que a largura seja múltiplo da plataforma."]);
   if (S.trats.some(t => !isFinite(num(t.dose)))) msgs.push(["", "Dose em aberto", "O desenho já pode ser baixado em KML e planilha. A prescrição precisa da dose de cada tratamento."]);
   av.innerHTML = msgs.map(([c, t, d]) => `<div class="nd-msg ${c}"><svg class="nd-ic" aria-hidden="true"><use href="#i-${c === "erro" ? "circle-x" : c === "aviso" ? "triangle-alert" : "info"}"/></svg><div><b>${t}</b>${d}</div></div>`).join("");
 }
 function atualizar(){
-  calcular(); desenharGrade(); renderLegenda(); renderResumo(); renderRxBtns();
+  calcular(); desenharGrade(); renderLegenda(); renderResumo(); renderRxBtns(); travarSemPontoA();
+  $("posInfo").textContent = textoPosicao();
   const t = talhaoAtual();
   $("talInfo").textContent = t && GRADE ? `${t.nome}: ${fmt(GRADE.areaTal, 2)} ha${t.origem === "importado" ? " (limite importado)" : ""}.` : "";
 }
@@ -613,6 +684,29 @@ $("btnAddTr").addEventListener("click", () => { if (S.trats.length >= 5) return;
 $("modo").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.modo = b.dataset.v; salvar(); renderTrats(); atualizar(); });
 $("ancora").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.ancora = b.dataset.v; salvar(); preencherCampos(); atualizar(); });
 $("pista1").addEventListener("change", () => { const v = Math.round(num($("pista1").value)); if (isFinite(v) && v >= 0 && v < 500) S.pista1 = v; salvar(); preencherCampos(); atualizar(); });
+$("inicioLado").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.inicioLado = b.dataset.v; salvar(); preencherCampos(); atualizar(); });
+$("inicioDist").addEventListener("change", () => { const v = num($("inicioDist").value); if (isFinite(v) && v >= 0) S.inicioDist = v; salvar(); preencherCampos(); atualizar(); });
+$("passo").addEventListener("change", () => { S.passo = $("passo").value; salvar(); });
+function moverCentro(du, dv){ // metros ao longo da pista (du) e para os lados (dv)
+  if (!S.centro) return; const P = projecao(S.centro[0], S.centro[1]), {d, p} = eixos(S.ang);
+  const ll = P.inv([du * d[0] + dv * p[0], du * d[1] + dv * p[1]]); S.centro = [ll[1], ll[0]];
+}
+document.querySelector(".setas").addEventListener("click", e => {
+  const b = e.target.closest("[data-mv]"); if (!b || !talhaoAtual() || S.ang == null) return;
+  const passo = S.passo === "meio" ? S.L / 2 : S.passo === "quad" ? S.L : Number(S.passo) || 10, mv = b.dataset.mv;
+  if (mv === "esq" || mv === "dir") {
+    const sentido = mv === "dir" ? 1 : -1;
+    if (S.pontoA && S.ancora === "dir") S.pista1 = Math.max(0, (Math.round(S.pista1) || 0) + sentido);
+    else if (S.pontoA && S.ancora === "esq") S.pista1 = Math.max(0, (Math.round(S.pista1) || 0) - sentido);
+    else moverCentro(0, sentido * S.W);
+  } else {
+    const sentido = mv === "frente" ? 1 : -1;
+    if (S.inicioLado === "A") S.inicioDist = Math.max(0, (num(S.inicioDist) || 0) + sentido * passo);
+    else if (S.inicioLado === "B") S.inicioDist = Math.max(0, (num(S.inicioDist) || 0) - sentido * passo);
+    else moverCentro(sentido * passo, 0);
+  }
+  salvar(); preencherCampos(); atualizar();
+});
 $("btnInverter").addEventListener("click", () => { S.inverter = !S.inverter; salvar(); atualizar(); });
 $("btnSortear").addEventListener("click", () => { S.semente = (S.semente % 9999) + 1; salvar(); atualizar(); aviso("Novo sorteio feito"); });
 
@@ -762,6 +856,12 @@ function renderRxBtns(){
     $("rxDica").textContent = `Produtos diferentes: ${prods.length} arquivos, um por teste, cada um só com a zona daquele teste (os quadrados sorteados para ele). Cada arquivo é uma aplicação, com o produto do teste no tanque. ${nT ? "A testemunha não tem arquivo: ela fica fora de todas as zonas e não recebe nada." : ""}`;
   }
 }
+function travarSemPontoA(){
+  const sem = !S.pontoA;
+  $("rxBtns").querySelectorAll("button").forEach(b => { b.disabled = sem; });
+  $("btnLim").disabled = sem;
+  $("rxTrava").hidden = !sem;
+}
 $("rxBtns").addEventListener("click", e => { const z = e.target.closest("[data-zona]"); if (z) { baixarZonaTeste(+z.dataset.zona); return; } if (e.target.closest("[data-zonas]")) { baixarZonas(); return; } const b = e.target.closest("[data-rx]"); if (!b) return; if (S.modo === "doses") baixarRxDoses(); else baixarRxProduto(+b.dataset.rx); });
 const CAMPOS_RX = [{nome:"ID", tipo:"N", tam:6}, {nome:"TRAT", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, {nome:"DOSE", tipo:"N", tam:12, dec:3}, {nome:"COLUNA", tipo:"N", tam:4}, {nome:"LINHA", tipo:"N", tam:4}, {nome:"PISTA", tipo:"N", tam:5}];
 const zipShp = (s, b) => zip([{nome:b + ".shp", dados:s.shp}, {nome:b + ".shx", dados:s.shx}, {nome:b + ".dbf", dados:s.dbf}, {nome:b + ".prj", dados:s.prj}]);
@@ -825,6 +925,137 @@ $("btnGj").addEventListener("click", () => {
   baixar(new Blob([JSON.stringify(gj)], {type:"application/geo+json"}), nomeBase() + ".geojson");
   arqMsg("", "<b>GeoJSON baixado</b>Guarde junto com o ensaio: ele será usado para cruzar com o mapa de colheita.");
 });
+
+/* ---------- relatório em PDF: croqui, referências da linha AB e áreas por teste (base Nadiana: pdf.js) ---------- */
+const GH_BASE = "https://fabianodsf12-beep.github.io/nadiana-design/v1/";
+const JSPDF = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+const AUTOTABLE = "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js";
+const LOGO_PDF = GH_BASE + "logos/nadiana-simbolo.png";
+const rgbHex = h => { h = (h || "#000000").replace("#", ""); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); };
+const coordTxt = c => c ? `${fmtMax(c[0], 7)}; ${fmtMax(c[1], 7)}` : "não informado";
+async function gerarPDF(){
+  if (!GRADE || !GRADE.quads.some(q => q.ok)) { arqMsg("erro", "<b>Nada para o relatório</b>Escolha o talhão e coloque o ensaio dentro dele."); return; }
+  const btn = $("btnPdf"); if (window.Nadiana && Nadiana.estado) Nadiana.estado(btn, "enviando");
+  try {
+    if (!window.jspdf) await carregarScript(JSPDF);
+    if (!window.jspdf.jsPDF.API.autoTable) await carregarScript(AUTOTABLE);
+    if (!window.NadianaPDF) await carregarScript(GH_BASE + "pdf.js");
+    const t = talhaoAtual(), ok = GRADE.quads.filter(q => q.ok), x = posicao(), ab = rumoAB();
+    const nome = S.codigo || `TAB ${S.talhao} 26/27`, prods = S.trats.filter(tr => !ehTest(tr));
+    const r = await NadianaPDF.novo({titulo: `Ensaio em tabuleiro · ${S.talhao}`, subtitulo: `${nome} · ${prods.length} ${prods.length === 1 ? "teste" : "testes"}${S.trats.length > prods.length ? " + testemunha" : ""} · ${S.modo === "produtos" ? "produtos diferentes" : "doses de um produto"}`, logo: LOGO_PDF});
+    const doc = r.doc, PW = doc.internal.pageSize.getWidth(), PH = doc.internal.pageSize.getHeight(), M = 15;
+    const fl = doc.getFontList(), FT = fl.Barlow ? "Barlow" : "helvetica", FN = fl.BarlowCondensed ? "BarlowCondensed" : "helvetica";
+    const TKp = (window.NadianaTokens || {}).light || {}, CI = rgbHex(TKp.ink), CM = rgbHex(TKp.muted), CP = rgbHex(TKp["nadiana-petroleo"]), CL = rgbHex(TKp.line), CC = rgbHex(TKp["mapa-campo"]), CB = rgbHex(TKp.panel);
+    const cont = S.trats.map((tr, i) => ok.filter(q => q.ti === i).length), aQ = GRADE.areaQ, un = S.unid.replace("/ha", "");
+
+    r.kpis([{rotulo:"Área do ensaio", valor:fmt(ok.length * aQ, 2), unidade:"ha"}, {rotulo:"Quadrados", valor:fmt(ok.length)},
+      {rotulo:"Por tratamento", valor:fmt(Math.min(...cont) * aQ, 2), unidade:"ha"}, {rotulo:`Talhão ${S.talhao}`, valor:fmt(GRADE.areaTal, 2), unidade:"ha"}]);
+
+    r.secao("Área de cada teste");
+    let totQ = 0, totA = 0;
+    const linhas = S.trats.map((tr, i) => { const a = cont[i] * aQ, d = num(tr.dose), pr = isFinite(d) ? d * a : NaN; totQ += cont[i]; totA += a;
+      return [tr.cod, tr.nome || "—", fmt(cont[i]), fmt(a, 2) + " ha", ehTest(tr) ? "0 (sem aplicação)" : isFinite(d) ? fmtMax(d, 3) + " " + S.unid : "a definir", isFinite(pr) && !ehTest(tr) ? fmt(pr, pr < 100 ? 1 : 0) + " " + un : "—"]; });
+    r.tabela({cabecalho:["Código", "Tratamento", "Quadrados", "Área", "Dose", "Produto"], linhas, numericas:[2, 3, 5], total:["", "Total", fmt(totQ), fmt(totA, 2) + " ha", "", ""]});
+    r.texto(S.modo === "produtos"
+      ? `${prods.length} aplicações, uma por teste, cada uma com o seu produto no tanque e o arquivo da zona daquele teste. A testemunha fica fora de todas as zonas e não recebe nada.`
+      : "Uma aplicação só, com a dose mudando de zona para zona (arquivo único com todas as zonas).");
+
+    r.secao("Referências da linha AB e do ensaio");
+    const cantos = (() => { const uI = x.uIni, uF = x.uFim, vI = Math.min(...ok.map(q => q.va)), vF = Math.max(...ok.map(q => q.vb)), f = (u, v) => { const ll = GRADE.toLL(u, v); return [ll[1], ll[0]]; };
+      return [["Canto início, lado " + x.ladoEsq, f(uI, vI)], ["Canto início, lado " + x.ladoDir, f(uI, vF)], ["Canto fim, lado " + x.ladoDir, f(uF, vF)], ["Canto fim, lado " + x.ladoEsq, f(uF, vI)]]; })();
+    const ladoAnc = S.ancora === "dir" ? `à direita (${x.ladoDir}) da linha AB` : S.ancora === "esq" ? `à esquerda (${x.ladoEsq}) da linha AB` : "posição livre, encaixada nas pistas";
+    r.tabela({cabecalho:["Item", "Valor"], linhas:[
+      ["Ponto A da linha AB", coordTxt(S.pontoA)],
+      ["Ponto B da linha AB", coordTxt(S.pontoB)],
+      ["Rumo da pista", `${fmtMax(S.ang, 4)}°${ab ? ` (calculado por A e B, linha de ${fmt(ab.dist, 0)} m)` : " (digitado)"}`],
+      ["Espaçamento entre pistas", `${fmtMax(S.W, 2)} m`],
+      ["Quadrado", `${fmtMax(S.W, 2)} × ${fmtMax(S.L, 2)} m (${fmtMax(aQ, 4)} ha)`],
+      ["Pistas do ensaio", x.pIni != null ? `${x.pIni} a ${x.pFim}, ${ladoAnc}` : "sem Ponto A: colunas sem número de pista"],
+      ["Início", x.dA != null ? `a ${fmt(x.dA, 0)} m da cabeceira ${x.ladoA} (lado A)` : "—"],
+      ["Fim", x.dB != null ? `a ${fmt(x.dB, 0)} m da cabeceira ${x.ladoB} (lado B); comprimento de ${fmt(x.comp, 0)} m` : `comprimento de ${fmt(x.comp, 0)} m`],
+      ["Bordadura", `${fmtMax(S.bord, 2)} m da divisa e dos carreadores`],
+      ...cantos.map(([n, c]) => [n, coordTxt(c)])]});
+    if (!S.pontoA) r.texto("Atenção: sem o Ponto A da linha AB, este croqui não está preso às pistas do pulverizador. Informe o Ponto A antes de gerar os arquivos de aplicação.");
+
+    /* ----- mapa de localização (geometria real) ----- */
+    if (PH - M - 40 - r.y < 115) r.y = 1e4; // mapa vai para a página seguinte só se não couber
+    r.secao("Mapa de localização no talhão");
+    const P = projecao(S.centro[0], S.centro[1]), xy = t.rings.map(rg => rg.map(P.fwd)), todos = xy.flat();
+    const mnx = Math.min(...todos.map(q => q[0])), mxx = Math.max(...todos.map(q => q[0])), mny = Math.min(...todos.map(q => q[1])), mxy = Math.max(...todos.map(q => q[1]));
+    const bx = M, by = r.y, bw = PW - 2 * M, bh = Math.min(PH - M - 40 - by, 175);
+    const esc1 = Math.min((bw - 10) / (mxx - mnx), (bh - 10) / (mxy - mny)), ox = bx + (bw - (mxx - mnx) * esc1) / 2, oy = by + (bh - (mxy - mny) * esc1) / 2;
+    const mm = q => [ox + (q[0] - mnx) * esc1, oy + (mxy - q[1]) * esc1];
+    const poli = (pts, est) => { const d = []; for (let i = 1; i < pts.length; i++) d.push([pts[i][0] - pts[i-1][0], pts[i][1] - pts[i-1][1]]); doc.lines(d, pts[0][0], pts[0][1], [1, 1], est, true); };
+    doc.setDrawColor(...CL); doc.setLineWidth(0.2); doc.rect(bx, by, bw, bh, "S");
+    const maior = xy.reduce((a, b2) => Math.abs(areaAssinada(b2)) > Math.abs(areaAssinada(a)) ? b2 : a, xy[0]);
+    doc.setFillColor(...CC); poli(maior.map(mm), "F");
+    doc.setFillColor(...CB); xy.filter(rg => rg !== maior).forEach(rg => poli(rg.map(mm), "F"));
+    ok.forEach(q => { doc.setFillColor(...rgbHex(corTrat(q.ti))); poli(q.ll.map(ll => mm(P.fwd(ll))), "F"); });
+    doc.setDrawColor(...CP); doc.setLineWidth(0.35); xy.forEach(rg => poli(rg.map(mm), "S"));
+    if (S.pontoA) { // linha AB recortada na moldura
+      const {d} = eixos(S.ang), a0 = P.fwd([S.pontoA[1], S.pontoA[0]]);
+      const pa = mm([a0[0] - d[0] * 5000, a0[1] - d[1] * 5000]), pb = mm([a0[0] + d[0] * 5000, a0[1] + d[1] * 5000]);
+      let t0 = 0, t1 = 1; const dx = pb[0] - pa[0], dy = pb[1] - pa[1], pp = [-dx, dx, -dy, dy], qq = [pa[0] - bx, bx + bw - pa[0], pa[1] - by, by + bh - pa[1]];
+      for (let i = 0; i < 4; i++) { if (pp[i] === 0) continue; const tt = qq[i] / pp[i]; if (pp[i] < 0) t0 = Math.max(t0, tt); else t1 = Math.min(t1, tt); }
+      if (t0 < t1) { doc.setDrawColor(...CI); doc.setLineWidth(0.4); doc.setLineDashPattern([2, 1.2], 0); doc.line(pa[0] + dx * t0, pa[1] + dy * t0, pa[0] + dx * t1, pa[1] + dy * t1); doc.setLineDashPattern([], 0); }
+      [[S.pontoA, "A"], [S.pontoB, "B"]].forEach(([c, n]) => { if (!c) return; const q = mm(P.fwd([c[1], c[0]])); doc.setFillColor(...CI); doc.circle(q[0], q[1], 1.2, "F");
+        doc.setFont(FN, "bold"); doc.setFontSize(10); doc.setTextColor(...CI); doc.text(n, q[0] + 2, q[1] - 1.5); });
+    }
+    // norte e escala
+    doc.setFillColor(...CI); doc.triangle(bx + bw - 10, by + 6, bx + bw - 12.5, by + 13, bx + bw - 7.5, by + 13, "F");
+    doc.setFont(FN, "bold"); doc.setFontSize(10); doc.setTextColor(...CI); doc.text("N", bx + bw - 10, by + 17.5, {align:"center"});
+    const esc = [50, 100, 200, 250, 500, 1000, 2000].find(v => v * esc1 >= 25) || 2000, ex = bx + 6, ey = by + bh - 6;
+    doc.setDrawColor(...CI); doc.setLineWidth(0.4); doc.line(ex, ey, ex + esc * esc1, ey); doc.line(ex, ey - 1.5, ex, ey); doc.line(ex + esc * esc1, ey - 1.5, ex + esc * esc1, ey);
+    doc.setFont(FT, "normal"); doc.setFontSize(8); doc.text(`${fmt(esc)} m`, ex + esc * esc1 / 2, ey - 2, {align:"center"});
+    r.y = by + bh + 4;
+    const legenda = (y0, croqui) => { // legenda: tratamentos, linha AB, limite (no croqui: tratamentos e quadrado fora)
+      let lx = M, ly = y0; doc.setFont(FT, "normal"); doc.setFontSize(8.5);
+      const item = (desenha, txt) => { const w = 7 + doc.getTextWidth(txt) + 6; if (lx + w > PW - M) { lx = M; ly += 5.5; } desenha(lx, ly); doc.setTextColor(...CI); doc.text(txt, lx + 5.5, ly + 2.8); lx += w; };
+      S.trats.forEach((tr, i) => item((a, b2) => { doc.setFillColor(...rgbHex(corTrat(i))); doc.rect(a, b2, 3.6, 3.6, "F"); }, `${tr.cod} · ${tr.nome || tr.cod}`));
+      if (croqui) { item((a, b2) => { doc.setDrawColor(...CL); doc.setLineWidth(0.3); doc.setLineDashPattern([0.8, 0.8], 0); doc.rect(a, b2, 3.6, 3.6, "S"); doc.setLineDashPattern([], 0); }, "Fora do ensaio (bordadura)"); return ly + 7; }
+      if (S.pontoA) item((a, b2) => { doc.setDrawColor(...CI); doc.setLineWidth(0.4); doc.setLineDashPattern([1.2, 0.8], 0); doc.line(a, b2 + 1.8, a + 4, b2 + 1.8); doc.setLineDashPattern([], 0); }, "Linha AB");
+      item((a, b2) => { doc.setDrawColor(...CP); doc.setLineWidth(0.35); doc.rect(a, b2, 3.6, 3.6, "S"); }, "Limite do talhão e carreadores");
+      return ly + 7;
+    };
+    r.y = legenda(r.y);
+
+    /* ----- croqui por pista (esquemático, alinhado à linha AB) ----- */
+    r.y = 1e4; r.secao("Croqui do ensaio por pista");
+    const nC = S.nC, nR = S.nR, cx0 = M + 16, topo = r.y + 12, base = PH - M - 28;
+    const escC = Math.min((PW - M - cx0 - 2) / (nC * S.W), (base - topo) / (nR * S.L)), cw = S.W * escC, ch = S.L * escC;
+    const gx = cx0 + (PW - M - cx0 - nC * cw) / 2, gy = topo;
+    doc.setFont(FT, "normal"); doc.setFontSize(8); doc.setTextColor(...CM);
+    doc.text(`${cap(x.ladoB)} · lado B · fim do ensaio`, gx + nC * cw / 2, gy - 6.5, {align:"center"});
+    for (let c = 1; c <= nC; c++) { const q = GRADE.quads.find(qq => qq.c === c), lbl = q && q.pista != null ? String(q.pista) : "P" + c;
+      doc.setFont(FN, "bold"); doc.setFontSize(cw > 8 ? 8 : 6.5); doc.setTextColor(...CI); doc.text(lbl, gx + (c - 0.5) * cw, gy - 1.5, {align:"center"}); }
+    GRADE.quads.forEach(q => {
+      const qx = gx + (q.c - 1) * cw, qy = gy + (nR - q.r) * ch, tr = S.trats[q.ti];
+      if (!q.ok) { doc.setDrawColor(...CL); doc.setLineWidth(0.2); doc.setLineDashPattern([0.8, 0.8], 0); doc.rect(qx + 0.3, qy + 0.3, cw - 0.6, ch - 0.6, "S"); doc.setLineDashPattern([], 0); return; }
+      doc.setFillColor(...rgbHex(corTrat(q.ti))); doc.setDrawColor(...CB); doc.setLineWidth(0.3); doc.rect(qx, qy, cw, ch, "FD");
+      doc.setFont(FN, "bold"); doc.setFontSize(Math.max(6, Math.min(10, cw * 1.6))); doc.setTextColor(...(ehTest(tr) ? CI : CB));
+      doc.text(tr.cod, qx + cw / 2, qy + ch / 2 + 1.2, {align:"center"});
+    });
+    for (let rr = 1; rr <= nR; rr++) { const yy = gy + (nR - rr + 1) * ch, u = GRADE.u0 + (rr - 1) * S.L;
+      const lbl = GRADE.cabA != null ? `${fmt(u - GRADE.cabA, 0)} m` : `Q${rr}`; doc.setFont(FT, "normal"); doc.setFontSize(6.5); doc.setTextColor(...CM); doc.text(lbl, gx - 1.5, yy - 0.5, {align:"right"}); }
+    doc.setFont(FT, "normal"); doc.setFontSize(8); doc.setTextColor(...CM);
+    doc.text(`${cap(x.ladoA)} · lado A · início do ensaio`, gx + nC * cw / 2, gy + nR * ch + 4.5, {align:"center"});
+    // seta do sentido A -> B
+    const sx = gx + nC * cw + 5; if (sx < PW - M) { doc.setDrawColor(...CI); doc.setLineWidth(0.4); doc.line(sx, gy + nR * ch, sx, gy + 6); doc.setFillColor(...CI); doc.triangle(sx, gy + 2, sx - 1.6, gy + 6, sx + 1.6, gy + 6, "F"); }
+    let yNota = gy + nR * ch + 9; doc.setFontSize(8); doc.setTextColor(...CI);
+    const nota = doc.splitTextToSize(`Números em cima: pista a partir da linha AB${S.pontoA ? "" : " (sem Ponto A: P1, P2… são só as colunas)"}. Números à esquerda: distância do início de cada fileira até a cabeceira ${x.ladoA} (lado A). Rumo ${fmtMax(S.ang, 4)}°, de A para B. Quadrado tracejado: fora do ensaio (bordadura).`, PW - 2 * M);
+    doc.text(nota, M, yNota); r.y = yNota + nota.length * 4 + 2;
+    legenda(r.y, true);
+
+    const blob = r.salvar(null).output("blob");
+    await baixar(blob, nomeBase() + "_relatorio.pdf");
+    if (window.Nadiana && Nadiana.estado) Nadiana.estado(btn, "feito");
+    arqMsg("", `<b>PDF gerado</b>Áreas por teste, referências da linha AB e o croqui por pista. ${ok.length} quadrados, ${fmt(ok.length * aQ, 2)} ha.`);
+  } catch (e) {
+    if (window.Nadiana && Nadiana.estado) Nadiana.estado(btn, null);
+    arqMsg("erro", `<b>Não consegui gerar o PDF</b>${esc((e && e.message) || "Verifique a internet e tente de novo.")}`);
+  }
+}
+$("btnPdf").addEventListener("click", gerarPDF);
 
 /* ---------- importar limite (shapefile em .zip, KML, GeoJSON) ---------- */
 async function lerZip(buf){
