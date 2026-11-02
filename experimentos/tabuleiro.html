@@ -54,6 +54,15 @@ details.alt .trs{padding-top:var(--space-2)}
 .mover .passo{min-width:160px}
 .mover .dica{flex-basis:100%}
 #posInfo{margin:0}
+fieldset.ab{border:1px solid var(--line2);border-radius:var(--radius-xl);padding:var(--space-3) var(--space-3_5) var(--space-3_5);margin:0;display:flex;flex-direction:column;gap:var(--space-3);min-width:0}
+fieldset.ab legend{padding:0 var(--space-1);font-weight:600;font-size:14px}
+.ab-ponto{display:grid;grid-template-columns:32px minmax(0,1fr) minmax(0,1fr);gap:var(--space-2) var(--space-3);align-items:end}
+.ab-nome{width:32px;height:32px;margin-bottom:8px;border-radius:var(--radius-pill);background:var(--brand-soft);color:var(--brand);font-family:var(--font-display);font-weight:600;font-size:18px;display:inline-flex;align-items:center;justify-content:center}
+.ab-ok{grid-column:2 / -1;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;min-height:18px}
+.ab-ponto + .ab-ponto{border-top:1px solid var(--line2);padding-top:var(--space-3)}
+.ab-ok.ok{color:var(--ok)} .ab-ok.erro{color:var(--bad)}
+.ab-ok .nd-ic{width:16px;height:16px}
+@media (max-width:420px){.ab-ponto{grid-template-columns:minmax(0,1fr)}.ab-nome{display:none}.ab-ok{grid-column:1}}
 .passos-jd{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:var(--space-2);font-size:15px}
 .mapmsg{font-size:14px;color:var(--muted);margin:0;min-height:20px}
 .modo{display:none}
@@ -153,14 +162,23 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
               <button class="nd-btn nd-onda" type="button" id="btnAuto"><svg class="nd-ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg>Ajustar ao talhão</button>
             </div>
             <p class="dica">Use o rumo da linha AB do pulverizador (no Operations Center, em Linhas de orientação), por exemplo 358,2665. Graus a partir do norte: 0 = norte–sul, 90 = leste–oeste. Sem a linha, marque dois pontos sobre uma linha de plantio na imagem.</p>
-            <div class="dois">
-              <label class="nd-campo">Ponto A da linha AB
-                <input class="nd-inp" id="pontoA" autocomplete="off" inputmode="decimal" placeholder="-10,5827557; -55,9401554">
-              </label>
-              <label class="nd-campo">Ponto B da linha AB
-                <input class="nd-inp" id="pontoB" autocomplete="off" inputmode="decimal" placeholder="-10,5630000; -55,9407000">
-              </label>
-            </div>
+            <fieldset class="ab" id="abBox">
+              <legend>Linha AB do Operations Center</legend>
+              <div class="ab-ponto">
+                <span class="ab-nome" aria-hidden="true">A</span>
+                <label class="nd-campo">Ponto A · latitude<input class="nd-inp" id="aLat" data-ab="aLat" autocomplete="off" inputmode="decimal" placeholder="-10,5827557"></label>
+                <label class="nd-campo">Ponto A · longitude<input class="nd-inp" id="aLon" data-ab="aLon" autocomplete="off" inputmode="decimal" placeholder="-55,9401554"></label>
+                <span class="ab-ok" id="aOk"></span>
+              </div>
+              <div class="ab-ponto">
+                <span class="ab-nome" aria-hidden="true">B</span>
+                <label class="nd-campo">Ponto B · latitude<input class="nd-inp" id="bLat" data-ab="bLat" autocomplete="off" inputmode="decimal" placeholder="-10,5630000"></label>
+                <label class="nd-campo">Ponto B · longitude<input class="nd-inp" id="bLon" data-ab="bLon" autocomplete="off" inputmode="decimal" placeholder="-55,9407000"></label>
+                <span class="ab-ok" id="bOk"></span>
+              </div>
+              <div class="acoes-l"><button class="nd-btn leve nd-onda" type="button" id="btnLimparAB"><svg class="nd-ic" aria-hidden="true"><use href="#i-x"/></svg>Limpar pontos A e B</button></div>
+              <p class="dica">Cole cada número no seu campo, com 7 casas decimais. Se colar "latitude, longitude" juntas num campo, o app separa sozinho. O que você cola fica guardado na hora, mesmo saindo da página.</p>
+            </fieldset>
             <p class="dica" id="abInfo" hidden></p>
             <div class="nd-campo" id="ancoraBox" hidden>Posição do ensaio
               <div class="nd-seg" id="ancora" role="group" aria-label="Posição do ensaio">
@@ -311,7 +329,7 @@ const COR = {
 };
 
 /* ---------- estado (guardado no aparelho) ---------- */
-const PADRAO = {talhao:"RT-40", codigo:"", ang:null, alvo:50, W:36, L:72, nC:14, nR:14, bord:36, centro:null, pontoA:null, pontoB:null, rumoFixo:false, ancora:"", pista1:1, inicioLado:"", inicioDist:30, passo:"10", modo:"produtos", unid:"L/ha", inverter:false, semente:1,
+const PADRAO = {talhao:"RT-40", codigo:"", ang:null, alvo:50, W:36, L:72, nC:14, nR:14, bord:36, centro:null, pontoA:null, pontoB:null, abTxt:null, rumoFixo:false, ancora:"", pista1:1, inicioLado:"", inicioDist:30, passo:"10", modo:"produtos", unid:"L/ha", inverter:false, semente:1,
   trats:[{cod:"A", nome:"Padrão fazenda", dose:""}, {cod:"T", nome:"Testemunha", dose:"0"}]};
 let S = {...PADRAO};
 try { const g = JSON.parse(lsGet("tabuleiro.plano") || "null"); if (g && typeof g === "object") S = {...PADRAO, ...g}; } catch (e) {}
@@ -523,8 +541,23 @@ function desenharGrade(){
   }
   const ic = L.divIcon({className:"", html:'<div class="centro-ic" title="Arraste para mudar o ensaio de lugar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 2v20M2 12h20M12 2l-3 3M12 2l3 3M12 22l-3-3M12 22l3-3M2 12l3-3M2 12l3 3M22 12l-3-3M22 12l-3 3"/></svg></div>', iconSize:[28,28], iconAnchor:[14,14]});
   MK = L.marker(S.centro, {draggable:true, icon:ic, keyboard:true, title:"Centro do ensaio", alt:"Centro do ensaio"}).addTo(LB);
-  MK.on("dragend", () => { const p = MK.getLatLng(); S.centro = [p.lat, p.lng]; salvar(); atualizar(); });
+  MK.on("dragend", soltarCentro);
   if (MAP.getZoom() >= 17) LR.addTo(MAP);
+}
+function soltarCentro(){
+  const p = MK.getLatLng(), G = GRADE;
+  if (G) { // posição solta no sistema da grade atual (u ao longo da pista, v para os lados)
+    const q = G.P.fwd([p.lng, p.lat]), uS = q[0] * G.d[0] + q[1] * G.d[1], vS = q[0] * G.p[0] + q[1] * G.p[1];
+    if (S.pontoA && G.vA != null && S.ancora) { const pc = (vS - G.vA) / S.W, meio = (S.nC - 1) / 2;
+      S.pista1 = Math.max(0, Math.round(S.ancora === "dir" ? pc - meio : -pc - meio)); }
+    if (S.inicioLado === "A" && G.cabA != null) S.inicioDist = Math.max(0, Math.round(uS - S.nR * S.L / 2 - G.cabA));
+    if (S.inicioLado === "B" && G.cabB != null) S.inicioDist = Math.max(0, Math.round(G.cabB - (uS + S.nR * S.L / 2)));
+  }
+  S.centro = [p.lat, p.lng]; atualizar(); centralizarCirculo(); salvar(); preencherCampos(); atualizar();
+  $("mapMsg").textContent = S.pontoA ? "Ensaio encaixado nas pistas da linha AB. " + textoPosicao() : "Sem o Ponto A o ensaio não encaixa nas pistas. Informe o Ponto A da linha AB.";
+}
+function centralizarCirculo(){ // leva o círculo para o centro real do ensaio (depois do encaixe nas pistas)
+  if (!GRADE) return; const ll = GRADE.toLL(GRADE.u0 + S.nR * S.L / 2, GRADE.v0 + S.nC * S.W / 2); S.centro = [ll[1], ll[0]];
 }
 function enquadrar(){
   if (!MAP) return;
@@ -538,7 +571,7 @@ function preencherCampos(){
   $("codigo").value = S.codigo || ""; $("codigo").placeholder = `TAB ${S.talhao || "talhão"} 26/27`;
   $("ang").value = S.ang == null ? "" : fmtMax(S.ang, 4);
   const ab = rumoAB(); $("ang").readOnly = !!ab;
-  $("pontoB").value = S.pontoB ? fmtMax(S.pontoB[0], 7) + "; " + fmtMax(S.pontoB[1], 7) : "";
+  preencherAB();
   $("abInfo").hidden = !ab;
   if (ab) $("abInfo").textContent = `Rumo calculado pelos pontos A e B: ${fmtMax(ab.ang, 4)} graus, linha de ${fmt(ab.dist, 0)} m. Compare com o rumo do Operations Center. Para digitar o rumo, apague o Ponto B.`;
   $("ancoraBox").hidden = !S.pontoA; $("pista1Box").hidden = !S.pontoA || !S.ancora; $("pista1").value = S.pista1;
@@ -550,7 +583,7 @@ function preencherCampos(){
     $("mvEsq").querySelector("span").textContent = cap(lado(S.ang - 90)); $("mvDir").querySelector("span").textContent = cap(lado(S.ang + 90));
     $("mvTras").querySelector("span").textContent = cap(lado(S.ang + 180)); $("mvFrente").querySelector("span").textContent = cap(lado(S.ang));
     $("ancDir").textContent = `À direita (${lado(S.ang + 90)})`; $("ancEsq").textContent = `À esquerda (${lado(S.ang - 90)})`; }
-  $("pontoA").value = S.pontoA ? fmtMax(S.pontoA[0], 7) + "; " + fmtMax(S.pontoA[1], 7) : ""; $("alvo").value = fmt(num(S.alvo) || 50, 0);
+  $("alvo").value = fmt(num(S.alvo) || 50, 0);
   $("W").value = fmt(S.W, S.W % 1 ? 1 : 0); $("L").value = fmt(S.L, S.L % 1 ? 1 : 0); $("nC").value = S.nC; $("nR").value = S.nR; $("bord").value = fmt(S.bord, S.bord % 1 ? 1 : 0);
   $("unid").value = S.unid;
   renderTrats();
@@ -610,7 +643,7 @@ function atualizar(){
 }
 function escolherTalhao(nome, ajustar){
   S.talhao = nome; $("talhao").value = nome;
-  if (ajustar) { S.ang = null; S.rumoFixo = false; S.pontoA = null; S.pontoB = null; ajustarAoTalhao(); }
+  if (ajustar) { S.ang = null; S.rumoFixo = false; S.pontoA = null; S.pontoB = null; S.abTxt = null; ajustarAoTalhao(); }
   salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar();
   $("mapMsg").textContent = "Arraste o círculo para mudar o ensaio de lugar. Toque num quadrado para ver o tratamento.";
 }
@@ -640,28 +673,59 @@ function rumoAB(){ // rumo de A para B, em graus a partir do norte, no plano loc
   return {ang: ((Math.atan2(dx, dy) / RAD) % 360 + 360) % 360, dist: Math.hypot(dx, dy)};
 }
 function aplicarAB(){ const r = rumoAB(); if (!r) return; S.ang = r.ang; S.rumoFixo = true; }
-$("pontoB").addEventListener("change", () => {
-  const t = $("pontoB").value.trim();
-  if (!t) { S.pontoB = null; salvar(); preencherCampos(); atualizar(); return; }
-  const ns = lerCoord(t);
-  if (!ns) { aviso("Ponto B inválido. Escreva latitude e longitude, por exemplo -10,5630000; -55,9407000."); preencherCampos(); return; }
-  S.pontoB = ns; const r = rumoAB();
-  if (r && r.dist < 50) { aviso("Os pontos A e B estão muito perto. Use os pontos das pontas da linha."); S.pontoB = null; preencherCampos(); return; }
-  aplicarAB(); salvar(); preencherCampos(); atualizar(); // mantém passadas e quadrados que já estavam
-});
+
 $("ang").addEventListener("change", () => { const v = num($("ang").value); if (!isFinite(v)) { preencherCampos(); return; }
   S.ang = ((v % 360) + 360) % 360; S.rumoFixo = true; ajustarTamanho(); salvar(); preencherCampos(); atualizar(); });
-$("pontoA").addEventListener("change", () => {
-  const t = $("pontoA").value.trim();
-  if (!t) { S.pontoA = null; S.ancora = ""; salvar(); preencherCampos(); atualizar(); return; }
-  const ns = lerCoord(t);
-  if (!ns) { aviso("Ponto A inválido. Escreva latitude e longitude, por exemplo -10,5827557; -55,9401554."); preencherCampos(); return; }
-  S.pontoA = ns; const r = rumoAB();
-  if (r && r.dist < 50) { aviso("Os pontos A e B estão muito perto. Use os pontos das pontas da linha."); S.pontoB = null; }
+/* Pontos A e B: latitude e longitude em campos separados; o texto colado fica guardado na hora (rascunho) */
+const AB_CAMPOS = ["aLat", "aLon", "bLat", "bLon"];
+const lerGrau = t => { t = String(t ?? "").trim().replace(/\s/g, ""); if (!t) return null; if (t.includes(",") && !t.includes(".")) t = t.replace(",", "."); const v = Number(t); return isFinite(v) ? v : NaN; };
+function textoAB(){ const o = {}; AB_CAMPOS.forEach(k => { o[k] = $(k).value; }); return o; }
+function preencherAB(){
+  const txt = S.abTxt || {}, de = (pt, i) => pt ? fmtMax(pt[i], 7) : "";
+  const val = {aLat: txt.aLat ?? de(S.pontoA, 0), aLon: txt.aLon ?? de(S.pontoA, 1), bLat: txt.bLat ?? de(S.pontoB, 0), bLon: txt.bLon ?? de(S.pontoB, 1)};
+  AB_CAMPOS.forEach(k => { if (document.activeElement !== $(k)) $(k).value = val[k]; });
+  estadoAB();
+}
+function pontoDe(lat, lon){ // [lat, lon] válido, null se os dois vazios, false se incompleto ou inválido
+  const a = lerGrau(lat), o = lerGrau(lon);
+  if (a == null && o == null) return null;
+  if (a == null || o == null || !isFinite(a) || !isFinite(o) || Math.abs(a) > 90 || Math.abs(o) > 180) return false;
+  return [a, o];
+}
+function estadoAB(){
+  [["a", S.pontoA], ["b", S.pontoB]].forEach(([q, pt]) => {
+    const p = pontoDe($(q + "Lat").value, $(q + "Lon").value), el = $(q + "Ok"), nome = q.toUpperCase();
+    ["Lat", "Lon"].forEach(c => $(q + c).setAttribute("aria-invalid", String(p === false && lerGrau($(q + c).value) !== null && !(isFinite(lerGrau($(q + c).value)) && Math.abs(lerGrau($(q + c).value)) <= (c === "Lat" ? 90 : 180)))));
+    if (p && pt) { el.className = "ab-ok ok"; el.innerHTML = `<svg class="nd-ic" aria-hidden="true"><use href="#i-circle-check"/></svg>Ponto ${nome} no mapa`; }
+    else if (p === false) { el.className = "ab-ok erro"; el.innerHTML = `<svg class="nd-ic" aria-hidden="true"><use href="#i-triangle-alert"/></svg>Falta ${lerGrau($(q + "Lat").value) == null ? "a latitude" : lerGrau($(q + "Lon").value) == null ? "a longitude" : "corrigir: latitude entre -90 e 90, longitude entre -180 e 180"}`; }
+    else { el.className = "ab-ok"; el.textContent = "Não informado"; }
+  });
+}
+let abTimer = null;
+function aplicarPontosAB(avisar){
+  clearTimeout(abTimer);
+  S.abTxt = textoAB();
+  const a = pontoDe(S.abTxt.aLat, S.abTxt.aLon), b = pontoDe(S.abTxt.bLat, S.abTxt.bLon);
+  const antes = JSON.stringify([S.pontoA, S.pontoB]);
+  if (a !== false) { S.pontoA = a; if (!a) S.ancora = ""; }
+  if (b !== false) S.pontoB = b;
+  const r = rumoAB();
+  if (r && r.dist < 50) { if (avisar) aviso("Os pontos A e B estão a menos de 50 m. Use os pontos das pontas da linha."); S.pontoB = null; }
   if (rumoAB()) aplicarAB();
-  salvar(); preencherCampos(); atualizar();
-  if (MAP) MAP.panTo([ns[0], ns[1]]);
+  salvar(); estadoAB();
+  if (JSON.stringify([S.pontoA, S.pontoB]) !== antes) { preencherCampos(); atualizar(); if (a && avisar && MAP && !MAP.getBounds().contains([a[0], a[1]])) MAP.panTo([a[0], a[1]]); }
+}
+document.querySelector("#abBox").addEventListener("input", e => { if (!e.target.dataset.ab) return; S.abTxt = textoAB(); salvar(); estadoAB(); clearTimeout(abTimer); abTimer = setTimeout(() => aplicarPontosAB(false), 500); });
+document.querySelector("#abBox").addEventListener("change", e => { if (e.target.dataset.ab) aplicarPontosAB(true); });
+document.querySelector("#abBox").addEventListener("paste", e => { // "lat, lon" colados juntos: separa nos dois campos do ponto
+  const k = e.target.dataset.ab; if (!k) return;
+  const txt = (e.clipboardData || window.clipboardData)?.getData("text") || "", par = lerCoord(txt);
+  if (!par) return; // um número só: colagem normal
+  e.preventDefault(); const q = k[0]; $(q + "Lat").value = String(par[0]).replace(".", ","); $(q + "Lon").value = String(par[1]).replace(".", ","); aplicarPontosAB(true);
 });
+$("btnLimparAB").addEventListener("click", () => { AB_CAMPOS.forEach(k => { $(k).value = ""; }); aplicarPontosAB(false); aviso("Pontos A e B apagados"); });
+document.addEventListener("visibilitychange", () => { if (document.hidden && document.querySelector("#abBox").contains(document.activeElement)) aplicarPontosAB(false); });
+
 campoNum("W", "W", 6, 200); campoNum("L", "L", 10, 500); campoNum("nC", "nC", 1, 80, true); campoNum("nR", "nR", 1, 80, true); campoNum("bord", "bord", 0, 200);
 $("alvo").addEventListener("change", () => { const v = num($("alvo").value); if (isFinite(v) && v > 0) { S.alvo = v; ajustarTamanho(); salvar(); preencherCampos(); atualizar(); } else preencherCampos(); });
 $("codigo").addEventListener("input", () => { S.codigo = $("codigo").value; salvar(); });
