@@ -1093,7 +1093,7 @@ async function renderSalvos(){
   else $("ensInfo").textContent = es.length ? "O que está na tela ainda não foi salvo. Escolha um ensaio na lista para abrir, ou salve este." : "Monte o ensaio e toque em Salvar ensaio. Ele entra nesta lista para abrir depois, com posição, tratamentos e vazões.";
   $("btnApagarEnsaio").hidden = !ab || !SALVOS.podeEscrever;
   $("btnApagarEnsaio").querySelector("span").textContent = SALVOS.confApagar && ab && SALVOS.confApagar === ab.id ? `Toque de novo para apagar "${ab.nome}"` : "Apagar ensaio aberto";
-  $("btnNovoEnsaio").querySelector("span").textContent = SALVOS.confNovo ? "Toque de novo: começa do zero" : "Novo ensaio";
+  $("btnNovoEnsaio").querySelector("span").textContent = SALVOS.confNovo ? "Toque de novo: zera tudo" : "Novo ensaio";
   const aberto = S.ensaioId && SALVOS.ensaios.find(e => e.id === S.ensaioId);
   $("btnSalvarEnsaio").querySelector("span").textContent = aberto ? `Salvar alterações em "${aberto.nome}"` : "Salvar ensaio";
   $("btnSalvarNovo").hidden = !aberto || !SALVOS.podeEscrever; $("btnSalvarEnsaio").hidden = !SALVOS.podeEscrever;
@@ -1165,13 +1165,14 @@ $("btnApagarEnsaio").addEventListener("click", async () => {
   try { await ARMAZEM.apagar("ensaios", en.id); S.ensaioId = null; salvar(); aviso(`Ensaio "${en.nome}" apagado`); renderSalvos(); }
   catch (err) { msgSalvos("ensMsg", "Não consegui apagar agora. Tente de novo."); }
 });
-$("btnNovoEnsaio").addEventListener("click", () => { // começa do zero no talhão atual (com a linha AB salva mais recente dele)
+$("btnNovoEnsaio").addEventListener("click", () => { // começa do zero no talhão atual
   if (!SALVOS.confNovo) { SALVOS.confNovo = true; renderSalvos(); clearTimeout(SALVOS._tn); SALVOS._tn = setTimeout(() => { SALVOS.confNovo = false; renderSalvos(); }, 4000); return; }
   SALVOS.confNovo = false; clearTimeout(SALVOS._tn);
-  const v = S; // mantém a linha AB e o espaçamento que estão na tela
-  S = {...PADRAO, talhao:v.talhao, trats:PADRAO.trats.map(t => ({...t})), pontoA:v.pontoA, pontoB:v.pontoB, ang:v.ang, rumoFixo:v.rumoFixo, W:v.W, linhaId:v.linhaId, modo:v.modo};
-  $("ensaioForm").hidden = true; ajustarAoTalhao(); salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar(); renderSalvos();
-  aviso(`Novo ensaio no ${v.talhao}`); window.scrollTo({top:0, behavior:"smooth"});
+  const tal = S.talhao; // zera tudo: só fica o talhão escolhido (sem linha AB, sem tratamentos, tamanho padrão)
+  S = {...PADRAO, talhao:tal, trats:PADRAO.trats.map(t => ({...t}))};
+  $("ensaioForm").hidden = true; $("linhaForm").hidden = true; $("linhaSel").value = "";
+  ajustarAoTalhao(); salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar(); renderSalvos(); arqMsg("", "");
+  aviso(`Novo ensaio no ${tal}: tudo zerado`); window.scrollTo({top:0, behavior:"smooth"});
 });
 
 /* ---------- relatório em PDF: croqui, referências da linha AB e áreas por teste (base Nadiana: pdf.js) ---------- */
