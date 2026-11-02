@@ -614,9 +614,13 @@ function escolherTalhao(nome, ajustar){
   salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar();
   $("mapMsg").textContent = "Arraste o círculo para mudar o ensaio de lugar. Toque num quadrado para ver o tratamento.";
 }
-function preencherLista(){
-  const nomes = TALHOES.map(t => t.nome).sort((a, b) => a.localeCompare(b, "pt-BR", {numeric:true}));
-  $("talhao").innerHTML = '<option value="">Escolha o talhão</option>' + nomes.map(n => `<option${n === S.talhao ? " selected" : ""}>${esc(n)}</option>`).join("");
+function preencherLista(){ // agrupa por bloco quando os limites trazem o bloco (FARM_NAME)
+  const ord = (a, b) => a.localeCompare(b, "pt-BR", {numeric:true}), opt = n => `<option${n === S.talhao ? " selected" : ""}>${esc(n)}</option>`;
+  const blocos = {}; TALHOES.forEach(t => { const b = t.bloco || ""; (blocos[b] = blocos[b] || []).push(t.nome); });
+  const chaves = Object.keys(blocos).sort((a, b) => !a ? 1 : !b ? -1 : ord(a, b));
+  $("talhao").innerHTML = '<option value="">Escolha o talhão</option>' + (chaves.length > 1 || chaves[0]
+    ? chaves.map(b => `<optgroup label="${esc(b || "Sem bloco")}">${blocos[b].sort(ord).map(opt).join("")}</optgroup>`).join("")
+    : TALHOES.map(t => t.nome).sort(ord).map(opt).join(""));
 }
 
 /* ---------- eventos ---------- */
@@ -1136,12 +1140,13 @@ async function lerGpkg(buf, base){
       if (!r.length) continue;
       const cols = r[0].columns, gi = cols.indexOf(col);
       r[0].values.forEach((row, i) => { const props = {}; cols.forEach((c, k) => { if (k !== gi) props[c] = row[k]; });
-        const rings = gpkgGeom(row[gi]); if (rings && rings.length) out.push({nome:nomeDe(props, i, base), rings}); });
+        const rings = gpkgGeom(row[gi]); if (rings && rings.length) out.push({nome:nomeDe(props, i, base), bloco:blocoDe(props), rings}); });
     }
     return out;
   } finally { db.close(); }
 }
 const NOME_CAMPOS = ["talhao", "TALHAO", "Talhao", "name", "Name", "NAME", "nome", "NOME", "FIELD_NAME", "FieldName", "FIELD", "Field", "field", "TALHAO_NOM"];
+const blocoDe = p => { for (const k of ["bloco", "BLOCO", "Bloco", "FARM_NAME", "FarmName", "farm"]) if (p && p[k]) return String(p[k]).trim(); return ""; };
 const nomeDe = (p, i, base) => { for (const k of NOME_CAMPOS) if (p && p[k]) return String(p[k]).trim(); return `${base} ${i + 1}`; };
 function geomParaRings(g){ if (!g) return null; if (g.type === "Polygon") return g.coordinates; if (g.type === "MultiPolygon") return g.coordinates.flat(); return null; }
 async function importar(arq){
@@ -1154,7 +1159,7 @@ async function importar(arq){
     if (!shpN) throw new Error("O .zip não tem shapefile (.shp).");
     if (!z[shpN]) throw new Error("Compressão do .zip não suportada. Compacte de novo e tente outra vez.");
     const polis = lerShp(await z[shpN]()), dbfN = shpN.replace(/\.shp$/, ".dbf"), regs = z[dbfN] ? lerDbf(await z[dbfN]()) : [];
-    polis.forEach((r, i) => { if (r && r.length) novos.push({nome:nomeDe(regs[i], i, base), rings:r}); });
+    polis.forEach((r, i) => { if (r && r.length) novos.push({nome:nomeDe(regs[i], i, base), bloco:blocoDe(regs[i]), rings:r}); });
   } else if (ext === "kml") {
     const doc = new DOMParser().parseFromString(await arq.text(), "application/xml");
     [...doc.getElementsByTagName("Placemark")].forEach((pm, i) => {
@@ -1167,7 +1172,7 @@ async function importar(arq){
     const j = JSON.parse(await arq.text());
     if (j.properties && j.properties.plano && Array.isArray(j.properties.plano.trats)) return {plano:j.properties.plano}; // GeoJSON baixado desta tela: reabre o plano
     const fs = j.type === "FeatureCollection" ? j.features : j.type === "Feature" ? [j] : [{type:"Feature", properties:{}, geometry:j}];
-    fs.forEach((f, i) => { const r = geomParaRings(f.geometry); if (r && r.length) novos.push({nome:nomeDe(f.properties, i, base), rings:r}); });
+    fs.forEach((f, i) => { const r = geomParaRings(f.geometry); if (r && r.length) novos.push({nome:nomeDe(f.properties, i, base), bloco:blocoDe(f.properties), rings:r}); });
   }
   if (!novos.length) throw new Error("Não achei polígono no arquivo.");
   if (novos.some(t => t.rings.flat().some(p => Math.abs(p[0]) > 180 || Math.abs(p[1]) > 90))) throw new Error("O limite precisa estar em latitude e longitude (WGS84). Exporte de novo nesse sistema.");
@@ -1194,7 +1199,7 @@ function juntarTalhoes(daFazenda){
   TALHOES = [...daFazenda.filter(t => !nomesImp.has(t.nome)), ...importados.map(t => ({...t, origem:"importado"}))];
 }
 function deGeoJSON(gj){
-  return (gj.features || []).map((f, i) => ({nome: nomeDe(f.properties, i, "Talhão"), rings: geomParaRings(f.geometry), origem:"fazenda"})).filter(t => t.rings && t.rings.length);
+  return (gj.features || []).map((f, i) => ({nome: nomeDe(f.properties, i, "Talhão"), bloco: blocoDe(f.properties), rings: geomParaRings(f.geometry), origem:"fazenda"})).filter(t => t.rings && t.rings.length);
 }
 async function carregarMapa(){
   let c = null; try { c = JSON.parse(lsGet("lancar.mapa") || "null"); } catch (e) {}
