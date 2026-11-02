@@ -48,11 +48,6 @@ details.alt summary{cursor:pointer;min-height:44px;display:flex;align-items:cent
 details.alt .trs{padding-top:var(--space-2)}
 .salvos{display:flex;flex-direction:column;gap:var(--space-3);border-top:1px solid var(--line2);padding-top:var(--space-3)}
 .salvar-form{display:flex;flex-direction:column;gap:var(--space-3);background:var(--panel2);border-radius:var(--radius-lg);padding:var(--space-3)}
-#ensLista > div{flex-wrap:wrap}
-#ensLista .ini{flex:1 1 220px}
-#ensLista .t{overflow-wrap:anywhere}
-#ensLista .acoes-l{flex:0 0 auto}
-#ensLista .atual .t::after{content:" · aberto";color:var(--ok);font-weight:500}
 .posicao{display:flex;flex-direction:column;gap:var(--space-3_5);border:1px solid var(--line2);border-radius:var(--radius-xl);padding:var(--space-3) var(--space-3_5) var(--space-3_5)}
 .mais-menos{display:grid;grid-template-columns:52px minmax(0,1fr) 52px;gap:var(--space-2);align-items:center}
 .mais-menos .nd-btn{min-height:48px;padding:0;font-family:var(--font-display);font-size:26px;font-weight:600;line-height:1}
@@ -272,20 +267,25 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
           </section>
 
           <section class="nd-cartao" id="ensaiosBox">
-            <h2>Ensaios salvos</h2>
+            <h2>Ensaios</h2>
+            <label class="nd-campo">Ensaios salvos
+              <select class="nd-inp" id="ensSel"><option value="">Carregando…</option></select>
+            </label>
+            <p class="dica" id="ensInfo"></p>
+            <div class="nd-seg" id="ensFiltro" role="group" aria-label="Quais ensaios mostrar na lista">
+              <button type="button" data-v="talhao" aria-pressed="true">Deste talhão</button>
+              <button type="button" data-v="todos" aria-pressed="false">Todos os talhões</button>
+            </div>
             <div class="acoes-l">
+              <button class="nd-btn nd-onda" type="button" id="btnNovoEnsaio"><svg class="nd-ic gira" aria-hidden="true"><use href="#i-plus"/></svg><span>Novo ensaio</span></button>
               <button class="nd-btn primario nd-onda" type="button" id="btnSalvarEnsaio"><svg class="nd-ic" aria-hidden="true"><use href="#i-check"/></svg><span>Salvar ensaio</span></button>
-              <button class="nd-btn nd-onda" type="button" id="btnSalvarNovo" hidden><svg class="nd-ic gira" aria-hidden="true"><use href="#i-plus"/></svg>Salvar como novo</button>
+              <button class="nd-btn nd-onda" type="button" id="btnSalvarNovo" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-copy"/></svg>Salvar como novo</button>
+              <button class="nd-btn leve nd-onda" type="button" id="btnApagarEnsaio" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-trash-2"/></svg><span>Apagar ensaio aberto</span></button>
             </div>
             <div class="salvar-form" id="ensaioForm" hidden>
               <label class="nd-campo">Nome do ensaio<input class="nd-inp" id="ensaioNome" autocomplete="off" maxlength="80"></label>
               <div class="acoes-l"><button class="nd-btn primario nd-onda" type="button" id="ensaioOk">Salvar</button><button class="nd-btn leve nd-onda" type="button" id="ensaioCancel">Cancelar</button></div>
             </div>
-            <div class="nd-seg" id="ensFiltro" role="group" aria-label="Quais ensaios mostrar">
-              <button type="button" data-v="talhao" aria-pressed="true">Deste talhão</button>
-              <button type="button" data-v="todos" aria-pressed="false">Todos os talhões</button>
-            </div>
-            <div class="nd-lista" id="ensLista"></div>
             <p class="dica" id="ensMsg"></p>
           </section>
 
@@ -1083,11 +1083,17 @@ async function renderSalvos(){
   const tok = SALVOS.tok = (SALVOS.tok || 0) + 1;
   const nomes = await nomesDe([...new Set(es.map(e => e.por).filter(Boolean))]);
   if (tok !== SALVOS.tok) return; // uma atualização mais nova já desenhou a lista
-  $("ensLista").innerHTML = es.length ? es.map(e => { const pl = e.plano || {}, nt = (pl.trats || []).length;
-    return `<div class="${e.id === S.ensaioId ? "atual" : ""}"><div class="ini"><span class="av"><svg class="nd-ic" aria-hidden="true"><use href="#i-file-text"/></svg></span><div>
-      <span class="t">${esc(e.nome)}</span><span class="s">${esc(e.talhao)} · ${nt} tratamentos · ${pl.desenho === "faixas" ? "faixas" : `${pl.nC || "?"} × ${pl.nR || "?"} quadrados`}${e.resumo ? " · " + esc(e.resumo) : ""} · ${esc(dataHora(e.atualizadoEm || e.criadoEm))}${e.por && nomes[e.por] && nomes[e.por].name ? " · " + esc(nomes[e.por].name) : ""}</span></div></div>
-      <div class="acoes-l"><button class="nd-btn nd-onda" type="button" data-abrir="${esc(e.id)}">Abrir</button>${SALVOS.podeEscrever ? `<button class="nd-btn leve nd-onda" type="button" data-apagar="${esc(e.id)}">${SALVOS.confApagar === e.id ? "Toque de novo para apagar" : "Apagar"}</button>` : ""}</div></div>`; }).join("")
-    : `<div class="nd-vazio"><h3>Nenhum ensaio salvo${todos ? "" : " neste talhão"}</h3><p>Monte o ensaio e toque em Salvar ensaio. Ele aparece aqui para abrir depois, com posição, tratamentos e vazões.</p></div>`;
+  const selE = $("ensSel"), rotulo = e => `${e.nome} · ${todos ? e.talhao + " · " : ""}${dataHora(e.atualizadoEm || e.criadoEm)}`;
+  selE.innerHTML = (es.length ? `<option value="">Escolha um ensaio salvo (${es.length})</option>` : `<option value="">Nenhum ensaio salvo${todos ? "" : " neste talhão"}</option>`)
+    + es.map(e => `<option value="${esc(e.id)}">${esc(rotulo(e))}</option>`).join("");
+  selE.value = es.some(e => e.id === S.ensaioId) ? S.ensaioId : "";
+  const ab = S.ensaioId && SALVOS.ensaios.find(e => e.id === S.ensaioId);
+  if (ab) { const pl = ab.plano || {}, nt = (pl.trats || []).length;
+    $("ensInfo").textContent = `Aberto: ${ab.nome} · ${ab.talhao} · ${nt} tratamentos · ${pl.nC || "?"} × ${pl.nR || "?"} quadrados${ab.resumo ? " · " + ab.resumo : ""} · salvo em ${dataHora(ab.atualizadoEm || ab.criadoEm)}${ab.por && nomes[ab.por] && nomes[ab.por].name ? " por " + nomes[ab.por].name : ""}.`; }
+  else $("ensInfo").textContent = es.length ? "O que está na tela ainda não foi salvo. Escolha um ensaio na lista para abrir, ou salve este." : "Monte o ensaio e toque em Salvar ensaio. Ele entra nesta lista para abrir depois, com posição, tratamentos e vazões.";
+  $("btnApagarEnsaio").hidden = !ab || !SALVOS.podeEscrever;
+  $("btnApagarEnsaio").querySelector("span").textContent = SALVOS.confApagar && ab && SALVOS.confApagar === ab.id ? `Toque de novo para apagar "${ab.nome}"` : "Apagar ensaio aberto";
+  $("btnNovoEnsaio").querySelector("span").textContent = SALVOS.confNovo ? "Toque de novo: começa do zero" : "Novo ensaio";
   const aberto = S.ensaioId && SALVOS.ensaios.find(e => e.id === S.ensaioId);
   $("btnSalvarEnsaio").querySelector("span").textContent = aberto ? `Salvar alterações em "${aberto.nome}"` : "Salvar ensaio";
   $("btnSalvarNovo").hidden = !aberto || !SALVOS.podeEscrever; $("btnSalvarEnsaio").hidden = !SALVOS.podeEscrever;
@@ -1146,16 +1152,26 @@ $("ensaioOk").addEventListener("click", async () => {
   finally { b.disabled = false; }
 });
 $("ensFiltro").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; [...$("ensFiltro").children].forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderSalvos(); });
-$("ensLista").addEventListener("click", async e => {
-  const ab = e.target.closest("[data-abrir]"), ap = e.target.closest("[data-apagar]");
-  if (ab) { const en = SALVOS.ensaios.find(x => x.id === ab.dataset.abrir); if (!en || !en.plano) return;
-    if (!TALHOES.some(t => t.nome === en.talhao)) { msgSalvos("ensMsg", `O talhão ${en.talhao} não está no mapa. Importe o limite dele primeiro.`); return; }
-    S = {...PADRAO, ...en.plano}; migrarPlano(); S.ensaioId = en.id; S.abTxt = null; salvar(); escolherTalhao(en.talhao, false); renderSalvos(); aviso(`Ensaio "${en.nome}" aberto`); window.scrollTo({top:0, behavior:"smooth"}); }
-  if (ap) { const en = SALVOS.ensaios.find(x => x.id === ap.dataset.apagar); if (!en) return;
-    if (SALVOS.confApagar !== en.id) { SALVOS.confApagar = en.id; renderSalvos(); clearTimeout(SALVOS._tc); SALVOS._tc = setTimeout(() => { SALVOS.confApagar = null; renderSalvos(); }, 4000); return; }
-    SALVOS.confApagar = null;
-    try { await ARMAZEM.apagar("ensaios", en.id); if (S.ensaioId === en.id) { S.ensaioId = null; salvar(); } aviso(`Ensaio "${en.nome}" apagado`); }
-    catch (err) { msgSalvos("ensMsg", "Não consegui apagar agora. Tente de novo."); } }
+function abrirEnsaio(id){
+  const en = SALVOS.ensaios.find(x => x.id === id); if (!en || !en.plano) return;
+  if (!TALHOES.some(t => t.nome === en.talhao)) { msgSalvos("ensMsg", `O talhão ${en.talhao} não está no mapa. Importe o limite dele primeiro.`); renderSalvos(); return; }
+  S = {...PADRAO, ...en.plano}; migrarPlano(); S.ensaioId = en.id; S.abTxt = null; salvar(); escolherTalhao(en.talhao, false); renderSalvos(); aviso(`Ensaio "${en.nome}" aberto`);
+}
+$("ensSel").addEventListener("change", () => { const id = $("ensSel").value; if (id && id !== S.ensaioId) abrirEnsaio(id); });
+$("btnApagarEnsaio").addEventListener("click", async () => {
+  const en = S.ensaioId && SALVOS.ensaios.find(x => x.id === S.ensaioId); if (!en) return;
+  if (SALVOS.confApagar !== en.id) { SALVOS.confApagar = en.id; renderSalvos(); clearTimeout(SALVOS._tc); SALVOS._tc = setTimeout(() => { SALVOS.confApagar = null; renderSalvos(); }, 4000); return; }
+  SALVOS.confApagar = null;
+  try { await ARMAZEM.apagar("ensaios", en.id); S.ensaioId = null; salvar(); aviso(`Ensaio "${en.nome}" apagado`); renderSalvos(); }
+  catch (err) { msgSalvos("ensMsg", "Não consegui apagar agora. Tente de novo."); }
+});
+$("btnNovoEnsaio").addEventListener("click", () => { // começa do zero no talhão atual (com a linha AB salva mais recente dele)
+  if (!SALVOS.confNovo) { SALVOS.confNovo = true; renderSalvos(); clearTimeout(SALVOS._tn); SALVOS._tn = setTimeout(() => { SALVOS.confNovo = false; renderSalvos(); }, 4000); return; }
+  SALVOS.confNovo = false; clearTimeout(SALVOS._tn);
+  const v = S; // mantém a linha AB e o espaçamento que estão na tela
+  S = {...PADRAO, talhao:v.talhao, trats:PADRAO.trats.map(t => ({...t})), pontoA:v.pontoA, pontoB:v.pontoB, ang:v.ang, rumoFixo:v.rumoFixo, W:v.W, linhaId:v.linhaId, modo:v.modo};
+  $("ensaioForm").hidden = true; ajustarAoTalhao(); salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar(); renderSalvos();
+  aviso(`Novo ensaio no ${v.talhao}`); window.scrollTo({top:0, behavior:"smooth"});
 });
 
 /* ---------- relatório em PDF: croqui, referências da linha AB e áreas por teste (base Nadiana: pdf.js) ---------- */
