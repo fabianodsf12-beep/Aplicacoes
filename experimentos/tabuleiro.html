@@ -250,7 +250,7 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
             <div class="acoes-l">
               <button class="nd-btn nd-onda" type="button" id="btnAddTr"><svg class="nd-ic gira" aria-hidden="true"><use href="#i-plus"/></svg>Tratamento</button>
             </div>
-            <p class="dica">Vazão de calda de cada tratamento, em L/ha. Testemunha é 0 (bicos fechados). Vai na coluna VAZAO dos arquivos de aplicação.</p>
+            <p class="dica">Vazão de calda de cada tratamento, em L/ha. Testemunha é 0 (bicos fechados). Vai na coluna TAXA dos arquivos de aplicação, como número inteiro.</p>
             <div class="acoes-l">
               <button class="nd-btn nd-onda modo" type="button" id="btnInverter"><svg class="nd-ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg>Inverter o xadrez</button>
               <button class="nd-btn nd-onda modo" type="button" id="btnSortear"><svg class="nd-ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg>Sortear de novo</button>
@@ -302,16 +302,16 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
             </div>
             <div id="arqMsg"></div>
             <p class="dica" id="rxDica"></p>
-            <p class="dica">Cada arquivo de zona tem uma linha com todos os quadrados daquele teste juntos (ZONA, NOME, VAZAO, QUADRADOS, AREA_HA); as prescrições prontas têm um polígono por quadrado, com TRAT, VAZAO, ID e PISTA. Tudo em coordenadas geográficas WGS84. O KML e a planilha servem para a equipe achar os quadrados no campo e para a análise depois da colheita.</p>
+            <p class="dica">Cada arquivo de zona tem uma linha com todos os quadrados daquele teste juntos (só a coluna TAXA, em L/ha, número inteiro); as prescrições prontas têm um polígono por quadrado, também só com TAXA. Tudo em coordenadas geográficas WGS84. O KML e a planilha servem para a equipe achar os quadrados no campo e para a análise depois da colheita.</p>
           </section>
 
           <section class="nd-cartao">
             <h2>Como levar para o M4030</h2>
             <ol class="passos-jd">
               <li>Produtos diferentes: baixe um arquivo por teste (Zona A, Zona B…). Cada arquivo tem só os quadrados sorteados para aquele teste. Não descompacte o .zip.</li>
-              <li>No Operations Center, envie cada arquivo em Arquivos e crie a prescrição daquele teste, com a vazão (coluna VAZAO) na zona. Fora da zona, bicos fechados.</li>
+              <li>No Operations Center, envie cada arquivo em Arquivos e crie a prescrição daquele teste, usando a coluna TAXA. Fora da zona, bicos fechados.</li>
               <li>Cada teste é uma aplicação separada, com o seu produto no tanque. A testemunha não tem arquivo: fica fora de todas as zonas. Lave o tanque entre um produto e outro.</li>
-              <li>Vazões diferentes da mesma calda: um arquivo só com todas as zonas e a coluna VAZAO, numa aplicação só.</li>
+              <li>Vazões diferentes da mesma calda: um arquivo só com todas as zonas e a coluna TAXA, numa aplicação só.</li>
               <li>Mande para o monitor pela transferência de dados, ou leve por pendrive.</li>
               <li>Ligue o desligamento bico a bico (Section Control) e trabalhe com sinal RTK.</li>
               <li>Antes do produto, faça um teste só com água em 3 ou 4 quadrados e confira o mapa do aplicado: a testemunha tem que sair sem aplicação.</li>
@@ -782,6 +782,7 @@ $("trs").addEventListener("change", e => {
   let v = el.value.trim();
   if (k === "cod") { v = v.toUpperCase().replace(/[^A-Z0-9+]/g, "").slice(0, 4); if (!v || S.trats.some((t, j) => j !== i && t.cod === v)) { aviso("Use um código diferente para cada tratamento."); el.value = S.trats[i].cod; return; } }
   if (k === "dose" && v && !(num(v) >= 0)) { aviso("Vazão inválida. Use L/ha, por exemplo 50."); el.value = S.trats[i].dose; return; }
+  if (k === "dose" && v && String(Math.round(num(v))) !== v) { const r = String(Math.round(num(v))); aviso(`Vazão arredondada para ${r} L/ha: a taxa vai como número inteiro.`); v = r; }
   S.trats[i][k] = v; salvar(); renderTrats(); atualizar(); arqMsg("", "");
 });
 $("trs").addEventListener("click", e => { const b = e.target.closest("[data-rm]"); if (!b || S.trats.length <= 2) return; S.trats.splice(+b.dataset.rm, 1); salvar(); renderTrats(); atualizar(); });
@@ -918,8 +919,10 @@ function faltaAplicacao(lista){ // trava os arquivos de aplicação: nenhum sai 
   const c0 = campos.find(Boolean); if (c0) { c0.scrollIntoView({behavior:"smooth", block:"center"}); setTimeout(() => c0.focus({preventScroll:true}), 300); }
   return true;
 }
-const CAMPOS_ZONA = () => [{nome:"ZONA", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, ...(S.modo === "doses" ? [{nome:"VAZAO", tipo:"N", tam:10, dec:2}] : []), {nome:"UNIDADE", tipo:"C", tam:6},
-  ...S.trats.filter(t => S.modo === "produtos" && !ehTest(t)).map(t => ({nome:("V_" + semAcento(t.cod).replace(/[^A-Za-z0-9]/g, "")).slice(0, 10), tipo:"N", tam:12, dec:3})),
+const CAMPO_TAXA = [{nome:"TAXA", tipo:"N", tam:6, dec:0}]; // arquivos de aplicação: só a taxa, número inteiro (L/ha)
+const taxa = v => Math.round(num(v));
+const CAMPOS_ZONA = () => [{nome:"ZONA", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, {nome:"UNIDADE", tipo:"C", tam:6},
+  ...S.trats.filter(t => !ehTest(t)).map(t => ({nome:("V_" + semAcento(t.cod).replace(/[^A-Za-z0-9]/g, "")).slice(0, 10), tipo:"N", tam:6, dec:0})),
   {nome:"QUADRADOS", tipo:"N", tam:5}, {nome:"AREA_HA", tipo:"N", tam:10, dec:2}];
 function baixarZonas(){
   if (!exigirGrade()) return;
@@ -927,13 +930,15 @@ function baixarZonas(){
   if (faltaAplicacao(prods)) return;
   const fe = S.trats.map((t, ti) => {
     const nq = GRADE.quads.filter(q => q.ok && q.ti === ti).length; if (!nq) return null;
-    const d = num(t.dose), props = {ZONA:t.cod, NOME:t.nome || t.cod, VAZAO:d, UNIDADE:"L/ha", QUADRADOS:nq, AREA_HA:nq * GRADE.areaQ};
-    prods.forEach(pt => { const dp = num(pt.dose); props[("V_" + semAcento(pt.cod).replace(/[^A-Za-z0-9]/g, "")).slice(0, 10)] = pt === t ? (isFinite(dp) ? dp : null) : 0; });
-    return {aneis:aneisDaZona(ti), props};
+    if (S.modo === "doses") return {aneis:aneisDaZona(ti), props:{TAXA:taxa(t.dose)}, cod:t.cod}; // vazões: arquivo de aplicação, só TAXA
+    const props = {ZONA:t.cod, NOME:t.nome || t.cod, UNIDADE:"L/ha", QUADRADOS:nq, AREA_HA:nq * GRADE.areaQ};
+    prods.forEach(pt => { props[("V_" + semAcento(pt.cod).replace(/[^A-Za-z0-9]/g, "")).slice(0, 10)] = pt === t ? taxa(pt.dose) : 0; });
+    return {aneis:aneisDaZona(ti), props, cod:t.cod};
   }).filter(Boolean);
   const b = nomeBase() + "_zonas";
-  baixar(zipShp(shapefile(fe, CAMPOS_ZONA()), b), b + ".zip");
-  arqMsg("", `<b>Zonas baixadas</b>${fe.length} zonas (${fe.map(f => esc(f.props.ZONA)).join(", ")}), uma por tratamento, coluna ZONA. ${S.modo === "produtos" ? "As colunas V_ trazem a vazão de cada teste por zona (0 nas outras). Cada aplicação usa uma coluna: V_A na do teste A, V_B na do B, e assim por diante." : "VAZAO traz a vazão de cada zona (0 na testemunha)."}`);
+  baixar(zipShp(shapefile(fe, S.modo === "doses" ? CAMPO_TAXA : CAMPOS_ZONA()), b), b + ".zip");
+  arqMsg("", S.modo === "doses" ? `<b>Zonas baixadas</b>${fe.length} zonas (${fe.map(f => esc(f.cod)).join(", ")}), com a coluna TAXA (vazão em L/ha, número inteiro; 0 na testemunha).`
+    : `<b>Zonas baixadas (para conferir)</b>${fe.length} zonas (${fe.map(f => esc(f.cod)).join(", ")}), com ZONA e as colunas V_ (vazão de cada teste na zona dele, 0 nas outras). Para aplicar, use o arquivo da zona de cada teste, que tem só a TAXA.`);
 }
 /* Produtos diferentes: um arquivo por teste, só com a zona dele (os quadrados sorteados para aquele teste) */
 function baixarZonaTeste(ti){
@@ -942,18 +947,17 @@ function baixarZonaTeste(ti){
   if (!t || !nq) { arqMsg("erro", "<b>Zona vazia</b>Esse teste não tem quadrados dentro do talhão."); return; }
   if (faltaAplicacao([t])) return;
   const d = num(t.dose), cod = semAcento(t.cod).replace(/[^A-Za-z0-9]/g, "");
-  const fe = [{aneis:aneisDaZona(ti), props:{ZONA:t.cod, NOME:t.nome || t.cod, VAZAO:d, UNIDADE:"L/ha", QUADRADOS:nq, AREA_HA:nq * GRADE.areaQ}}];
-  const campos = [{nome:"ZONA", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, {nome:"VAZAO", tipo:"N", tam:10, dec:2}, {nome:"UNIDADE", tipo:"C", tam:6}, {nome:"QUADRADOS", tipo:"N", tam:5}, {nome:"AREA_HA", tipo:"N", tam:10, dec:2}];
+  const fe = [{aneis:aneisDaZona(ti), props:{TAXA:taxa(d)}}];
   const b = nomeBase() + "_zona_" + cod;
-  baixar(zipShp(shapefile(fe, campos), b), b + ".zip");
-  arqMsg("", `<b>Zona ${esc(t.cod)} baixada</b>${fmt(nq)} quadrados, ${fmt(nq * GRADE.areaQ, 2)} ha, só do ${esc(t.nome || t.cod)}. VAZAO ${fmtMax(d, 2)} L/ha. Fora da zona, bicos fechados.`);
+  baixar(zipShp(shapefile(fe, CAMPO_TAXA), b), b + ".zip");
+  arqMsg("", `<b>Zona ${esc(t.cod)} baixada</b>${fmt(nq)} quadrados, ${fmt(nq * GRADE.areaQ, 2)} ha, só do ${esc(t.nome || t.cod)}. TAXA ${taxa(d)} (L/ha). Fora da zona, bicos fechados.`);
 }
 function renderRxBtns(){
   const ic = '<svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>';
   if (S.modo === "doses") {
     $("rxBtns").innerHTML = `<button class="nd-btn primario grande nd-onda" type="button" data-zonas>${ic}Zonas de todas as vazões (shapefile)</button>`
       + `<details class="alt"><summary>Ou uma prescrição pronta por quadrado</summary><div class="trs"><button class="nd-btn grande nd-onda" type="button" data-rx="">${ic}Prescrição por quadrado (shapefile)</button></div></details>`;
-    $("rxDica").textContent = `Vazões diferentes: tudo num arquivo só, com ${S.trats.length} zonas (uma por vazão, coluna ZONA e coluna VAZAO). Uma passada só, com a vazão mudando de zona para zona.`;
+    $("rxDica").textContent = `Vazões diferentes: tudo num arquivo só, com ${S.trats.length} zonas (uma por vazão, só a coluna TAXA). Uma passada só, com a vazão mudando de zona para zona.`;
   } else {
     const prods = S.trats.map((t, i) => [t, i]).filter(([t]) => !ehTest(t));
     $("rxBtns").innerHTML = prods.map(([t, i], k) => `<button class="nd-btn ${k ? "" : "primario"} grande nd-onda" type="button" data-zona="${i}">${ic}Zona ${esc(t.cod)}${t.nome ? " · " + esc(t.nome) : ""} (aplicação ${k + 1})</button>`).join("")
@@ -970,30 +974,26 @@ function travarSemPontoA(){
   $("rxTrava").hidden = !sem;
 }
 $("rxBtns").addEventListener("click", e => { const z = e.target.closest("[data-zona]"); if (z) { baixarZonaTeste(+z.dataset.zona); return; } if (e.target.closest("[data-zonas]")) { baixarZonas(); return; } const b = e.target.closest("[data-rx]"); if (!b) return; if (S.modo === "doses") baixarRxDoses(); else baixarRxProduto(+b.dataset.rx); });
-const CAMPOS_RX = [{nome:"ID", tipo:"N", tam:6}, {nome:"TRAT", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:30}, {nome:"VAZAO", tipo:"N", tam:10, dec:2}, {nome:"COLUNA", tipo:"N", tam:4}, {nome:"LINHA", tipo:"N", tam:4}, {nome:"PISTA", tipo:"N", tam:5}];
+const CAMPOS_RX = CAMPO_TAXA;
 const zipShp = (s, b) => zip([{nome:b + ".shp", dados:s.shp}, {nome:b + ".shx", dados:s.shx}, {nome:b + ".dbf", dados:s.dbf}, {nome:b + ".prj", dados:s.prj}]);
 function baixarRxProduto(i){
   if (!exigirGrade()) return;
   const t = S.trats[i]; if (!t) return;
   if (faltaAplicacao([t])) return;
-  const fe = GRADE.quads.map(q => ({anel:fechado(q), props: q.ok
-    ? {ID:q.id, TRAT:S.trats[q.ti].cod, NOME:q.ti === i ? t.nome : "Sem aplicacao", VAZAO:q.ti === i ? num(t.dose) : 0, COLUNA:q.c, LINHA:q.r, PISTA:q.pista}
-    : {ID:0, TRAT:"BORD", NOME:"Bordadura", VAZAO:0, COLUNA:q.c, LINHA:q.r, PISTA:q.pista}}));
+  const fe = GRADE.quads.map(q => ({anel:fechado(q), props:{TAXA:q.ok && q.ti === i ? taxa(t.dose) : 0}}));
   const b = nomeBase() + "_" + semAcento(t.cod).replace(/[^A-Za-z0-9]/g, "");
   baixar(zipShp(shapefile(fe, CAMPOS_RX), b), b + "_prescricao.zip");
   const nq = GRADE.quads.filter(q => q.ok && q.ti === i).length;
-  arqMsg("", `<b>Prescrição ${esc(t.cod)} baixada</b>${fmt(nq)} quadrados com VAZAO ${fmtMax(num(t.dose), 2)} L/ha; os demais com 0.`);
+  arqMsg("", `<b>Prescrição ${esc(t.cod)} baixada</b>${fmt(nq)} quadrados com TAXA ${taxa(t.dose)}; os demais com 0.`);
 }
 function baixarRxDoses(){
   if (!exigirGrade()) return;
   if (faltaAplicacao(S.trats)) return;
   const doseBord = (S.trats.find(t => num(t.dose) > 0) || {dose:0}).dose;
-  const fe = GRADE.quads.map(q => ({anel:fechado(q), props: q.ok
-    ? {ID:q.id, TRAT:S.trats[q.ti].cod, NOME:S.trats[q.ti].nome, VAZAO:num(S.trats[q.ti].dose), COLUNA:q.c, LINHA:q.r, PISTA:q.pista}
-    : {ID:0, TRAT:"BORD", NOME:"Bordadura", VAZAO:num(doseBord), COLUNA:q.c, LINHA:q.r, PISTA:q.pista}}));
+  const fe = GRADE.quads.map(q => ({anel:fechado(q), props:{TAXA:q.ok ? taxa(S.trats[q.ti].dose) : taxa(doseBord)}}));
   const b = nomeBase();
   baixar(zipShp(shapefile(fe, CAMPOS_RX), b), b + "_prescricao.zip");
-  arqMsg("", `<b>Prescrição baixada</b>${fmt(GRADE.quads.filter(q => q.ok).length)} quadrados do ensaio e ${fmt(GRADE.quads.filter(q => !q.ok).length)} de bordadura (com a primeira vazão), coluna VAZAO em L/ha.`);
+  arqMsg("", `<b>Prescrição baixada</b>${fmt(GRADE.quads.filter(q => q.ok).length)} quadrados do ensaio e ${fmt(GRADE.quads.filter(q => !q.ok).length)} de bordadura (com a primeira vazão), coluna TAXA em L/ha.`);
 }
 $("btnLim").addEventListener("click", () => {
   if (!exigirGrade()) return;
