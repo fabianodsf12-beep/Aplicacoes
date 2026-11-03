@@ -20,6 +20,7 @@ main{display:flex;flex-direction:column;gap:var(--space-6);padding-block:var(--s
 .opcoes .explica{margin:0;color:var(--muted)}
 .opcoes .acoes-imp{display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:center}
 .opcoes .acoes-imp p{margin:0}
+.opcoes [hidden]{display:none!important}
 
 /* ---------- Folha A4: o que sai na impressora ---------- */
 .folhas{display:grid;gap:var(--space-5);justify-content:center}
@@ -105,8 +106,16 @@ main>.nd-secao{min-width:0}
 .corpo .qd{width:4.4mm;height:4.4mm}
 .corpo .ass{grid-template-columns:1fr 1fr;gap:5mm}
 
+/* ---------- Arte para a gráfica: 1 via de 15 × 10 cm por página (bloco com cópia autocopiativa) ---------- */
+.a4.grafica{width:150mm;height:100mm;display:flex}
+.a4.grafica .corpo{flex:1;padding:12mm 8mm 6mm}
+.a4.grafica .num b{font-size:14pt;min-width:30mm;text-align:left}
+.pedido{margin:0;padding-left:var(--space-5);display:grid;gap:var(--space-1)}
+.pedido b{display:inline;font-weight:600}
+
 /* ---------- Impressão: só as folhas ---------- */
 @page{size:A4 portrait;margin:0}
+@media print{.a4.grafica{height:99.5mm}}
 @media print{
   html,body{margin:0;padding:0;background:#FFFFFF}
   .nd-topo,.so-tela{display:none!important}
@@ -116,6 +125,7 @@ main>.nd-secao{min-width:0}
   .a4+.a4{break-before:page;page-break-before:always}
 }
 </style>
+<style id="pg"></style>
 </head>
 <body>
 <header class="nd-topo">
@@ -138,10 +148,23 @@ main>.nd-secao{min-width:0}
           <button type="button" class="nd-onda" data-modelo="destacar" aria-pressed="true">Destacar</button>
           <button type="button" class="nd-onda" data-modelo="meia" aria-pressed="false">Meia folha</button>
           <button type="button" class="nd-onda" data-modelo="compacto" aria-pressed="false">Compacto</button>
+          <button type="button" class="nd-onda" data-modelo="grafica" aria-pressed="false">Gráfica</button>
         </div>
         <p class="explica nd-corpo-pequeno" id="explica"></p>
       </div>
-      <div class="nd-linha2">
+      <div class="nd-msg" id="pedido" hidden>
+        <svg class="nd-ic" aria-hidden="true"><use href="#i-info"/></svg>
+        <div><b>Pedido para a gráfica</b>
+          <ul class="pedido nd-corpo-pequeno">
+            <li><b>Formato:</b> 15 × 10 cm, deitado. Arte sem sangria, com 6 mm livres nas bordas e 12 mm em cima.</li>
+            <li><b>Bloco:</b> 50 jogos de 2 vias em papel autocopiativo (sem carbono): 1ª via branca, 2ª via amarela.</li>
+            <li><b>Numeração:</b> sequencial no campo Nº, a mesma nas 2 vias.</li>
+            <li><b>Acabamento:</b> blocado em cima, picote na 1ª via a 1 cm da borda de cima, capa de papelão e folha de proteção.</li>
+            <li><b>Cores:</b> as do logo Nadiana, sem trocar a cor do logo.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="nd-linha2" id="opA4">
         <label class="nd-campo">Nº inicial
           <input class="nd-inp" id="numIni" type="number" inputmode="numeric" min="1" placeholder="Em branco: à mão">
         </label>
@@ -166,6 +189,7 @@ main>.nd-secao{min-width:0}
 const LOGO = "https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.svg";
 const PRODUTOS = ["Calcário", "Gesso", "Filler", "Fósforo", "KCl", "Micronutriente"];
 const EXPLICA = {
+  grafica: "Arte para a gráfica fazer o bloco: 1 via de 15 × 10 cm com cópia. A 1ª via destaca e vai para a balança; a 2ª fica no bloco com a fazenda. Use Imprimir e salve como PDF para mandar.",
   destacar: "3 talões por folha. O canhoto fica no bloco com a fazenda; a parte maior é destacada e vai para a balança.",
   meia: "1 romaneio por folha. Via da balança em cima, via da fazenda embaixo. Corte no meio.",
   compacto: "2 romaneios por folha, cada um com as 2 vias lado a lado. Corte em cruz."
@@ -230,7 +254,41 @@ function talao(n, corte){
   </div>`;
 }
 
+function cartela(qual){
+  return `<div class="a4 grafica"><div class="corpo">
+      <div class="cab">
+        <img src="${LOGO}" alt="Nadiana">
+        <div class="tit"><h3>Romaneio de chegada</h3><p>Fertilizantes e corretivos · Fazenda Reata</p><span class="traco"></span></div>
+        <div class="num"><b>Nº</b><span>${qual}</span></div>
+      </div>
+      <div class="grade g3">
+        <div><span class="rot">Data</span><div class="caixa data">___/___/______</div></div>
+        <div><span class="rot">Placa do veículo</span><div class="caixa"></div></div>
+        <div><span class="rot">Nota fiscal (NF)</span><div class="caixa"></div></div>
+      </div>
+      <div><span class="rot">Produto (assinale)</span>
+        <div class="prod">${PRODUTOS.map(p => `<span class="op"><span class="qd"></span>${p}</span>`).join("")}</div>
+      </div>
+      <div class="grade g2">
+        <div><span class="rot">Nome do produto (escreva)</span><div class="caixa"></div></div>
+        <div><span class="rot">Pátio (onde descarregou)</span><div class="caixa"></div></div>
+      </div>
+      <div class="ass"><div>Balança</div><div>Recebido no pátio por</div></div>
+  </div></div>`;
+}
+
 function montar(){
+  const graf = modelo === "grafica";
+  $("pg").textContent = graf ? "@page{size:150mm 100mm;margin:0}" : "";
+  $("pedido").hidden = !graf;
+  $("opA4").hidden = graf;
+  $("btnImp").lastChild.textContent = graf ? "Imprimir ou salvar PDF" : "Imprimir romaneios";
+  if (graf){
+    $("folhas").innerHTML = cartela("1ª via · Balança") + cartela("2ª via · Fazenda");
+    $("explica").textContent = EXPLICA.grafica;
+    $("resumo").textContent = "2 páginas de 15 × 10 cm: 1ª via e 2ª via.";
+    return;
+  }
   const iniTxt = $("numIni").value.trim();
   const ini = iniTxt === "" ? null : Math.max(1, parseInt(iniTxt, 10) || 1);
   const folhas = Math.min(100, Math.max(1, parseInt($("qtd").value, 10) || 1));
