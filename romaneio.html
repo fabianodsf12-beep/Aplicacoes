@@ -77,6 +77,7 @@ main>.nd-secao{min-width:0}
 
 .ass{margin-top:auto;display:grid;grid-template-columns:1fr 1fr;gap:5mm}
 .compacto .ass{grid-template-columns:1fr;gap:5.5mm}
+.compacto .ass span{display:none}
 .ass div{border-top:0.3mm solid var(--tinta);padding-top:1mm;font-size:7pt;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--apoio)}
 
 /* ---------- Modelo de destacar (talão): canhoto fica no bloco, a parte maior vai para a balança ---------- */
@@ -169,6 +170,7 @@ main>.nd-secao{min-width:0}
           <button type="button" class="nd-onda" data-modelo="grafica" aria-pressed="false">Gráfica</button>
         </div>
         <p class="explica nd-corpo-pequeno" id="explica"></p>
+        <p class="explica nd-corpo-pequeno">Quem preenche e assina é o responsável pelo descarregamento. Ele entrega a via ao motorista, que entrega ao pessoal da balança quando for tirar a tara.</p>
       </div>
       <div class="nd-msg" id="pedido" hidden>
         <svg class="nd-ic" aria-hidden="true"><use href="#i-info"/></svg>
@@ -233,7 +235,7 @@ function via(n, qual, corte){
     </div>
     <div><span class="rot">Nome do produto (escreva)</span><div class="caixa"></div></div>
     <div><span class="rot">Pátio (onde descarregou)</span><div class="caixa alta"></div></div>
-    <div class="ass"><div>Balança</div><div>Recebido no pátio por</div></div>
+    <div class="ass"><span></span><div>Responsável pelo descarregamento</div></div>
     ${corte ? `<span class="corte">Corte aqui</span>` : ""}
   </div>`;
 }
@@ -245,7 +247,7 @@ function talao(n, corte){
     <div class="canhoto">
       <div class="topo-c"><div><b class="vermelho">${num}</b><small>Canhoto · Fazenda</small></div><img src="${LOGO}" alt="Nadiana"></div>
       ${lc("Data", '<span class="data">___/___/______</span>')}
-      ${lc("Placa")}${lc("NF")}${lc("Produto")}${lc("Pátio")}${lc("Recebido por")}
+      ${lc("Placa")}${lc("NF")}${lc("Produto")}${lc("Pátio")}
       <div class="destaque" aria-hidden="true"><span>Destaque aqui</span></div>
     </div>
     <div class="corpo">
@@ -266,7 +268,7 @@ function talao(n, corte){
         <div><span class="rot">Nome do produto (escreva)</span><div class="caixa"></div></div>
         <div><span class="rot">Pátio (onde descarregou)</span><div class="caixa"></div></div>
       </div>
-      <div class="ass"><div>Balança</div><div>Recebido no pátio por</div></div>
+      <div class="ass"><span></span><div>Responsável pelo descarregamento</div></div>
     </div>
     ${corte ? `<span class="corte">Corte aqui</span>` : ""}
   </div>`;
@@ -300,7 +302,7 @@ function cartela(){
         <div><span class="rot">Nome do produto (escreva)</span><div class="caixa"></div></div>
         <div><span class="rot">Pátio (onde descarregou)</span><div class="caixa"></div></div>
       </div>
-      <div class="ass"><div>Balança</div><div>Recebido no pátio por</div></div>
+      <div class="ass"><span></span><div>Responsável pelo descarregamento</div></div>
     </div>
   </div>`;
 }
