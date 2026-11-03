@@ -78,6 +78,33 @@ main>.nd-secao{min-width:0}
 .compacto .ass{grid-template-columns:1fr;gap:5.5mm}
 .ass div{border-top:0.3mm solid var(--tinta);padding-top:1mm;font-size:7pt;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--apoio)}
 
+/* ---------- Modelo de destacar (talão): canhoto fica no bloco, a parte maior vai para a balança ---------- */
+.a4.destacar{grid-template-rows:repeat(3,1fr)}
+.talao{position:relative;display:grid;grid-template-columns:60mm 1fr;min-height:0}
+.talao:not(:last-child){border-bottom:0.3mm dashed var(--borda)}
+.talao .corte{left:6mm}
+.canhoto{display:flex;flex-direction:column;gap:2.6mm;padding:6mm 5mm 5mm 8mm;border-right:0.45mm dotted var(--tinta);position:relative}
+.destaque{position:absolute;right:-2.6mm;top:50%;transform:translateY(-50%) rotate(-90deg);transform-origin:center;width:0;display:flex;justify-content:center}
+.destaque span{background:var(--papel);padding:0 2mm;font-size:6.5pt;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--apoio);white-space:nowrap;line-height:1}
+.canhoto .topo-c{display:flex;justify-content:space-between;align-items:flex-start;gap:2mm;padding-bottom:1.6mm;border-bottom:0.3mm solid var(--borda)}
+.canhoto .topo-c b{font-family:var(--font-display);font-weight:700;font-size:13pt;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.canhoto .topo-c small{display:block;font-size:6.5pt;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--apoio);margin-top:0.8mm}
+.canhoto .topo-c img{height:7mm;width:auto}
+.linha-c{display:flex;align-items:flex-end;gap:1.5mm;min-height:7mm;border-bottom:0.3mm solid var(--borda);padding-bottom:0.6mm}
+.linha-c .rot{margin:0;flex:none;font-size:6.5pt}
+.linha-c .data{font-size:11pt}
+.corpo{display:flex;flex-direction:column;gap:3mm;padding:6mm 8mm 5mm 7mm;font-size:10pt}
+.corpo .cab img{height:8mm}
+.corpo .cab h3{font-size:14pt}
+.corpo .num b{font-size:14pt}
+.corpo .caixa{min-height:8mm;border-radius:var(--radius-md)}
+.corpo .g3{grid-template-columns:0.9fr 1fr 1fr}
+.corpo .g2{grid-template-columns:1fr 1fr}
+.corpo .prod{gap:0.8mm 3mm}
+.corpo .op{min-height:5.6mm;font-size:10pt}
+.corpo .qd{width:4.4mm;height:4.4mm}
+.corpo .ass{grid-template-columns:1fr 1fr;gap:5mm}
+
 /* ---------- Impressão: só as folhas ---------- */
 @page{size:A4 portrait;margin:0}
 @media print{
@@ -108,7 +135,8 @@ main>.nd-secao{min-width:0}
       <div class="nd-campo">
         <span id="t-modelo">Modelo da folha</span>
         <div class="nd-seg desliza" role="group" aria-labelledby="t-modelo">
-          <button type="button" class="nd-onda" data-modelo="meia" aria-pressed="true">Meia folha</button>
+          <button type="button" class="nd-onda" data-modelo="destacar" aria-pressed="true">Destacar</button>
+          <button type="button" class="nd-onda" data-modelo="meia" aria-pressed="false">Meia folha</button>
           <button type="button" class="nd-onda" data-modelo="compacto" aria-pressed="false">Compacto</button>
         </div>
         <p class="explica nd-corpo-pequeno" id="explica"></p>
@@ -138,11 +166,12 @@ main>.nd-secao{min-width:0}
 const LOGO = "https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.svg";
 const PRODUTOS = ["Calcário", "Gesso", "Filler", "Fósforo", "KCl", "Micronutriente"];
 const EXPLICA = {
+  destacar: "3 talões por folha. O canhoto fica no bloco com a fazenda; a parte maior é destacada e vai para a balança.",
   meia: "1 romaneio por folha. Via da balança em cima, via da fazenda embaixo. Corte no meio.",
   compacto: "2 romaneios por folha, cada um com as 2 vias lado a lado. Corte em cruz."
 };
 const $ = id => document.getElementById(id);
-let modelo = "meia";
+let modelo = "destacar";
 
 function via(n, qual, corte){
   const num = n == null ? "Nº ______" : "Nº " + String(n).padStart(4, "0");
@@ -160,8 +189,43 @@ function via(n, qual, corte){
     <div><span class="rot">Produto (assinale)</span>
       <div class="prod">${PRODUTOS.map(p => `<span class="op"><span class="qd"></span>${p}</span>`).join("")}</div>
     </div>
+    <div><span class="rot">Nome do produto (escreva)</span><div class="caixa"></div></div>
     <div><span class="rot">Pátio (onde descarregou)</span><div class="caixa alta"></div></div>
     <div class="ass"><div>Balança</div><div>Recebido no pátio por</div></div>
+    ${corte ? `<span class="corte">Corte aqui</span>` : ""}
+  </div>`;
+}
+
+function talao(n, corte){
+  const num = n == null ? "Nº ______" : "Nº " + String(n).padStart(4, "0");
+  const lc = (r, extra) => `<div class="linha-c"><span class="rot">${r}</span>${extra || ""}</div>`;
+  return `<div class="talao">
+    <div class="canhoto">
+      <div class="topo-c"><div><b>${num}</b><small>Canhoto · Fazenda</small></div><img src="${LOGO}" alt="Nadiana"></div>
+      ${lc("Data", '<span class="data">___/___/______</span>')}
+      ${lc("Placa")}${lc("NF")}${lc("Produto")}${lc("Pátio")}${lc("Recebido por")}
+      <div class="destaque" aria-hidden="true"><span>Destaque aqui</span></div>
+    </div>
+    <div class="corpo">
+      <div class="cab">
+        <img src="${LOGO}" alt="Nadiana">
+        <div class="tit"><h3>Romaneio de chegada</h3><p>Fertilizantes e corretivos · Fazenda Reata</p><span class="traco"></span></div>
+        <div class="num"><b>${num}</b><span>Via da balança</span></div>
+      </div>
+      <div class="grade g3">
+        <div><span class="rot">Data</span><div class="caixa data">___/___/______</div></div>
+        <div><span class="rot">Placa do veículo</span><div class="caixa"></div></div>
+        <div><span class="rot">Nota fiscal (NF)</span><div class="caixa"></div></div>
+      </div>
+      <div><span class="rot">Produto (assinale)</span>
+        <div class="prod">${PRODUTOS.map(p => `<span class="op"><span class="qd"></span>${p}</span>`).join("")}</div>
+      </div>
+      <div class="grade g2">
+        <div><span class="rot">Nome do produto (escreva)</span><div class="caixa"></div></div>
+        <div><span class="rot">Pátio (onde descarregou)</span><div class="caixa"></div></div>
+      </div>
+      <div class="ass"><div>Balança</div><div>Recebido no pátio por</div></div>
+    </div>
     ${corte ? `<span class="corte">Corte aqui</span>` : ""}
   </div>`;
 }
@@ -170,12 +234,14 @@ function montar(){
   const iniTxt = $("numIni").value.trim();
   const ini = iniTxt === "" ? null : Math.max(1, parseInt(iniTxt, 10) || 1);
   const folhas = Math.min(100, Math.max(1, parseInt($("qtd").value, 10) || 1));
-  const porFolha = modelo === "meia" ? 1 : 2;
+  const porFolha = modelo === "destacar" ? 3 : modelo === "meia" ? 1 : 2;
   const B = "1ª via · Balança", F = "2ª via · Fazenda";
   let html = "";
   for (let f = 0; f < folhas; f++){
     const n1 = ini == null ? null : ini + f * porFolha;
-    if (modelo === "meia"){
+    if (modelo === "destacar"){
+      html += `<div class="a4 destacar">${[0, 1, 2].map(i => talao(n1 == null ? null : n1 + i, i < 2)).join("")}</div>`;
+    } else if (modelo === "meia"){
       html += `<div class="a4 meia">${via(n1, B, true)}${via(n1, F, false)}</div>`;
     } else {
       const n2 = ini == null ? null : n1 + 1;
