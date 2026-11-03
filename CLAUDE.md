@@ -1,6 +1,6 @@
 # Projetos Nadiana
 
-Este repositório guarda os aplicativos da Fazenda Reata: página inicial (`index.html`), Painel de aplicações (`painel.html`), Lançamentos (`lancar.html`) e Experimentos (`experimentos/`).
+Este repositório guarda os aplicativos da Fazenda Reata: página inicial (`index.html`), Painel de aplicações (`painel.html`), Lançamentos (`lancar.html`), Romaneio de chegada (`romaneio.html`) e Experimentos (`experimentos/`).
 
 A base de design da Nadiana Agronegócios fica em outro repositório, `fabianodsf12-beep/nadiana-design`, publicada em https://fabianodsf12-beep.github.io/nadiana-design/v1/. Os apps carregam a base desse endereço; não copie os arquivos dela para cá.
 

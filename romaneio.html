@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
+<title>Romaneio de chegada – Fazenda Reata</title>
+<!-- Feito a partir do v1/modelo.html da base Nadiana: https://github.com/fabianodsf12-beep/nadiana-design/blob/main/v1/README.md -->
+<link rel="icon" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.png">
+<link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.css">
+<link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/componentes.css">
+<script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/icones.js"></script>
+<script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/nadiana.js" defer></script>
+<style>
+/* Estilos só deste app, sempre com var(--token).
+   A tela segue o tema claro ou escuro. A folha impressa segue o padrão de impresso/PDF da base:
+   só tema claro, papel branco, título em nadiana-petroleo, traço verde curto, Barlow e Barlow Condensed. */
+main{display:flex;flex-direction:column;gap:var(--space-6);padding-block:var(--space-5)}
+.opcoes .nd-seg{max-width:420px}
+.opcoes .explica{margin:0;color:var(--muted)}
+.opcoes .acoes-imp{display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:center}
+.opcoes .acoes-imp p{margin:0}
+
+/* ---------- Folha A4: o que sai na impressora ---------- */
+.folhas{display:grid;gap:var(--space-5);justify-content:center}
+main>.nd-secao{min-width:0}
+@media (max-width:860px){.folhas{justify-content:start;overflow-x:auto;padding-bottom:var(--space-3);max-width:100%}}
+.a4{
+  /* Papel: branco fixo nos dois temas, como a prévia de um PDF (a base não tem token de papel; --panel escurece no tema escuro). */
+  --papel:#FFFFFF;--tinta:var(--nadiana-petroleo);--apoio:var(--petroleo-600);--borda:var(--petroleo-300);
+  width:210mm;height:297mm;flex:none;background:var(--papel);color:var(--tinta);box-shadow:var(--sombra-2);
+  display:grid;grid-template-rows:1fr 1fr;overflow:hidden;font-family:var(--font-body)}
+.a4.compacto{grid-template-columns:1fr 1fr}
+
+.via{position:relative;display:flex;flex-direction:column;gap:3.4mm;padding:9mm 12mm 8mm;font-size:10.5pt;line-height:1.3}
+.compacto .via{padding:7mm 7mm 6mm;gap:2.8mm;font-size:10pt}
+/* Linhas de corte */
+.meia .via:first-child,.compacto .via:nth-child(-n+2){border-bottom:0.3mm dashed var(--borda)}
+.compacto .via:nth-child(odd){border-right:0.3mm dashed var(--borda)}
+.corte{position:absolute;bottom:-1.9mm;left:10mm;background:var(--papel);padding:0 2mm;color:var(--apoio);font-size:7pt;font-weight:600;letter-spacing:.05em;text-transform:uppercase;line-height:1}
+
+/* Cabeçalho da via: símbolo, título em petróleo, traço verde curto, número e via */
+.cab{display:flex;align-items:flex-start;gap:3mm}
+.cab img{height:10mm;width:auto;flex:none}
+.compacto .cab img{height:8mm}
+.cab .tit{flex:1;min-width:0}
+.cab h3{margin:0;font-family:var(--font-display);font-weight:600;font-size:17pt;line-height:1;color:var(--nadiana-petroleo);white-space:nowrap}
+.compacto .cab h3{font-size:13.5pt}
+.cab p{margin:0.8mm 0 0;font-size:8.5pt;color:var(--apoio)}
+.compacto .cab p{font-size:7.5pt}
+.cab .traco{display:block;width:12mm;height:0.7mm;margin-top:1.6mm;background:var(--nadiana-verde);border-radius:var(--radius-pill)}
+.num{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:1.2mm}
+.num b{font-family:var(--font-display);font-weight:700;font-size:17pt;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.compacto .num b{font-size:13.5pt}
+.num span{font-size:7pt;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border:0.3mm solid var(--tinta);border-radius:var(--radius-pill);padding:0.5mm 2mm;white-space:nowrap}
+
+/* Campos para preencher à mão */
+.rot{display:block;font-size:7.5pt;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--apoio);margin-bottom:1mm}
+.caixa{display:flex;align-items:center;min-height:10mm;padding:0 2.6mm;border:0.3mm solid var(--borda);border-radius:var(--radius-lg)}
+.compacto .caixa{min-height:8.5mm;border-radius:var(--radius-md)}
+.caixa.alta{min-height:18mm}
+.compacto .caixa.alta{min-height:12mm}
+.data{font-family:var(--font-display);font-size:13pt;color:var(--apoio);letter-spacing:.06em}
+.grade{display:grid;gap:3mm}
+.meia .g3{grid-template-columns:1fr 1fr 1.2fr}
+.compacto .g3{grid-template-columns:1fr 1fr}
+.compacto .g3 .nf{grid-column:1/-1}
+
+/* Produtos com quadrinho de assinalar */
+.prod{display:grid;gap:1.4mm 3mm;grid-template-columns:repeat(3,1fr)}
+.compacto .prod{grid-template-columns:repeat(2,1fr)}
+.op{display:flex;align-items:center;gap:2.2mm;min-height:7mm;font-weight:600;font-size:11pt}
+.compacto .op{min-height:6mm;font-size:10pt}
+.qd{width:5mm;height:5mm;flex:none;border:0.35mm solid var(--tinta);border-radius:var(--radius-sm)}
+.compacto .qd{width:4.4mm;height:4.4mm}
+
+.ass{margin-top:auto;display:grid;grid-template-columns:1fr 1fr;gap:5mm}
+.compacto .ass{grid-template-columns:1fr;gap:5.5mm}
+.ass div{border-top:0.3mm solid var(--tinta);padding-top:1mm;font-size:7pt;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--apoio)}
+
+/* ---------- Impressão: só as folhas ---------- */
+@page{size:A4 portrait;margin:0}
+@media print{
+  html,body{margin:0;padding:0;background:#FFFFFF}
+  .nd-topo,.so-tela{display:none!important}
+  main.nd-wrap{display:block;max-width:none;margin:0;padding:0}
+  .folhas{display:block;padding:0;overflow:visible}
+  .a4{height:296mm;box-shadow:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .a4+.a4{break-before:page;page-break-before:always}
+}
+</style>
+</head>
+<body>
+<header class="nd-topo">
+  <div class="nd-wrap">
+    <a href="./index.html" aria-label="Início"><img class="nd-simbolo" src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.svg" alt="Nadiana"></a>
+    <div class="app"><h1>Romaneio de chegada</h1><p>Fertilizantes e corretivos · Fazenda Reata</p></div>
+    <div class="acoes">
+      <button class="nd-btn icone leve nd-onda" type="button" data-nd-tema aria-label="Trocar tema claro ou escuro"><svg class="nd-ic" aria-hidden="true"><use id="temaIc" href="#i-moon"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main class="nd-wrap">
+  <section class="nd-secao so-tela">
+    <h2>Imprimir romaneios</h2>
+    <div class="nd-cartao opcoes">
+      <div class="nd-campo">
+        <span id="t-modelo">Modelo da folha</span>
+        <div class="nd-seg desliza" role="group" aria-labelledby="t-modelo">
+          <button type="button" class="nd-onda" data-modelo="meia" aria-pressed="true">Meia folha</button>
+          <button type="button" class="nd-onda" data-modelo="compacto" aria-pressed="false">Compacto</button>
+        </div>
+        <p class="explica nd-corpo-pequeno" id="explica"></p>
+      </div>
+      <div class="nd-linha2">
+        <label class="nd-campo">Nº inicial
+          <input class="nd-inp" id="numIni" type="number" inputmode="numeric" min="1" placeholder="Em branco: à mão">
+        </label>
+        <label class="nd-campo">Folhas A4
+          <input class="nd-inp" id="qtd" type="number" inputmode="numeric" min="1" max="100" value="1">
+        </label>
+      </div>
+      <div class="acoes-imp">
+        <button class="nd-btn primario nd-onda" type="button" id="btnImp"><svg class="nd-ic" aria-hidden="true"><use href="#i-file-text"/></svg>Imprimir romaneios</button>
+        <p class="nd-corpo-pequeno" id="resumo" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="nd-secao">
+    <h2 class="so-tela">Prévia</h2>
+    <div class="folhas" id="folhas"></div>
+  </section>
+</main>
+
+<script>
+const LOGO = "https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.svg";
+const PRODUTOS = ["Calcário", "Gesso", "Filler", "Fósforo", "KCl", "Micronutriente"];
+const EXPLICA = {
+  meia: "1 romaneio por folha. Via da balança em cima, via da fazenda embaixo. Corte no meio.",
+  compacto: "2 romaneios por folha, cada um com as 2 vias lado a lado. Corte em cruz."
+};
+const $ = id => document.getElementById(id);
+let modelo = "meia";
+
+function via(n, qual, corte){
+  const num = n == null ? "Nº ______" : "Nº " + String(n).padStart(4, "0");
+  return `<div class="via">
+    <div class="cab">
+      <img src="${LOGO}" alt="Nadiana">
+      <div class="tit"><h3>Romaneio de chegada</h3><p>Fertilizantes e corretivos · Fazenda Reata</p><span class="traco"></span></div>
+      <div class="num"><b>${num}</b><span>${qual}</span></div>
+    </div>
+    <div class="grade g3">
+      <div><span class="rot">Data</span><div class="caixa data">___/___/______</div></div>
+      <div><span class="rot">Placa do veículo</span><div class="caixa"></div></div>
+      <div class="nf"><span class="rot">Nota fiscal (NF)</span><div class="caixa"></div></div>
+    </div>
+    <div><span class="rot">Produto (assinale)</span>
+      <div class="prod">${PRODUTOS.map(p => `<span class="op"><span class="qd"></span>${p}</span>`).join("")}</div>
+    </div>
+    <div><span class="rot">Pátio (onde descarregou)</span><div class="caixa alta"></div></div>
+    <div class="ass"><div>Balança</div><div>Recebido no pátio por</div></div>
+    ${corte ? `<span class="corte">Corte aqui</span>` : ""}
+  </div>`;
+}
+
+function montar(){
+  const iniTxt = $("numIni").value.trim();
+  const ini = iniTxt === "" ? null : Math.max(1, parseInt(iniTxt, 10) || 1);
+  const folhas = Math.min(100, Math.max(1, parseInt($("qtd").value, 10) || 1));
+  const porFolha = modelo === "meia" ? 1 : 2;
+  const B = "1ª via · Balança", F = "2ª via · Fazenda";
+  let html = "";
+  for (let f = 0; f < folhas; f++){
+    const n1 = ini == null ? null : ini + f * porFolha;
+    if (modelo === "meia"){
+      html += `<div class="a4 meia">${via(n1, B, true)}${via(n1, F, false)}</div>`;
+    } else {
+      const n2 = ini == null ? null : n1 + 1;
+      html += `<div class="a4 compacto">${via(n1, B, false)}${via(n1, F, false)}${via(n2, B, false)}${via(n2, F, false)}</div>`;
+    }
+  }
+  $("folhas").innerHTML = html;
+  $("explica").textContent = EXPLICA[modelo];
+  const total = folhas * porFolha;
+  let r = `${folhas} folha${folhas > 1 ? "s" : ""} A4, ${total} romaneio${total > 1 ? "s" : ""} com 2 vias`;
+  if (ini != null) r += `, do Nº ${String(ini).padStart(4, "0")} ao ${String(ini + total - 1).padStart(4, "0")}`;
+  $("resumo").textContent = r + ".";
+}
+
+document.querySelectorAll("[data-modelo]").forEach(b => b.addEventListener("click", () => {
+  modelo = b.dataset.modelo;
+  document.querySelectorAll("[data-modelo]").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+  montar();
+}));
+["numIni", "qtd"].forEach(id => $(id).addEventListener("input", montar));
+$("btnImp").addEventListener("click", () => window.print());
+montar();
+
+function iconeTema(){
+  const d = (window.Nadiana && Nadiana.tema ? Nadiana.tema() : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")) === "dark";
+  $("temaIc").setAttribute("href", d ? "#i-sun" : "#i-moon");
+}
+document.addEventListener("nd-tema", iconeTema);
+window.addEventListener("load", iconeTema);
+</script>
+</body>
+</html>
