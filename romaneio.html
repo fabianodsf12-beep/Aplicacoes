@@ -106,16 +106,50 @@ main>.nd-secao{min-width:0}
 .corpo .qd{width:4.4mm;height:4.4mm}
 .corpo .ass{grid-template-columns:1fr 1fr;gap:5mm}
 
-/* ---------- Arte para a gráfica: 1 via de 15 × 10 cm por página (bloco com cópia autocopiativa) ---------- */
-.a4.grafica{width:150mm;height:100mm;display:flex}
-.a4.grafica .corpo{flex:1;padding:12mm 8mm 6mm}
-.a4.grafica .num b{font-size:14pt;min-width:30mm;text-align:left}
+/* ---------- Arte para a gráfica: bloco com cópia autocopiativa, no jeito do bloco de apontamento da empresa ----------
+   Moldura com linhas de campo, faixa de seção, Nº livre para a numeração da gráfica, assinaturas embaixo. */
+.a4.grafica{display:flex;--lh:8mm;--fs:9.5pt}
+.a4.grafica.tam-g{width:140mm;height:210mm;--lh:12.5mm;--fs:11pt}
+.a4.grafica.tam-p{width:140mm;height:105mm;--lh:6.6mm;--fs:9pt}
+.ficha{flex:1;display:flex;flex-direction:column;padding:9mm 6mm 4mm;font-size:var(--fs)}
+.tam-g .ficha{padding:12mm 8mm 9mm}
+.f-topo{display:flex;align-items:center;justify-content:space-between;gap:3mm;margin-bottom:2mm}
+.tam-g .f-topo{margin-bottom:4mm}
+.f-topo img{height:11mm;width:auto}
+.tam-g .f-topo img{height:20mm}
+.f-tit{display:flex;flex-direction:column;align-items:flex-end;gap:0.8mm;text-align:right}
+.f-tit h3{margin:0;font-family:var(--font-display);font-weight:600;font-size:15pt;line-height:1;color:var(--nadiana-petroleo)}
+.tam-g .f-tit h3{font-size:20pt}
+.f-tit p{margin:0;font-size:7.5pt;color:var(--apoio)}
+.tam-g .f-tit p{font-size:9pt}
+.f-tit .traco{display:block;width:12mm;height:0.7mm;background:var(--nadiana-verde);border-radius:var(--radius-pill)}
+.f-num{display:flex;align-items:center;gap:2mm}
+.f-num b{font-family:var(--font-display);font-weight:700;font-size:13pt;line-height:1}
+.tam-g .f-num b{font-size:16pt}
+.f-num i{display:block;width:30mm;height:6mm}
+.f-num span{font-size:6.5pt;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border:0.3mm solid var(--tinta);border-radius:var(--radius-pill);padding:0.5mm 2mm;white-space:nowrap}
+.tam-g .f-num span{font-size:7.5pt}
+.tab{border:0.35mm solid var(--tinta);border-radius:var(--radius-sm);overflow:hidden}
+.tr{display:grid;grid-template-columns:1fr;min-height:var(--lh);border-bottom:0.3mm solid var(--tinta)}
+.tr:last-child{border-bottom:0}
+.tr.c2{grid-template-columns:1fr 1fr}
+.tr.c3{grid-template-columns:repeat(3,1fr)}
+.tr>div{display:flex;align-items:center;gap:2mm;padding:0 2.2mm;font-weight:600}
+.tr>div+div{border-left:0.3mm solid var(--tinta)}
+.tr.sem>div+div{border-left:0}
+.tr .barras{margin-left:auto;font-family:var(--font-display);font-weight:500;color:var(--apoio);letter-spacing:.2em;padding-right:2mm}
+.tr.faixa{min-height:auto;padding:0.8mm 0;background:var(--petroleo-100);justify-content:center;text-align:center;font-family:var(--font-display);font-weight:600;font-size:calc(var(--fs) + 1pt);letter-spacing:.05em;text-transform:uppercase}
+.tr.faixa small{font-family:var(--font-body);font-weight:500;font-size:calc(var(--fs) - 2pt);letter-spacing:0;text-transform:none;color:var(--apoio)}
+.tr .qd{width:4.2mm;height:4.2mm}
+.tam-g .tr .qd{width:5.2mm;height:5.2mm}
+.f-ass{margin-top:auto;padding-top:7mm;display:grid;grid-template-columns:1fr 1fr;gap:8mm;padding-inline:2mm}
+.f-ass div{border-top:0.3mm solid var(--tinta);padding-top:1mm;text-align:center;font-size:calc(var(--fs) - 1.5pt);font-weight:600}
 .pedido{margin:0;padding-left:var(--space-5);display:grid;gap:var(--space-1)}
 .pedido b{display:inline;font-weight:600}
 
 /* ---------- Impressão: só as folhas ---------- */
 @page{size:A4 portrait;margin:0}
-@media print{.a4.grafica{height:99.5mm}}
+@media print{.a4.grafica.tam-g{height:209.5mm}.a4.grafica.tam-p{height:104.5mm}}
 @media print{
   html,body{margin:0;padding:0;background:#FFFFFF}
   .nd-topo,.so-tela{display:none!important}
@@ -152,13 +186,20 @@ main>.nd-secao{min-width:0}
         </div>
         <p class="explica nd-corpo-pequeno" id="explica"></p>
       </div>
+      <div class="nd-campo" id="opGraf" hidden>
+        <span id="t-tam">Tamanho do bloco</span>
+        <div class="nd-seg desliza" role="group" aria-labelledby="t-tam">
+          <button type="button" class="nd-onda" data-tam="g" aria-pressed="true">14 × 21 cm</button>
+          <button type="button" class="nd-onda" data-tam="p" aria-pressed="false">14 × 10,5 cm</button>
+        </div>
+      </div>
       <div class="nd-msg" id="pedido" hidden>
         <svg class="nd-ic" aria-hidden="true"><use href="#i-info"/></svg>
         <div><b>Pedido para a gráfica</b>
           <ul class="pedido nd-corpo-pequeno">
-            <li><b>Formato:</b> 15 × 10 cm, deitado. Arte sem sangria, com 6 mm livres nas bordas e 12 mm em cima.</li>
+            <li><b>Formato:</b> <span id="fmt">14 × 21 cm, em pé (igual ao bloco de apontamento)</span>. Arte sem sangria, com espaço livre em cima para o picote.</li>
             <li><b>Bloco:</b> 50 jogos de 2 vias em papel autocopiativo (sem carbono): 1ª via branca, 2ª via amarela.</li>
-            <li><b>Numeração:</b> sequencial no campo Nº, a mesma nas 2 vias.</li>
+            <li><b>Numeração:</b> sequencial no campo Nº, em vermelho como no apontamento, a mesma nas 2 vias.</li>
             <li><b>Acabamento:</b> blocado em cima, picote na 1ª via a 1 cm da borda de cima, capa de papelão e folha de proteção.</li>
             <li><b>Cores:</b> as do logo Nadiana, sem trocar a cor do logo.</li>
           </ul>
@@ -189,7 +230,7 @@ main>.nd-secao{min-width:0}
 const LOGO = "https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.svg";
 const PRODUTOS = ["Calcário", "Gesso", "Filler", "Fósforo", "KCl", "Micronutriente"];
 const EXPLICA = {
-  grafica: "Arte para a gráfica fazer o bloco: 1 via de 15 × 10 cm com cópia. A 1ª via destaca e vai para a balança; a 2ª fica no bloco com a fazenda. Use Imprimir e salve como PDF para mandar.",
+  grafica: "Arte para a gráfica fazer o bloco, no jeito do bloco de apontamento: 1 via com cópia. A 1ª via destaca e vai para a balança; a 2ª fica no bloco com a fazenda. Use Imprimir e salve como PDF para mandar.",
   destacar: "3 talões por folha. O canhoto fica no bloco com a fazenda; a parte maior é destacada e vai para a balança.",
   meia: "1 romaneio por folha. Via da balança em cima, via da fazenda embaixo. Corte no meio.",
   compacto: "2 romaneios por folha, cada um com as 2 vias lado a lado. Corte em cruz."
@@ -254,39 +295,55 @@ function talao(n, corte){
   </div>`;
 }
 
+const LOGO_V = "https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-logo-vertical.svg";
+let tam = "g";
+const TAM = {
+  g: {nome: "14 × 21 cm", fmt: "14 × 21 cm, em pé (igual ao bloco de apontamento)", pg: "140mm 210mm"},
+  p: {nome: "14 × 10,5 cm", fmt: "14 × 10,5 cm, deitado (metade do bloco de apontamento)", pg: "140mm 105mm"}
+};
+
 function cartela(qual){
-  return `<div class="a4 grafica"><div class="corpo">
-      <div class="cab">
-        <img src="${LOGO}" alt="Nadiana">
-        <div class="tit"><h3>Romaneio de chegada</h3><p>Fertilizantes e corretivos · Fazenda Reata</p><span class="traco"></span></div>
-        <div class="num"><b>Nº</b><span>${qual}</span></div>
+  const g = tam === "g";
+  const cel = r => `<div>${r}:</div>`;
+  const chk = PRODUTOS.map(p => `<div><span class="qd"></span>${p}</div>`);
+  const obs = g ? `<div class="tr">${cel("Observação")}</div><div class="tr"><div></div></div><div class="tr"><div></div></div><div class="tr"><div></div></div>` : `<div class="tr">${cel("Observação")}</div>`;
+  return `<div class="a4 grafica tam-${tam}"><div class="ficha">
+    <div class="f-topo">
+      <img src="${LOGO_V}" alt="Nadiana Agronegócios">
+      <div class="f-tit">
+        <h3>Romaneio de chegada</h3>
+        <p>Fertilizantes e corretivos · Fazenda Reata</p>
+        <span class="traco"></span>
+        <div class="f-num"><b>Nº</b><i></i><span>${qual}</span></div>
       </div>
-      <div class="grade g3">
-        <div><span class="rot">Data</span><div class="caixa data">___/___/______</div></div>
-        <div><span class="rot">Placa do veículo</span><div class="caixa"></div></div>
-        <div><span class="rot">Nota fiscal (NF)</span><div class="caixa"></div></div>
-      </div>
-      <div><span class="rot">Produto (assinale)</span>
-        <div class="prod">${PRODUTOS.map(p => `<span class="op"><span class="qd"></span>${p}</span>`).join("")}</div>
-      </div>
-      <div class="grade g2">
-        <div><span class="rot">Nome do produto (escreva)</span><div class="caixa"></div></div>
-        <div><span class="rot">Pátio (onde descarregou)</span><div class="caixa"></div></div>
-      </div>
-      <div class="ass"><div>Balança</div><div>Recebido no pátio por</div></div>
+    </div>
+    <div class="tab">
+      <div class="tr c2"><div>Data:<span class="barras">/&nbsp;&nbsp;&nbsp;&nbsp;/</span></div>${cel("Placa do veículo")}</div>
+      <div class="tr c2">${cel("Nota fiscal (NF)")}${cel("Hora")}</div>
+      <div class="tr faixa"><div>Produto <small>(assinale)</small></div></div>
+      <div class="tr c3 sem">${chk.slice(0, 3).join("")}</div>
+      <div class="tr c3 sem">${chk.slice(3).join("")}</div>
+      <div class="tr">${cel("Nome do produto")}</div>
+      <div class="tr faixa"><div>Descarga</div></div>
+      <div class="tr">${cel("Pátio (onde descarregou)")}</div>
+      ${obs}
+    </div>
+    <div class="f-ass"><div>Balança</div><div>Recebido no pátio por</div></div>
   </div></div>`;
 }
 
 function montar(){
   const graf = modelo === "grafica";
-  $("pg").textContent = graf ? "@page{size:150mm 100mm;margin:0}" : "";
+  $("pg").textContent = graf ? `@page{size:${TAM[tam].pg};margin:0}` : "";
   $("pedido").hidden = !graf;
+  $("opGraf").hidden = !graf;
+  $("fmt").textContent = TAM[tam].fmt;
   $("opA4").hidden = graf;
   $("btnImp").lastChild.textContent = graf ? "Imprimir ou salvar PDF" : "Imprimir romaneios";
   if (graf){
     $("folhas").innerHTML = cartela("1ª via · Balança") + cartela("2ª via · Fazenda");
     $("explica").textContent = EXPLICA.grafica;
-    $("resumo").textContent = "2 páginas de 15 × 10 cm: 1ª via e 2ª via.";
+    $("resumo").textContent = `2 páginas de ${TAM[tam].nome}: 1ª via e 2ª via.`;
     return;
   }
   const iniTxt = $("numIni").value.trim();
@@ -317,6 +374,11 @@ function montar(){
 document.querySelectorAll("[data-modelo]").forEach(b => b.addEventListener("click", () => {
   modelo = b.dataset.modelo;
   document.querySelectorAll("[data-modelo]").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+  montar();
+}));
+document.querySelectorAll("[data-tam]").forEach(b => b.addEventListener("click", () => {
+  tam = b.dataset.tam;
+  document.querySelectorAll("[data-tam]").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
   montar();
 }));
 ["numIni", "qtd"].forEach(id => $(id).addEventListener("input", montar));
