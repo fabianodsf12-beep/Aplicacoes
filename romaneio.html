@@ -113,6 +113,15 @@ main>.nd-secao{min-width:0}
 .a4.grafica{width:225mm;height:80mm;display:grid;grid-template-columns:50mm 1fr;grid-template-rows:1fr}
 .a4.grafica .canhoto{gap:1.6mm;padding:5mm 4mm 4mm 7mm}
 .a4.grafica .linha-c{min-height:8.2mm}
+.a4.grafica.escrever .caixa{min-height:8.5mm}
+.a4.grafica.assinalar .canhoto{gap:1.2mm}
+.a4.grafica.assinalar .linha-c{min-height:7.4mm}
+.prod-c{padding-top:1mm}
+.a4.grafica .prod-c .rot{font-size:6.5pt;margin-bottom:0.8mm}
+.prod-c>div:first-of-type{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1mm 1.5mm}
+.a4.grafica .prod-c .qd{width:3mm;height:3mm;border-width:0.3mm}
+.prod-c>div>span,.outro-c{display:flex;align-items:center;gap:0.8mm;font-size:6.5pt;font-weight:600;white-space:nowrap}
+.outro-c{margin-top:1mm;border-bottom:0.3mm solid var(--borda);padding-bottom:0.8mm}
 .a4.grafica .corpo{gap:2.2mm;padding:5mm 6mm 4mm 7mm;font-size:9.5pt}
 .a4.grafica .cab img{height:7.5mm}
 .a4.grafica .cab h3{font-size:13pt}
@@ -171,6 +180,13 @@ main>.nd-secao{min-width:0}
         </div>
         <p class="explica nd-corpo-pequeno" id="explica"></p>
         <p class="explica nd-corpo-pequeno">Quem preenche e assina é o responsável pelo descarregamento. Ele entrega a via ao motorista, que entrega ao pessoal da balança quando for tirar a tara.</p>
+      </div>
+      <div class="nd-campo" id="opProd" hidden>
+        <span id="t-prod">Produto no talão</span>
+        <div class="nd-seg desliza" role="group" aria-labelledby="t-prod">
+          <button type="button" class="nd-onda" data-prod="escrever" aria-pressed="true">Escrever o nome</button>
+          <button type="button" class="nd-onda" data-prod="assinalar" aria-pressed="false">Assinalar</button>
+        </div>
       </div>
       <div class="nd-msg" id="pedido" hidden>
         <svg class="nd-ic" aria-hidden="true"><use href="#i-info"/></svg>
@@ -274,14 +290,30 @@ function talao(n, corte){
   </div>`;
 }
 
+let prodModo = "escrever";
+
 function cartela(){
   const NUM = "Nº 001234";
+  const esc = prodModo === "escrever";
   const lc = (r, extra) => `<div class="linha-c"><span class="rot">${r}</span>${extra || ""}</div>`;
-  return `<div class="a4 grafica">
+  const ABREV = ["Calcário", "Gesso", "Filler", "Fósforo", "KCl", "Micro"];
+  const prodCanhoto = esc ? lc("Produto")
+    : `<div class="prod-c"><span class="rot">Produto</span><div>${ABREV.map(p => `<span><span class="qd"></span>${p}</span>`).join("")}</div><div class="outro-c"><span class="qd"></span>Outro</div></div>`;
+  const prodVia = esc
+    ? `<div><span class="rot">Produto (escreva o nome)</span><div class="caixa"></div></div>
+      <div><span class="rot">Pátio (onde descarregou)</span><div class="caixa"></div></div>`
+    : `<div><span class="rot">Produto (assinale)</span>
+        <div class="prod">${PRODUTOS.map(p => `<span class="op"><span class="qd"></span>${p}</span>`).join("")}</div>
+      </div>
+      <div class="grade g2">
+        <div><span class="rot">Outro (escreva)</span><div class="caixa"></div></div>
+        <div><span class="rot">Pátio (onde descarregou)</span><div class="caixa"></div></div>
+      </div>`;
+  return `<div class="a4 grafica ${esc ? "escrever" : "assinalar"}">
     <div class="canhoto">
       <div class="topo-c"><div><b class="vermelho">${NUM}</b><small>Canhoto · Fazenda</small></div><img src="${LOGO}" alt="Nadiana"></div>
       ${lc("Data", '<span class="data">___/___/______</span>')}
-      ${lc("Placa")}${lc("NF")}${lc("Produto")}${lc("Pátio")}
+      ${lc("Placa")}${lc("NF")}${prodCanhoto}${lc("Pátio")}
       <div class="destaque" aria-hidden="true"><span>Destaque aqui</span></div>
     </div>
     <div class="corpo">
@@ -295,13 +327,7 @@ function cartela(){
         <div><span class="rot">Placa do veículo</span><div class="caixa"></div></div>
         <div><span class="rot">Nota fiscal (NF)</span><div class="caixa"></div></div>
       </div>
-      <div><span class="rot">Produto (assinale)</span>
-        <div class="prod">${PRODUTOS.map(p => `<span class="op"><span class="qd"></span>${p}</span>`).join("")}</div>
-      </div>
-      <div class="grade g2">
-        <div><span class="rot">Nome do produto (escreva)</span><div class="caixa"></div></div>
-        <div><span class="rot">Pátio (onde descarregou)</span><div class="caixa"></div></div>
-      </div>
+      ${prodVia}
       <div class="ass"><span></span><div>Responsável pelo descarregamento</div></div>
     </div>
   </div>`;
@@ -311,6 +337,7 @@ function montar(){
   const graf = modelo === "grafica";
   $("pg").textContent = graf ? "@page{size:225mm 80mm;margin:0}" : "";
   $("pedido").hidden = !graf;
+  $("opProd").hidden = !graf;
   $("opA4").hidden = graf;
   $("btnImp").lastChild.textContent = graf ? "Imprimir ou salvar PDF" : "Imprimir romaneios";
   if (graf){
@@ -347,6 +374,11 @@ function montar(){
 document.querySelectorAll("[data-modelo]").forEach(b => b.addEventListener("click", () => {
   modelo = b.dataset.modelo;
   document.querySelectorAll("[data-modelo]").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+  montar();
+}));
+document.querySelectorAll("[data-prod]").forEach(b => b.addEventListener("click", () => {
+  prodModo = b.dataset.prod;
+  document.querySelectorAll("[data-prod]").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
   montar();
 }));
 ["numIni", "qtd"].forEach(id => $(id).addEventListener("input", montar));
