@@ -46,6 +46,22 @@
 .leg i.ab,.ctl.legmap i.ab{height:0;border:0;border-top:2px dashed var(--muted);border-radius:0;background:transparent}
 details.alt summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:500;color:var(--muted)}
 details.alt .trs{padding-top:var(--space-2)}
+.pistas-oc{display:flex;flex-direction:column;gap:var(--space-3);padding-bottom:var(--space-3);border-bottom:1px solid var(--line2)}
+.pistas-cab{display:flex;flex-direction:column;gap:2px}
+.pistas-cab b{font-family:var(--font-display);font-size:18px;font-weight:600}
+.pistas-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:var(--space-3)}
+.pista{border:1px solid var(--line);border-radius:var(--radius-xl);padding:var(--space-3) var(--space-3_5);display:flex;flex-direction:column;gap:var(--space-2);background:var(--panel);min-width:0}
+.pista.uso{border-color:var(--brand);background:var(--brand-soft);box-shadow:0 0 0 1px var(--brand)}
+.pista-cab{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2)}
+.pista-cab b{font-family:var(--font-display);font-size:22px;font-weight:600;line-height:1;margin-right:auto}
+.pista-rumo{display:flex;align-items:baseline;gap:var(--space-2)}
+.pista-rumo .val{font-family:var(--font-display);font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1}
+.pista-rumo .rot{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.pista-pts{display:grid;grid-template-columns:24px minmax(0,1fr);gap:4px var(--space-2);align-items:center;font-variant-numeric:tabular-nums;font-size:14px}
+.pista-pts .pt{width:24px;height:24px;border-radius:var(--radius-pill);background:var(--panel2);border:1px solid var(--line);font-family:var(--font-display);font-weight:600;display:inline-flex;align-items:center;justify-content:center;font-size:14px}
+.pista-pts span:not(.pt){overflow-wrap:anywhere}
+.pista .nota{font-size:13px;color:var(--muted);margin:0}
+.pista .nota.aviso{color:var(--warn)}
 .salvos{display:flex;flex-direction:column;gap:var(--space-3);border-top:1px solid var(--line2);padding-top:var(--space-3)}
 .salvar-form{display:flex;flex-direction:column;gap:var(--space-3);background:var(--panel2);border-radius:var(--radius-lg);padding:var(--space-3)}
 .posicao{display:flex;flex-direction:column;gap:var(--space-3_5);border:1px solid var(--line2);border-radius:var(--radius-xl);padding:var(--space-3) var(--space-3_5) var(--space-3_5)}
@@ -176,6 +192,12 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
             <p class="dica">Use o rumo da linha AB do pulverizador (no Operations Center, em Linhas de orientação), por exemplo 358,2665. Graus a partir do norte: 0 = norte–sul, 90 = leste–oeste. Sem a linha, marque dois pontos sobre uma linha de plantio na imagem.</p>
             <fieldset class="ab" id="abBox">
               <legend>Linha AB do Operations Center</legend>
+              <div class="pistas-oc" id="pistasBox">
+                <div class="pistas-cab"><b>Pistas de aplicação deste talhão</b><span class="dica" id="pistasResumo"></span></div>
+                <div class="pistas-lista" id="pistasLista"></div>
+                <div class="acoes-l"><label class="nd-btn leve nd-onda" for="arqPistas"><svg class="nd-ic" aria-hidden="true"><use href="#i-upload"/></svg>Importar pistas (.zip do Operations Center)</label><input type="file" id="arqPistas" accept=".zip"></div>
+                <p class="dica" id="pistasMsg"></p>
+              </div>
               <div class="ab-ponto">
                 <span class="ab-nome" aria-hidden="true">A</span>
                 <label class="nd-campo">Ponto A · latitude<input class="nd-inp" id="aLat" data-ab="aLat" autocomplete="off" inputmode="decimal" placeholder="-10,5827557"></label>
@@ -607,7 +629,7 @@ function preencherCampos(){
   const ab = rumoAB(); $("ang").readOnly = !!ab;
   preencherAB();
   $("abInfo").hidden = !ab;
-  if (ab) $("abInfo").textContent = `Rumo calculado pelos pontos A e B: ${fmtMax(ab.ang, 4)} graus, linha de ${fmt(ab.dist, 0)} m. Compare com o rumo do Operations Center. Para digitar o rumo, apague o Ponto B.`;
+  if (ab) $("abInfo").textContent = `Rumo no monitor: ${fmtMax(rumoMonitor(S.pontoA, S.pontoB), 4)}° (o mesmo número do Operations Center; no terreno, ${fmtMax(ab.ang, 4)}°). Linha de ${fmt(ab.dist, 0)} m.`;
   const semA = !S.pontoA; $("posBox").setAttribute("aria-disabled", String(semA)); ["pista1", "pistaMenos", "pistaMais"].forEach(k => { $(k).disabled = semA; });
   if (semA) $("pistaDica").textContent = "Informe o Ponto A da linha AB para posicionar o ensaio pelas pistas.";
 $("pista1").value = S.pontoA ? Math.round(S.pista1) : "";
@@ -673,7 +695,7 @@ function renderResumo(){
   av.innerHTML = msgs.map(([c, t, d]) => `<div class="nd-msg ${c}"><svg class="nd-ic" aria-hidden="true"><use href="#i-${c === "erro" ? "circle-x" : c === "aviso" ? "triangle-alert" : "info"}"/></svg><div><b>${t}</b>${d}</div></div>`).join("");
 }
 function atualizar(){
-  calcular(); desenharGrade(); renderLegenda(); renderResumo(); renderRxBtns(); travarSemPontoA();
+  calcular(); desenharGrade(); renderLegenda(); renderResumo(); renderRxBtns(); travarSemPontoA(); renderPistas();
   $("posInfo").textContent = $("posInfo2").textContent = textoPosicao();
   const t = talhaoAtual();
   $("talInfo").textContent = t && GRADE ? `${t.nome}: ${fmt(GRADE.areaTal, 2)} ha${t.origem === "importado" ? " (limite importado)" : ""}.` : "";
@@ -1036,7 +1058,7 @@ $("btnGj").addEventListener("click", () => {
 });
 
 /* ---------- salvos: linhas AB e ensaios. No simulador (claude.ai) ficam no banco do próprio simulador, para todos que abrem o link; fora dele, neste aparelho */
-const SALVOS = {linhas:[], ensaios:[], ondeTxt:"", podeEscrever:true, pronto:false, uid:null, user:null, db:null};
+const SALVOS = {linhas:[], ensaios:[], pistas:[], pistasInfo:null, ondeTxt:"", podeEscrever:true, pronto:false, uid:null, user:null, db:null};
 const agoraISO = () => new Date().toISOString();
 const dataHora = iso => { try { return new Date(iso).toLocaleString("pt-BR", {day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"}); } catch (e) { return ""; } };
 const idNovo = () => "x" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -1052,7 +1074,9 @@ const ARMAZEM = {
     const o = localLer(); if (o[tipo]) delete o[tipo][id]; lsSet(LOCAL_SALVOS, JSON.stringify(o)); carregarLocal();
   }
 };
-function carregarLocal(){ const o = localLer(); ["linhas", "ensaios"].forEach(t => { SALVOS[t] = Object.entries(o[t] || {}).map(([id, d]) => ({id, ...d})); }); SALVOS.pronto = true; renderSalvos(); }
+function carregarLocal(){ const o = localLer(); ["linhas", "ensaios"].forEach(t => { SALVOS[t] = Object.entries(o[t] || {}).map(([id, d]) => ({id, ...d})); });
+  const pc = (o.config || {}).pistas; SALVOS.pistas = pc ? pc.linhas || [] : []; SALVOS.pistasInfo = pc ? {importadoEm:pc.importadoEm} : null; renderPistas();
+  SALVOS.pronto = true; renderSalvos(); }
 async function iniciarSalvos(){
   const usar = window.claude && typeof claude.use === "function";
   const db = usar ? await claude.use("db") : null;
@@ -1061,6 +1085,9 @@ async function iniciarSalvos(){
   try { SALVOS.user = await claude.use("user"); SALVOS.uid = SALVOS.user ? await SALVOS.user.id() : null;
     const pode = SALVOS.user ? await SALVOS.user.can("data.write") : null; SALVOS.podeEscrever = pode !== false; } catch (e) {}
   let respondeu = false; const t = setTimeout(() => { if (!respondeu) { $("linhasMsg").textContent = $("ensMsg").textContent = "Ainda não consegui ler os salvos. Verifique a internet."; } }, 10000);
+  db.collection("config").onSnapshot(snap => { const d = snap.docs.find(x => x.id === "pistas"), v = d && d.data();
+    SALVOS.pistas = v ? v.linhas || [] : []; SALVOS.pistasInfo = v ? {importadoEm:v.importadoEm} : null; renderPistas(); },
+    () => { $("pistasMsg").textContent = "Não consegui ler as pistas agora."; });
   ["linhas", "ensaios"].forEach(tipo => db.collection(tipo).onSnapshot(snap => {
     if (!snap.metadata.fromCache) { respondeu = true; clearTimeout(t); }
     SALVOS[tipo] = snap.docs.map(d => ({id:d.id, ...d.data()})); SALVOS.pronto = true; renderSalvos();
@@ -1173,6 +1200,75 @@ $("btnNovoEnsaio").addEventListener("click", () => { // começa do zero no talh�
   $("ensaioForm").hidden = true; $("linhaForm").hidden = true; $("linhaSel").value = "";
   ajustarAoTalhao(); salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar(); renderSalvos(); arqMsg("", "");
   aviso(`Novo ensaio no ${tal}: tudo zerado`); window.scrollTo({top:0, behavior:"smooth"});
+});
+
+/* ---------- pistas de aplicação do Operations Center (linhas AB "AP…" de cada talhão) ---------- */
+const ehAP = nome => /^ap/i.test(String(nome || "").trim()); // AP, AP 02, AP_SOJA, AP_MILHO 02, Aplic_PV26…
+const r7 = x => Math.round(x * 1e7) / 1e7;
+function rumoMonitor(a, b){ return ((Math.atan2(b[1] - a[1], b[0] - a[0]) / RAD) % 360 + 360) % 360; } // como o Operations Center mostra: direto em graus de lat/long
+function medidaPista(a, b){ const P = projecao((a[0] + b[0]) / 2, (a[1] + b[1]) / 2), pa = P.fwd([a[1], a[0]]), pb = P.fwd([b[1], b[0]]); return Math.hypot(pb[0] - pa[0], pb[1] - pa[1]); }
+const ordemPista = (x, y) => { const k = p => (/^ap\s*\d*$/i.test(p.nome) ? "0" : "1") + p.nome; return k(x).localeCompare(k(y), "pt-BR", {numeric:true}); };
+const pistasDoTalhao = () => (SALVOS.pistas || []).filter(p => p.talhao === S.talhao).sort(ordemPista);
+const mesmoPonto = (p, q) => p && q && Math.abs(p[0] - q[0]) < 2e-7 && Math.abs(p[1] - q[1]) < 2e-7;
+const pistaEmUso = p => p.tipo === "reta" && mesmoPonto(p.a, S.pontoA) && mesmoPonto(p.b, S.pontoB);
+function renderPistas(){
+  const ps = pistasDoTalhao(), todas = SALVOS.pistas || [];
+  $("pistasResumo").textContent = todas.length ? `${ps.length ? ps.length + (ps.length === 1 ? " pista" : " pistas") + " no " + S.talhao : "Nenhuma pista de aplicação no " + S.talhao} · ${todas.length} no total, de ${new Set(todas.map(p => p.talhao)).size} talhões${SALVOS.pistasInfo ? " · importadas em " + dataHora(SALVOS.pistasInfo.importadoEm) : ""}`
+    : "Nenhuma pista importada ainda. Importe o .zip das linhas de orientação exportado do Operations Center.";
+  $("pistasLista").innerHTML = ps.map(p => {
+    const uso = pistaEmUso(p), m = medidaPista(p.a, p.b), curta = p.tipo === "reta" && m < 50;
+    return `<div class="pista${uso ? " uso" : ""}">
+      <div class="pista-cab"><b>${esc(p.nome)}</b><span class="nd-pill">${p.tipo === "reta" ? "Reta" : "Curva"} · ${fmt(m, 0)} m</span>${uso ? '<span class="nd-pill ok"><svg class="nd-ic" aria-hidden="true"><use href="#i-circle-check"/></svg>Em uso</span>' : ""}</div>
+      ${p.tipo === "reta" ? `<div class="pista-rumo"><span class="val">${fmtMax(rumoMonitor(p.a, p.b), 4)}°</span><span class="rot">rumo no monitor</span></div>` : ""}
+      <div class="pista-pts"><span class="pt" aria-label="Ponto A">A</span><span>${fmtMax(p.a[0], 7)} · ${fmtMax(p.a[1], 7)}</span><span class="pt" aria-label="Ponto B">B</span><span>${fmtMax(p.b[0], 7)} · ${fmtMax(p.b[1], 7)}</span></div>
+      ${p.tipo !== "reta" ? '<p class="nota aviso">Pista curva: o tabuleiro precisa de uma pista reta.</p>' : curta ? `<p class="nota aviso">A e B estão a só ${fmt(m, 0)} m: o rumo pode sair impreciso. Confira no monitor.</p>` : ""}
+      ${p.tipo === "reta" ? `<button class="nd-btn ${uso ? "" : "primario"} nd-onda" type="button" data-pista="${esc(p.id)}">${uso ? "Usar de novo" : "Usar esta pista"}</button>` : ""}
+    </div>`; }).join("");
+  desenharPistas();
+}
+function usarPista(id){
+  const p = (SALVOS.pistas || []).find(x => x.id === id); if (!p || p.tipo !== "reta") return;
+  S.abTxt = null; S.pontoA = [...p.a]; S.pontoB = [...p.b]; S.linhaId = null; aplicarAB();
+  fixarPosicaoAtual(); salvar(); preencherCampos(); atualizar(); renderSalvos(); renderPistas();
+  aviso(`Pista ${p.nome} em uso: rumo ${fmtMax(rumoMonitor(p.a, p.b), 4)}° no monitor`);
+}
+$("pistasLista").addEventListener("click", e => { const b = e.target.closest("[data-pista]"); if (b) usarPista(b.dataset.pista); });
+let LP = null;
+function desenharPistas(){ // as pistas do talhão no mapa: tracejadas; a que está em uso, mais grossa
+  if (!MAP) return; if (!LP) LP = L.layerGroup().addTo(MAP); LP.clearLayers();
+  pistasDoTalhao().forEach(p => {
+    const uso = pistaEmUso(p), lls = (p.pts || [p.a, p.b]).map(q => [q[0], q[1]]);
+    L.polyline(lls, {color: uso ? COR.limite : COR.branco, weight: uso ? 4 : 2, dashArray: uso ? null : "6 6", opacity: .95, interactive:false}).addTo(LP);
+    L.marker(lls[Math.floor(lls.length / 2)] || lls[0], {interactive:false, keyboard:false, icon:L.divIcon({className:"qlbl", html:esc(p.nome), iconSize:[90, 16], iconAnchor:[45, 20]})}).addTo(LP);
+  });
+}
+async function importarPistas(arq){
+  const z = await lerZip(await arq.arrayBuffer()), nomes = Object.keys(z), shpN = nomes.find(n => n.endsWith(".shp"));
+  if (!shpN || !z[shpN]) throw new Error("O .zip não tem um shapefile de linhas (.shp).");
+  const dbfN = shpN.replace(/\.shp$/, ".dbf"); if (!z[dbfN]) throw new Error("Falta o arquivo .dbf das linhas no .zip.");
+  const geo = lerShpLinhas(await z[shpN]()), dbfU8 = await z[dbfN](), cpg = nomes.find(n => n.endsWith(".cpg"));
+  const regs = lerDbf(dbfU8, cpg && z[cpg] ? new TextDecoder().decode(await z[cpg]()).includes("65001") || /utf/i.test(new TextDecoder().decode(await z[cpg]())) : false);
+  if (!geo.some(Boolean)) throw new Error("O arquivo não tem linhas. Exporte as linhas de orientação do Operations Center.");
+  const linhas = [], vistos = new Set();
+  geo.forEach((pts, i) => {
+    const r = regs[i] || {}, nome = String(r.NAME || r.NOME || r.name || "").trim(), tal = String(r.FIELD || r.TALHAO || r.field || "").trim();
+    if (!pts || pts.length < 2 || !ehAP(nome) || !tal) return;
+    if (pts.some(q => Math.abs(q[0]) > 180 || Math.abs(q[1]) > 90)) throw new Error("As linhas precisam estar em latitude e longitude (WGS84).");
+    const tipo = /#CAB#/i.test(r.AGKID || "") || pts.length > 2 ? "curva" : "reta";
+    let id = (tal + "_" + nome).normalize("NFD").replace(/[^A-Za-z0-9_-]+/g, "_"); while (vistos.has(id)) id += "_b"; vistos.add(id);
+    const ll = pts.map(q => [r7(q[1]), r7(q[0])]);
+    linhas.push({id, talhao:tal, bloco:String(r.FARM || "").trim(), nome, tipo, a:ll[0], b:ll[ll.length - 1], ...(tipo === "curva" ? {pts:ll.filter((q, k) => k % Math.ceil(ll.length / 60) === 0 || k === ll.length - 1)} : {})});
+  });
+  if (!linhas.length) throw new Error("Nenhuma pista com nome começando por AP no arquivo.");
+  await ARMAZEM.gravar("config", "pistas", {linhas, importadoEm:agoraISO(), por:SALVOS.uid || null, arquivo:arq.name});
+  return linhas;
+}
+$("arqPistas").addEventListener("change", async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  $("pistasMsg").textContent = "Lendo as pistas…";
+  try { const ls = await importarPistas(f); const nt = new Set(ls.map(p => p.talhao)).size;
+    $("pistasMsg").textContent = `${ls.length} pistas de aplicação importadas, de ${nt} talhões (${ls.filter(p => p.tipo === "curva").length} curvas). ${SALVOS.db ? "Ficam salvas no simulador para todos." : "Ficam salvas neste aparelho."}`; renderPistas(); }
+  catch (err) { $("pistasMsg").textContent = (err && err.message) || "Não consegui ler o arquivo das pistas."; }
 });
 
 /* ---------- relatório em PDF: croqui, referências da linha AB e áreas por teste (base Nadiana: pdf.js) ---------- */
@@ -1326,10 +1422,10 @@ async function lerZip(buf){
   }
   return out;
 }
-function lerDbf(u8){
+function lerDbf(u8, utf8){
   const v = new DataView(u8.buffer, u8.byteOffset, u8.byteLength), n = v.getUint32(4, true), lc = v.getUint16(8, true), lr = v.getUint16(10, true), campos = [];
   for (let o = 32; u8[o] !== 0x0D && o < lc; o += 32) { let nm = ""; for (let k = 0; k < 11 && u8[o + k]; k++) nm += String.fromCharCode(u8[o + k]); campos.push({nome:nm.trim(), tam:u8[o + 16]}); }
-  const dec = new TextDecoder("latin1"), regs = [];
+  const dec = new TextDecoder(utf8 ? "utf-8" : "latin1"), regs = [];
   for (let i = 0; i < n; i++) { let o = lc + i * lr + 1; const r = {}; campos.forEach(c => { r[c.nome] = dec.decode(u8.subarray(o, o + c.tam)).trim(); o += c.tam; }); regs.push(r); }
   return regs;
 }
@@ -1348,6 +1444,20 @@ function lerShp(u8){
     o = c + tam;
   }
   return polis;
+}
+function lerShpLinhas(u8){ // polilinhas (tipos 3, 13, 23): cada registro vira a lista de pontos [lon, lat]
+  const v = new DataView(u8.buffer, u8.byteOffset, u8.byteLength), fim = v.getInt32(24) * 2, out = [];
+  let o = 100;
+  while (o + 8 <= Math.min(fim, u8.byteLength)) {
+    const tam = v.getInt32(o + 4) * 2, c = o + 8, tipo = v.getInt32(c, true);
+    if ([3, 13, 23].includes(tipo)) {
+      const np = v.getInt32(c + 36, true), npt = v.getInt32(c + 40, true), b = c + 44 + 4 * np, pts = [];
+      for (let i = 0; i < npt; i++) pts.push([v.getFloat64(b + 16 * i, true), v.getFloat64(b + 16 * i + 8, true)]);
+      out.push(pts);
+    } else out.push(null);
+    o = c + tam;
+  }
+  return out;
 }
 /* GeoPackage: é um banco SQLite; o leitor (sql.js) só é baixado quando alguém importa um .gpkg */
 const SQLJS = "https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/";
