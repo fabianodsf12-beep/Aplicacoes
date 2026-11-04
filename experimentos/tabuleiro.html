@@ -19,7 +19,21 @@
 *{box-sizing:border-box}
 .layout{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--space-5);padding-block:var(--space-5)}
 @media (min-width:1100px){.layout{grid-template-columns:400px minmax(0,1fr);align-items:start}.mapcol{position:sticky;top:84px;order:2}.side{order:1}}
-.side{display:flex;flex-direction:column;gap:var(--space-5);min-width:0}
+[hidden]{display:none !important} /* o que está escondido fica escondido, mesmo com display dos componentes */
+.side{display:flex;flex-direction:column;gap:var(--space-4);min-width:0}
+/* passos que dobram: o cabeçalho abre e fecha; fechado, mostra o resumo do passo */
+.nd-cartao.dobra{padding:0;gap:0}
+.nd-cartao.dobra:hover{transform:none}
+.passo-d > summary{list-style:none;display:flex;align-items:center;gap:var(--space-3);min-height:44px;padding:var(--space-3) var(--space-4);cursor:pointer;border-radius:var(--radius-2xl)}
+.passo-d > summary::-webkit-details-marker,details.alt > summary::-webkit-details-marker{display:none}
+.passo-d > summary .passo{margin-right:auto;white-space:nowrap}
+.passo-d > summary:focus-visible,details.alt > summary:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+.passo-d .resumo{display:none;min-width:0;font-size:13.5px;color:var(--muted);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.passo-d:not([open]) .resumo{display:block}
+.seta{flex:0 0 auto;color:var(--muted);transition:transform var(--dur-media) var(--curva)}
+details[open] > summary > .seta{transform:rotate(180deg)}
+.passo-d .corpo{display:flex;flex-direction:column;gap:var(--space-3);padding:0 var(--space-4) var(--space-4)}
+.tres{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-3);align-items:end}
 .mapcol{display:flex;flex-direction:column;gap:var(--space-3);min-width:0}
 #mapa{height:62vh;min-height:360px;border-radius:var(--radius-2xl);border:1px solid var(--line2);box-shadow:var(--sombra-1);background:var(--panel2)}
 @media (min-width:1100px){#mapa{height:calc(100vh - 170px)}}
@@ -44,12 +58,10 @@
 .leg i{width:14px;height:14px;border-radius:var(--radius-xs);background:var(--c);border:1px solid var(--line)}
 .leg i.fora{background:transparent;border:1.5px dashed var(--muted)}
 .leg i.ab,.ctl.legmap i.ab{height:0;border:0;border-top:2px dashed var(--muted);border-radius:0;background:transparent}
-details.alt summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:500;color:var(--muted)}
+details.alt summary{list-style:none;cursor:pointer;min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);font-weight:500;color:var(--muted);border-radius:var(--radius-md)}
+details.alt{border-top:1px solid var(--line2)}
 details.alt .trs{padding-top:var(--space-2)}
-.pistas-oc{display:flex;flex-direction:column;gap:var(--space-3);padding-bottom:var(--space-3);border-bottom:1px solid var(--line2)}
-.pistas-cab{display:flex;flex-direction:column;gap:2px}
-.pistas-cab b{font-family:var(--font-display);font-size:18px;font-weight:600}
-.pistas-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:var(--space-3)}
+.pistas-oc{display:flex;flex-direction:column;gap:var(--space-2)}
 .pista{border:1px solid var(--line);border-radius:var(--radius-xl);padding:var(--space-3) var(--space-3_5);display:flex;flex-direction:column;gap:var(--space-2);background:var(--panel);min-width:0}
 .pista.uso{border-color:var(--brand);background:var(--brand-soft);box-shadow:0 0 0 1px var(--brand)}
 .pista-cab{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2)}
@@ -60,20 +72,20 @@ details.alt .trs{padding-top:var(--space-2)}
 .pista-pts{display:grid;grid-template-columns:24px minmax(0,1fr);gap:4px var(--space-2);align-items:center;font-variant-numeric:tabular-nums;font-size:14px}
 .pista-pts .pt{width:24px;height:24px;border-radius:var(--radius-pill);background:var(--panel2);border:1px solid var(--line);font-family:var(--font-display);font-weight:600;display:inline-flex;align-items:center;justify-content:center;font-size:14px}
 .pista-pts span:not(.pt){overflow-wrap:anywhere}
-.pista .nota{font-size:13px;color:var(--muted);margin:0}
+.pista .nota{font-size:13px;color:var(--muted);margin:0;display:flex;gap:6px;align-items:flex-start}
+.pista .nota .nd-ic{width:16px;height:16px;flex:0 0 auto;margin-top:1px}
 .pista .nota.aviso{color:var(--warn)}
 .salvos{display:flex;flex-direction:column;gap:var(--space-3);border-top:1px solid var(--line2);padding-top:var(--space-3)}
 .salvar-form{display:flex;flex-direction:column;gap:var(--space-3);background:var(--panel2);border-radius:var(--radius-lg);padding:var(--space-3)}
-.posicao{display:flex;flex-direction:column;gap:var(--space-3_5);border:1px solid var(--line2);border-radius:var(--radius-xl);padding:var(--space-3) var(--space-3_5) var(--space-3_5)}
-.mais-menos{display:grid;grid-template-columns:52px minmax(0,1fr) 52px;gap:var(--space-2);align-items:center}
-.mais-menos .nd-btn{min-height:48px;padding:0;font-family:var(--font-display);font-size:26px;font-weight:600;line-height:1}
-.mais-menos .nd-inp{text-align:center;font-family:var(--font-display);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.posicao{display:flex;flex-direction:column;gap:var(--space-3);border-top:1px solid var(--line2);padding-top:var(--space-3)}
+.mais-menos{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:var(--space-1);align-items:center}
+.mais-menos .nd-btn{min-height:44px;padding:0;font-family:var(--font-display);font-size:24px;font-weight:600;line-height:1}
+.mais-menos .nd-inp{text-align:center;padding:0 var(--space-1);font-family:var(--font-display);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+@media (max-width:480px){.posicao .dois{grid-template-columns:minmax(0,1fr)}}
 .mais-menos .un{display:flex;align-items:center;gap:var(--space-2);min-width:0}
 .mais-menos .un span{color:var(--muted)}
 .posicao[aria-disabled="true"] .mais-menos{opacity:.5}
 #posInfo{margin:0}
-fieldset.ab{border:1px solid var(--line2);border-radius:var(--radius-xl);padding:var(--space-3) var(--space-3_5) var(--space-3_5);margin:0;display:flex;flex-direction:column;gap:var(--space-3);min-width:0}
-fieldset.ab legend{padding:0 var(--space-1);font-weight:600;font-size:14px}
 .ab-ponto{display:grid;grid-template-columns:32px minmax(0,1fr) minmax(0,1fr);gap:var(--space-2) var(--space-3);align-items:end}
 .ab-nome{width:32px;height:32px;margin-bottom:8px;border-radius:var(--radius-pill);background:var(--brand-soft);color:var(--brand);font-family:var(--font-display);font-weight:600;font-size:18px;display:inline-flex;align-items:center;justify-content:center}
 .ab-ok{grid-column:2 / -1;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;min-height:18px}
@@ -159,197 +171,228 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
             <p class="dica" id="ensMsg"></p>
           </section>
 
-          <section class="nd-cartao">
-            <h2 class="passo"><span class="n">1</span>Talhão</h2>
-            <label class="nd-campo">Talhão do ensaio
-              <select class="nd-inp" id="talhao"><option value="">Carregando…</option></select>
-            </label>
-            <div class="acoes-l">
-              <label class="nd-btn nd-onda" for="arqLimite"><svg class="nd-ic" aria-hidden="true"><use href="#i-upload"/></svg>Importar limite</label>
-              <input type="file" id="arqLimite" accept=".zip,.gpkg,.kml,.geojson,.json">
-            </div>
-            <p class="dica">Se o talhão não estiver no mapa da fazenda, importe o limite em shapefile (.zip), GeoPackage (.gpkg), KML ou GeoJSON, por exemplo o limite exportado do Operations Center.</p>
-            <p class="dica" id="talInfo"></p>
-          </section>
-
-          <section class="nd-cartao">
-            <h2 class="passo"><span class="n">2</span>Direção e tamanho</h2>
-            <label class="nd-campo">Nome do ensaio
-              <input class="nd-inp" id="codigo" autocomplete="off" placeholder="TAB RT-40 26/27">
-            </label>
-            <div class="dois">
-              <label class="nd-campo">Rumo da pista
-                <span class="un"><input class="nd-inp" id="ang" inputmode="decimal"><span>graus</span></span>
-              </label>
-              <label class="nd-campo">Área alvo
-                <span class="un"><input class="nd-inp" id="alvo" inputmode="decimal"><span>ha</span></span>
-              </label>
-            </div>
-            <div class="acoes-l">
-              <button class="nd-btn nd-onda" type="button" id="btnMedir"><svg class="nd-ic" aria-hidden="true"><use href="#i-pencil"/></svg>Marcar direção no mapa</button>
-              <button class="nd-btn nd-onda" type="button" id="btnAuto"><svg class="nd-ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg>Ajustar ao talhão</button>
-            </div>
-            <p class="dica">Use o rumo da linha AB do pulverizador (no Operations Center, em Linhas de orientação), por exemplo 358,2665. Graus a partir do norte: 0 = norte–sul, 90 = leste–oeste. Sem a linha, marque dois pontos sobre uma linha de plantio na imagem.</p>
-            <fieldset class="ab" id="abBox">
-              <legend>Linha AB do Operations Center</legend>
-              <div class="pistas-oc" id="pistasBox">
-                <div class="pistas-cab"><b>Pistas de aplicação deste talhão</b><span class="dica" id="pistasResumo"></span></div>
-                <div class="pistas-lista" id="pistasLista"></div>
-                <div class="acoes-l"><label class="nd-btn leve nd-onda" for="arqPistas"><svg class="nd-ic" aria-hidden="true"><use href="#i-upload"/></svg>Importar pistas (.zip do Operations Center)</label><input type="file" id="arqPistas" accept=".zip"></div>
-                <p class="dica" id="pistasMsg"></p>
-              </div>
-              <div class="ab-ponto">
-                <span class="ab-nome" aria-hidden="true">A</span>
-                <label class="nd-campo">Ponto A · latitude<input class="nd-inp" id="aLat" data-ab="aLat" autocomplete="off" inputmode="decimal" placeholder="-10,5827557"></label>
-                <label class="nd-campo">Ponto A · longitude<input class="nd-inp" id="aLon" data-ab="aLon" autocomplete="off" inputmode="decimal" placeholder="-55,9401554"></label>
-                <span class="ab-ok" id="aOk"></span>
-              </div>
-              <div class="ab-ponto">
-                <span class="ab-nome" aria-hidden="true">B</span>
-                <label class="nd-campo">Ponto B · latitude<input class="nd-inp" id="bLat" data-ab="bLat" autocomplete="off" inputmode="decimal" placeholder="-10,5630000"></label>
-                <label class="nd-campo">Ponto B · longitude<input class="nd-inp" id="bLon" data-ab="bLon" autocomplete="off" inputmode="decimal" placeholder="-55,9407000"></label>
-                <span class="ab-ok" id="bOk"></span>
-              </div>
-              <div class="acoes-l"><button class="nd-btn leve nd-onda" type="button" id="btnLimparAB"><svg class="nd-ic" aria-hidden="true"><use href="#i-x"/></svg>Limpar pontos A e B</button></div>
-              <div class="salvos" id="linhasBox">
-                <label class="nd-campo">Linhas AB salvas deste talhão
-                  <select class="nd-inp" id="linhaSel"><option value="">Carregando…</option></select>
+          <section class="nd-cartao dobra">
+            <details class="passo-d" open data-dobra="talhao">
+              <summary><h2 class="passo"><span class="n">1</span>Talhão</h2><span class="resumo" id="res-talhao"></span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+              <div class="corpo">
+                <label class="nd-campo">Talhão do ensaio
+                  <select class="nd-inp" id="talhao"><option value="">Carregando…</option></select>
                 </label>
+                <p class="dica" id="talInfo"></p>
+                <details class="alt" id="limiteBox"><summary><span>Talhão fora da lista? Importar o limite</span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><div class="trs">
+                  <div class="acoes-l">
+                    <label class="nd-btn nd-onda" for="arqLimite"><svg class="nd-ic" aria-hidden="true"><use href="#i-upload"/></svg>Importar limite</label>
+                    <input type="file" id="arqLimite" accept=".zip,.gpkg,.kml,.geojson,.json">
+                  </div>
+                  <p class="dica">Se o talhão não estiver no mapa da fazenda, importe o limite em shapefile (.zip), GeoPackage (.gpkg), KML ou GeoJSON, por exemplo o limite exportado do Operations Center.</p>
+                </div></details>
+              </div>
+            </details>
+          </section>
+
+          <section class="nd-cartao dobra">
+            <details class="passo-d" open data-dobra="pista">
+              <summary><h2 class="passo"><span class="n">2</span>Pista e posição</h2><span class="resumo" id="res-pista"></span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+              <div class="corpo">
+                <div class="pistas-oc" id="pistasBox">
+                  <label class="nd-campo">Pista de aplicação do Operations Center
+                    <select class="nd-inp" id="pistaSel"><option value="">Carregando…</option></select>
+                  </label>
+                  <div class="pista" id="pistaInfo" hidden></div>
+                  <p class="dica" id="pistasResumo"></p>
+                </div>
+                <p class="dica" id="abInfo" hidden></p>
+                <details class="alt ab" id="abBox"><summary id="abResumo"><span>Digitar os pontos A e B, linhas salvas</span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><div class="trs">
+                  <div class="dois">
+                    <label class="nd-campo">Rumo da pista
+                      <span class="un"><input class="nd-inp" id="ang" inputmode="decimal"><span>graus</span></span>
+                    </label>
+                    <div class="nd-campo"><span>Sem linha AB</span>
+                      <button class="nd-btn nd-onda" type="button" id="btnMedir"><svg class="nd-ic" aria-hidden="true"><use href="#i-pencil"/></svg>Marcar no mapa</button>
+                    </div>
+                  </div>
+                  <div class="ab-ponto">
+                    <span class="ab-nome" aria-hidden="true">A</span>
+                    <label class="nd-campo">Ponto A · latitude<input class="nd-inp" id="aLat" data-ab="aLat" autocomplete="off" inputmode="decimal" placeholder="-10,5827557"></label>
+                    <label class="nd-campo">Ponto A · longitude<input class="nd-inp" id="aLon" data-ab="aLon" autocomplete="off" inputmode="decimal" placeholder="-55,9401554"></label>
+                    <span class="ab-ok" id="aOk"></span>
+                  </div>
+                  <div class="ab-ponto">
+                    <span class="ab-nome" aria-hidden="true">B</span>
+                    <label class="nd-campo">Ponto B · latitude<input class="nd-inp" id="bLat" data-ab="bLat" autocomplete="off" inputmode="decimal" placeholder="-10,5630000"></label>
+                    <label class="nd-campo">Ponto B · longitude<input class="nd-inp" id="bLon" data-ab="bLon" autocomplete="off" inputmode="decimal" placeholder="-55,9407000"></label>
+                    <span class="ab-ok" id="bOk"></span>
+                  </div>
+                  <div class="acoes-l"><button class="nd-btn leve nd-onda" type="button" id="btnLimparAB"><svg class="nd-ic" aria-hidden="true"><use href="#i-x"/></svg>Limpar pontos A e B</button></div>
+                  <div class="salvos" id="linhasBox">
+                    <label class="nd-campo">Linhas AB salvas deste talhão
+                      <select class="nd-inp" id="linhaSel"><option value="">Carregando…</option></select>
+                    </label>
+                    <div class="acoes-l">
+                      <button class="nd-btn nd-onda" type="button" id="btnSalvarLinha"><svg class="nd-ic" aria-hidden="true"><use href="#i-check"/></svg>Salvar esta linha AB</button>
+                      <button class="nd-btn leve nd-onda" type="button" id="btnApagarLinha" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-trash-2"/></svg><span>Apagar linha escolhida</span></button>
+                    </div>
+                    <div class="salvar-form" id="linhaForm" hidden>
+                      <label class="nd-campo">Nome da linha<input class="nd-inp" id="linhaNome" autocomplete="off" maxlength="60"></label>
+                      <div class="acoes-l"><button class="nd-btn primario nd-onda" type="button" id="linhaOk">Salvar linha</button><button class="nd-btn leve nd-onda" type="button" id="linhaCancel">Cancelar</button></div>
+                    </div>
+                    <p class="dica" id="linhasMsg"></p>
+                  </div>
+                  <div class="acoes-l"><label class="nd-btn leve nd-onda" for="arqPistas"><svg class="nd-ic" aria-hidden="true"><use href="#i-upload"/></svg>Importar pistas (.zip do Operations Center)</label><input type="file" id="arqPistas" accept=".zip"></div>
+                  <p class="dica" id="pistasMsg"></p>
+                  <p class="dica">Sem pista na lista, use o rumo da linha AB do pulverizador (no Operations Center, em Linhas de orientação), por exemplo 358,2665. Graus a partir do norte: 0 = norte–sul, 90 = leste–oeste. Sem a linha, marque dois pontos sobre uma linha de plantio na imagem.</p>
+                  <p class="dica">Cole cada número no seu campo, com 7 casas decimais. Se colar "latitude, longitude" juntas num campo, o app separa sozinho. O que você cola fica guardado na hora, mesmo saindo da página.</p>
+                  <p class="dica" id="pontoADica">Latitude e longitude dos pontos A e B da linha no Operations Center, com 7 casas decimais (1 cm). Com A e B o rumo é calculado pelos dois pontos, a mesma reta que o monitor segue; cada coluna do ensaio cai exatamente numa pista e o mapa mostra o número da pista a partir da linha AB. Só com o A, vale o rumo digitado.</p>
+                </div></details>
+                <div class="posicao" id="posBox">
+                  <div class="nd-campo">
+                    <span>Cabeceira de referência</span>
+                    <div class="nd-seg" id="inicioLado" role="group" aria-label="Cabeceira de referência">
+                      <button type="button" data-v="A" aria-pressed="true" id="iniA">Lado A</button>
+                      <button type="button" data-v="B" aria-pressed="false" id="iniB">Lado B</button>
+                    </div>
+                  </div>
+                  <div class="dois">
+                    <div class="nd-campo">
+                      <label for="pista1">Primeira pista</label>
+                      <div class="mais-menos">
+                        <button class="nd-btn nd-onda" type="button" data-pista="-1" id="pistaMenos" aria-label="Uma pista para a esquerda">−</button>
+                        <input class="nd-inp" id="pista1" type="number" step="1" inputmode="numeric" aria-describedby="pistaDica">
+                        <button class="nd-btn nd-onda" type="button" data-pista="1" id="pistaMais" aria-label="Uma pista para a direita">+</button>
+                      </div>
+                    </div>
+                    <div class="nd-campo">
+                      <label for="inicioDist">Da cabeceira (m)</label>
+                      <div class="mais-menos">
+                        <button class="nd-btn nd-onda" type="button" data-dist="-1" id="distMenos" aria-label="Um quadrado para trás">−</button>
+                        <input class="nd-inp" id="inicioDist" type="number" step="1" inputmode="numeric" aria-describedby="distDica">
+                        <button class="nd-btn nd-onda" type="button" data-dist="1" id="distMais" aria-label="Um quadrado para frente">+</button>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="dica"><span id="pistaDica">Positivo: à direita da linha AB. Negativo: à esquerda. 0: a própria linha AB.</span> <span id="distDica">Distância: + afasta da cabeceira, − aproxima.</span></p>
+                  <p class="nd-corpo-pequeno" id="posInfo2" aria-live="polite"></p>
+                  <div class="acoes-l"><button class="nd-btn leve nd-onda" type="button" id="btnCentro"><svg class="nd-ic" aria-hidden="true"><use href="#i-map-pin"/></svg>Centralizar no talhão</button></div>
+                </div>
+              </div>
+            </details>
+          </section>
+
+          <section class="nd-cartao dobra">
+            <details class="passo-d" open data-dobra="tamanho">
+              <summary><h2 class="passo"><span class="n">3</span>Nome e tamanho</h2><span class="resumo" id="res-tamanho"></span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+              <div class="corpo">
+                <div class="dois">
+                  <label class="nd-campo">Nome do ensaio
+                    <input class="nd-inp" id="codigo" autocomplete="off" placeholder="TAB RT-40 26/27">
+                  </label>
+                  <label class="nd-campo">Área alvo
+                    <span class="un"><input class="nd-inp" id="alvo" inputmode="decimal"><span>ha</span></span>
+                  </label>
+                </div>
+                <div class="tres">
+                  <label class="nd-campo">Espaçamento
+                    <span class="un"><input class="nd-inp" id="W" inputmode="decimal"><span>m</span></span>
+                  </label>
+                  <label class="nd-campo">Comprimento
+                    <span class="un"><input class="nd-inp" id="L" inputmode="decimal"><span>m</span></span>
+                  </label>
+                  <label class="nd-campo">Bordadura
+                    <span class="un"><input class="nd-inp" id="bord" inputmode="decimal"><span>m</span></span>
+                  </label>
+                  <label class="nd-campo">Passadas
+                    <input class="nd-inp" id="nC" inputmode="numeric">
+                  </label>
+                  <label class="nd-campo">Quadrados por passada
+                    <input class="nd-inp" id="nR" inputmode="numeric">
+                  </label>
+                </div>
+                <div class="acoes-l"><button class="nd-btn nd-onda" type="button" id="btnAuto"><svg class="nd-ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg>Ajustar ao talhão</button></div>
+                <details class="alt"><summary><span>O que é cada medida</span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><div class="trs"><p class="dica">Espaçamento: a distância entre pistas, que é a largura do quadrado: 36 m = uma passada da barra do M4030, igual ao da linha AB. Comprimento de 60 m ou mais, por causa do atraso do monitor de colheita. Quadrados a menos que a bordadura da divisa do talhão ficam de fora.</p><p class="dica">Passadas são as colunas do tabuleiro; quadrados por passada, as fileiras ao longo da pista. Área alvo é usada por Ajustar ao talhão.</p></div></details>
+              </div>
+            </details>
+          </section>
+
+          <section class="nd-cartao dobra">
+            <details class="passo-d" open data-dobra="trat">
+              <summary><h2 class="passo"><span class="n">4</span>Tratamentos</h2><span class="resumo" id="res-trat"></span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+              <div class="corpo">
+                <div class="nd-campo">Os tratamentos são
+                  <div class="nd-seg" id="modo" role="group" aria-label="Tipo de tratamento">
+                    <button type="button" data-v="produtos" aria-pressed="true">Produtos diferentes</button>
+                    <button type="button" data-v="doses" aria-pressed="false">Vazões diferentes</button>
+                  </div>
+                </div>
+                <div class="trs" id="trs"></div>
                 <div class="acoes-l">
-                  <button class="nd-btn nd-onda" type="button" id="btnSalvarLinha"><svg class="nd-ic" aria-hidden="true"><use href="#i-check"/></svg>Salvar esta linha AB</button>
-                  <button class="nd-btn leve nd-onda" type="button" id="btnApagarLinha" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-trash-2"/></svg><span>Apagar linha escolhida</span></button>
+                  <button class="nd-btn nd-onda" type="button" id="btnAddTr"><svg class="nd-ic gira" aria-hidden="true"><use href="#i-plus"/></svg>Tratamento</button>
                 </div>
-                <div class="salvar-form" id="linhaForm" hidden>
-                  <label class="nd-campo">Nome da linha<input class="nd-inp" id="linhaNome" autocomplete="off" maxlength="60"></label>
-                  <div class="acoes-l"><button class="nd-btn primario nd-onda" type="button" id="linhaOk">Salvar linha</button><button class="nd-btn leve nd-onda" type="button" id="linhaCancel">Cancelar</button></div>
+                <p class="dica">Vazão de calda em L/ha (vai na coluna TAXA). Testemunha é 0: bicos fechados.</p>
+                <div class="acoes-l">
+                  <button class="nd-btn nd-onda modo" type="button" id="btnInverter"><svg class="nd-ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg>Inverter o xadrez</button>
+                  <button class="nd-btn nd-onda modo" type="button" id="btnSortear"><svg class="nd-ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg>Sortear de novo</button>
                 </div>
-                <p class="dica" id="linhasMsg"></p>
+                <details class="alt"><summary><span>Como o sorteio é feito</span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><div class="trs"><p class="dica" id="trDica"></p></div></details>
               </div>
-              <p class="dica">Cole cada número no seu campo, com 7 casas decimais. Se colar "latitude, longitude" juntas num campo, o app separa sozinho. O que você cola fica guardado na hora, mesmo saindo da página.</p>
-            </fieldset>
-            <p class="dica" id="abInfo" hidden></p>
-            <div class="posicao" id="posBox">
-              <div class="nd-campo">
-                <label for="pista1">Primeira pista do ensaio</label>
-                <div class="mais-menos">
-                  <button class="nd-btn nd-onda" type="button" data-pista="-1" id="pistaMenos" aria-label="Uma pista para a esquerda">−</button>
-                  <input class="nd-inp" id="pista1" type="number" step="1" inputmode="numeric">
-                  <button class="nd-btn nd-onda" type="button" data-pista="1" id="pistaMais" aria-label="Uma pista para a direita">+</button>
-                </div>
-                <span class="dica" id="pistaDica">Positivo: à direita da linha AB. Negativo: à esquerda. 0: a própria linha AB. Cada toque anda uma pista.</span>
-              </div>
-              <div class="nd-campo">
-                <span>Cabeceira de referência</span>
-                <div class="nd-seg" id="inicioLado" role="group" aria-label="Cabeceira de referência">
-                  <button type="button" data-v="A" aria-pressed="true" id="iniA">Lado A</button>
-                  <button type="button" data-v="B" aria-pressed="false" id="iniB">Lado B</button>
-                </div>
-              </div>
-              <div class="nd-campo">
-                <label for="inicioDist">Distância da cabeceira</label>
-                <div class="mais-menos">
-                  <button class="nd-btn nd-onda" type="button" data-dist="-1" id="distMenos" aria-label="Um quadrado para trás">−</button>
-                  <span class="un"><input class="nd-inp" id="inicioDist" type="number" step="1" inputmode="numeric"><span>m</span></span>
-                  <button class="nd-btn nd-onda" type="button" data-dist="1" id="distMais" aria-label="Um quadrado para frente">+</button>
-                </div>
-                <span class="dica" id="distDica">Cada toque anda um quadrado ao longo da pista. Cabeceira é onde a primeira pista encontra a divisa ou o carreador.</span>
-              </div>
-              <p class="nd-corpo-pequeno" id="posInfo2" aria-live="polite"></p>
-              <div class="acoes-l"><button class="nd-btn nd-onda" type="button" id="btnCentro"><svg class="nd-ic" aria-hidden="true"><use href="#i-map-pin"/></svg>Centralizar no talhão</button></div>
-            </div>
-            <p class="dica" id="pontoADica">Latitude e longitude dos pontos A e B da linha no Operations Center, com 7 casas decimais (1 cm). Com A e B o rumo é calculado pelos dois pontos, a mesma reta que o monitor segue; cada coluna do ensaio cai exatamente numa pista e o mapa mostra o número da pista a partir da linha AB. Só com o A, vale o rumo digitado.</p>
-            <div class="dois">
-              <label class="nd-campo">Espaçamento entre pistas
-                <span class="un"><input class="nd-inp" id="W" inputmode="decimal"><span>m</span></span>
-              </label>
-              <label class="nd-campo">Comprimento
-                <span class="un"><input class="nd-inp" id="L" inputmode="decimal"><span>m</span></span>
-              </label>
-              <label class="nd-campo">Passadas (colunas)
-                <input class="nd-inp" id="nC" inputmode="numeric">
-              </label>
-              <label class="nd-campo">Quadrados por passada
-                <input class="nd-inp" id="nR" inputmode="numeric">
-              </label>
-              <label class="nd-campo">Bordadura
-                <span class="un"><input class="nd-inp" id="bord" inputmode="decimal"><span>m</span></span>
-              </label>
-            </div>
-            <p class="dica">O espaçamento entre pistas é a largura do quadrado: 36 m = uma passada da barra do M4030, igual ao da linha AB. Comprimento de 60 m ou mais, por causa do atraso do monitor de colheita. Quadrados a menos que a bordadura da divisa do talhão ficam de fora.</p>
+            </details>
           </section>
 
-          <section class="nd-cartao">
-            <h2 class="passo"><span class="n">3</span>Tratamentos</h2>
-            <div class="nd-campo">Os tratamentos são
-              <div class="nd-seg" id="modo" role="group" aria-label="Tipo de tratamento">
-                <button type="button" data-v="produtos" aria-pressed="true">Produtos diferentes</button>
-                <button type="button" data-v="doses" aria-pressed="false">Vazões diferentes</button>
+          <section class="nd-cartao dobra" aria-live="polite">
+            <details class="passo-d" open data-dobra="resumo">
+              <summary><h2 class="passo"><span class="n">5</span>Resumo</h2><span class="resumo" id="res-resumo"></span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+              <div class="corpo">
+                <div class="kpis">
+                  <div class="nd-kpi"><span class="rot">Quadrados</span><span class="val" id="kQ">0</span><span class="var" id="kQs"></span></div>
+                  <div class="nd-kpi"><span class="rot">Área do ensaio</span><span class="val" id="kA">0<small>ha</small></span><span class="var" id="kAs"></span></div>
+                </div>
+                <div class="nd-tabela-wrap"><table class="nd-tabela">
+                  <thead><tr><th>Tratamento</th><th class="n">Quadrados</th><th class="n">Área</th><th class="n">Calda</th></tr></thead>
+                  <tbody id="tbTr"></tbody>
+                </table></div>
+                <div id="avisos" class="trs"></div>
               </div>
-            </div>
-            <div class="trs" id="trs"></div>
-            <div class="acoes-l">
-              <button class="nd-btn nd-onda" type="button" id="btnAddTr"><svg class="nd-ic gira" aria-hidden="true"><use href="#i-plus"/></svg>Tratamento</button>
-            </div>
-            <p class="dica">Vazão de calda de cada tratamento, em L/ha. Testemunha é 0 (bicos fechados). Vai na coluna TAXA dos arquivos de aplicação, como número inteiro.</p>
-            <div class="acoes-l">
-              <button class="nd-btn nd-onda modo" type="button" id="btnInverter"><svg class="nd-ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg>Inverter o xadrez</button>
-              <button class="nd-btn nd-onda modo" type="button" id="btnSortear"><svg class="nd-ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg>Sortear de novo</button>
-            </div>
-            <p class="dica" id="trDica"></p>
+            </details>
           </section>
 
-          <section class="nd-cartao" aria-live="polite">
-            <h2 class="passo"><span class="n">4</span>Resumo</h2>
-            <div class="kpis">
-              <div class="nd-kpi"><span class="rot">Quadrados</span><span class="val" id="kQ">0</span><span class="var" id="kQs"></span></div>
-              <div class="nd-kpi"><span class="rot">Área do ensaio</span><span class="val" id="kA">0<small>ha</small></span><span class="var" id="kAs"></span></div>
-            </div>
-            <div class="nd-tabela-wrap"><table class="nd-tabela">
-              <thead><tr><th>Tratamento</th><th class="n">Quadrados</th><th class="n">Área</th><th class="n">Calda</th></tr></thead>
-              <tbody id="tbTr"></tbody>
-            </table></div>
-            <div id="avisos" class="trs"></div>
-          </section>
-
-          <section class="nd-cartao">
-            <h2 class="passo"><span class="n">5</span>Arquivos</h2>
-            <button class="nd-btn grande nd-onda nd-estado" type="button" id="btnPdf" data-enviando="Gerando o PDF…" data-feito="PDF pronto"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-file-text"/></svg>Relatório em PDF (croqui, pontos e áreas)</button>
-            <div class="nd-msg aviso" id="rxTrava" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-triangle-alert"/></svg><div><b>Falta o Ponto A</b>Informe o Ponto A (e o B) da linha AB no passo 2 para baixar os arquivos de aplicação. Sem ele, as zonas podem cair entre duas pistas.</div></div>
-            <div class="trs" id="rxBtns"></div>
-            <div class="acoes-l">
-              <button class="nd-btn nd-onda" type="button" id="btnLim"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>Testemunhas como limite</button>
-              <button class="nd-btn nd-onda" type="button" id="btnKml"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>KML (Google Earth)</button>
-              <button class="nd-btn nd-onda" type="button" id="btnCsv"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>Planilha (CSV)</button>
-              <button class="nd-btn nd-onda" type="button" id="btnGj"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>GeoJSON</button>
-            </div>
-            <div id="arqMsg"></div>
-            <p class="dica" id="rxDica"></p>
-            <p class="dica">Cada arquivo de zona tem uma linha com todos os quadrados daquele teste juntos (só a coluna TAXA, em L/ha, número inteiro); as prescrições prontas têm um polígono por quadrado, também só com TAXA. Tudo em coordenadas geográficas WGS84. O KML e a planilha servem para a equipe achar os quadrados no campo e para a análise depois da colheita.</p>
-          </section>
-
-          <section class="nd-cartao">
-            <h2>Como levar para o M4030</h2>
-            <ol class="passos-jd">
-              <li>Produtos diferentes: baixe um arquivo por teste (Zona A, Zona B…). Cada arquivo tem só os quadrados sorteados para aquele teste. Não descompacte o .zip.</li>
-              <li>No Operations Center, envie cada arquivo em Arquivos e crie a prescrição daquele teste, usando a coluna TAXA. Fora da zona, bicos fechados.</li>
-              <li>Cada teste é uma aplicação separada, com o seu produto no tanque. A testemunha não tem arquivo: fica fora de todas as zonas. Lave o tanque entre um produto e outro.</li>
-              <li>Vazões diferentes da mesma calda: um arquivo só com todas as zonas e a coluna TAXA, numa aplicação só.</li>
-              <li>Mande para o monitor pela transferência de dados, ou leve por pendrive.</li>
-              <li>Ligue o desligamento bico a bico (Section Control) e trabalhe com sinal RTK.</li>
-              <li>Antes do produto, faça um teste só com água em 3 ou 4 quadrados e confira o mapa do aplicado: a testemunha tem que sair sem aplicação.</li>
-              <li>Se o monitor não fechar os bicos com vazão 0, use o arquivo "Testemunhas como limite" como limites internos do talhão; o Section Control fecha os bicos dentro deles.</li>
-            </ol>
-            <p class="dica">Os nomes dos menus mudam com a versão do monitor. Guarde o mapa do aplicado: ele mostra o que cada quadrado recebeu de fato.</p>
-          </section>
-
-          <section class="nd-cartao">
-            <h2>Zonas de manejo</h2>
-            <p class="nd-corpo" style="margin:0">O tabuleiro cobre a área toda por igual. Por isso, as zonas podem ser desenhadas depois, e o resultado sai separado por zona do mesmo jeito.</p>
-            <ul class="passos-jd">
-              <li>Durante a safra: NDVI de satélite no enchimento de grãos.</li>
-              <li>Na colheita: produtividade das testemunhas. Elas mostram o potencial de cada parte da área sem o produto.</li>
-              <li>Depois, cada quadrado é comparado com as testemunhas vizinhas dentro da sua zona.</li>
-            </ul>
+          <section class="nd-cartao dobra">
+            <details class="passo-d" open data-dobra="arquivos">
+              <summary><h2 class="passo"><span class="n">6</span>Arquivos</h2><span class="resumo" id="res-arquivos"></span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+              <div class="corpo">
+                <button class="nd-btn grande nd-onda nd-estado" type="button" id="btnPdf" data-enviando="Gerando o PDF…" data-feito="PDF pronto"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-file-text"/></svg>Relatório em PDF (croqui, pontos e áreas)</button>
+                <div class="nd-msg aviso" id="rxTrava" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-triangle-alert"/></svg><div><b>Falta a linha AB</b>Escolha a pista (ou digite os pontos A e B) no passo 2 para baixar os arquivos de aplicação. Sem ele, as zonas podem cair entre duas pistas.</div></div>
+                <div class="trs" id="rxBtns"></div>
+                <div class="acoes-l">
+                  <button class="nd-btn nd-onda" type="button" id="btnLim"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>Testemunhas como limite</button>
+                  <button class="nd-btn nd-onda" type="button" id="btnKml"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>KML (Google Earth)</button>
+                  <button class="nd-btn nd-onda" type="button" id="btnCsv"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>Planilha (CSV)</button>
+                  <button class="nd-btn nd-onda" type="button" id="btnGj"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>GeoJSON</button>
+                </div>
+                <div id="arqMsg"></div>
+                <p class="dica" id="rxDica"></p>
+                <details class="alt"><summary><span>O que vai em cada arquivo</span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><div class="trs"><p class="dica">Cada arquivo de zona tem uma linha com todos os quadrados daquele teste juntos (só a coluna TAXA, em L/ha, número inteiro); as prescrições prontas têm um polígono por quadrado, também só com TAXA. Tudo em coordenadas geográficas WGS84. O KML e a planilha servem para a equipe achar os quadrados no campo e para a análise depois da colheita.</p></div></details>
+                <details class="alt"><summary><span>Como levar para o M4030</span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><div class="trs">
+                  <ol class="passos-jd">
+                    <li>Produtos diferentes: baixe um arquivo por teste (Zona A, Zona B…). Cada arquivo tem só os quadrados sorteados para aquele teste. Não descompacte o .zip.</li>
+                    <li>No Operations Center, envie cada arquivo em Arquivos e crie a prescrição daquele teste, usando a coluna TAXA. Fora da zona, bicos fechados.</li>
+                    <li>Cada teste é uma aplicação separada, com o seu produto no tanque. A testemunha não tem arquivo: fica fora de todas as zonas. Lave o tanque entre um produto e outro.</li>
+                    <li>Vazões diferentes da mesma calda: um arquivo só com todas as zonas e a coluna TAXA, numa aplicação só.</li>
+                    <li>Mande para o monitor pela transferência de dados, ou leve por pendrive.</li>
+                    <li>Ligue o desligamento bico a bico (Section Control) e trabalhe com sinal de correção (SF3 ou RTK).</li>
+                    <li>Antes do produto, faça um teste só com água em 3 ou 4 quadrados e confira o mapa do aplicado: a testemunha tem que sair sem aplicação.</li>
+                    <li>Se o monitor não fechar os bicos com vazão 0, use o arquivo "Testemunhas como limite" como limites internos do talhão; o Section Control fecha os bicos dentro deles.</li>
+                  </ol>
+                  <p class="dica">Os nomes dos menus mudam com a versão do monitor. Guarde o mapa do aplicado: ele mostra o que cada quadrado recebeu de fato.</p>
+                </div></details>
+                <details class="alt"><summary><span>Zonas de manejo</span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><div class="trs">
+                  <p class="dica">O tabuleiro cobre a área toda por igual. Por isso, as zonas podem ser desenhadas depois, e o resultado sai separado por zona do mesmo jeito.</p>
+                  <ul class="passos-jd">
+                    <li>Durante a safra: NDVI de satélite no enchimento de grãos.</li>
+                    <li>Na colheita: produtividade das testemunhas. Elas mostram o potencial de cada parte da área sem o produto.</li>
+                    <li>Depois, cada quadrado é comparado com as testemunhas vizinhas dentro da sua zona.</li>
+                  </ul>
+                </div></details>
+              </div>
+            </details>
           </section>
         </div>
       </div>
@@ -628,19 +671,19 @@ function preencherCampos(){
   $("ang").value = S.ang == null ? "" : fmtMax(S.ang, 4);
   const ab = rumoAB(); $("ang").readOnly = !!ab;
   preencherAB();
-  $("abInfo").hidden = !ab;
+  $("abInfo").hidden = !ab || pistasDoTalhao().some(pistaEmUso);
   if (ab) $("abInfo").textContent = `Rumo no monitor: ${fmtMax(rumoMonitor(S.pontoA, S.pontoB), 4)}° (o mesmo número do Operations Center; no terreno, ${fmtMax(ab.ang, 4)}°). Linha de ${fmt(ab.dist, 0)} m.`;
   const semA = !S.pontoA; $("posBox").setAttribute("aria-disabled", String(semA)); ["pista1", "pistaMenos", "pistaMais"].forEach(k => { $(k).disabled = semA; });
-  if (semA) $("pistaDica").textContent = "Informe o Ponto A da linha AB para posicionar o ensaio pelas pistas.";
+  if (semA) { $("pistaDica").textContent = "Escolha a pista (ou os pontos A e B) para posicionar o ensaio pelas pistas."; $("distDica").textContent = ""; }
 $("pista1").value = S.pontoA ? Math.round(S.pista1) : "";
   [...$("inicioLado").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === S.inicioLado)));
   $("inicioDist").value = Math.round(num(S.inicioDist) || 0);
   if (S.ang != null) {
     $("iniA").textContent = `Lado A (${lado(S.ang + 180)})`; $("iniB").textContent = `Lado B (${lado(S.ang)})`;
-    if (!semA) $("pistaDica").textContent = `Positivo: à direita (${lado(S.ang + 90)}) da linha AB. Negativo: à esquerda (${lado(S.ang - 90)}). 0: a própria linha AB. Cada toque anda uma pista (${fmtMax(S.W, 2)} m).`;
+    if (!semA) $("pistaDica").textContent = `Pista: + anda para ${lado(S.ang + 90)}, − para ${lado(S.ang - 90)}, ${fmtMax(S.W, 2)} m por toque; 0 é a própria linha AB.`;
     $("pistaMenos").setAttribute("aria-label", `Uma pista para ${lado(S.ang - 90)}`); $("pistaMais").setAttribute("aria-label", `Uma pista para ${lado(S.ang + 90)}`);
     const sentidoMais = S.inicioLado === "B" ? lado(S.ang + 180) : lado(S.ang), sentidoMenos = S.inicioLado === "B" ? lado(S.ang) : lado(S.ang + 180);
-    $("distDica").textContent = `+ afasta da cabeceira (${sentidoMais}), − aproxima (${sentidoMenos}). Cada toque anda um quadrado (${fmtMax(S.L, 2)} m). Aceita número negativo.`;
+    if (!semA) $("distDica").textContent = `Cabeceira: + afasta (${sentidoMais}), − aproxima (${sentidoMenos}), ${fmtMax(S.L, 2)} m por toque.`;
     $("distMenos").setAttribute("aria-label", `Um quadrado para ${sentidoMenos}`); $("distMais").setAttribute("aria-label", `Um quadrado para ${sentidoMais}`); }
   $("alvo").value = fmt(num(S.alvo) || 50, 0);
   $("W").value = fmt(S.W, S.W % 1 ? 1 : 0); $("L").value = fmt(S.L, S.L % 1 ? 1 : 0); $("nC").value = S.nC; $("nR").value = S.nR; $("bord").value = fmt(S.bord, S.bord % 1 ? 1 : 0);
@@ -699,7 +742,26 @@ function atualizar(){
   $("posInfo").textContent = $("posInfo2").textContent = textoPosicao();
   const t = talhaoAtual();
   $("talInfo").textContent = t && GRADE ? `${t.nome}: ${fmt(GRADE.areaTal, 2)} ha${t.origem === "importado" ? " (limite importado)" : ""}.` : "";
+  renderResumos();
 }
+function renderResumos(){
+  const t = talhaoAtual(), ok = GRADE ? GRADE.quads.filter(q => q.ok).length : 0, pu = pistasDoTalhao().find(pistaEmUso);
+  const rumo = S.pontoA && S.pontoB ? fmtMax(rumoMonitor(S.pontoA, S.pontoB), 4) + "°" : S.ang != null ? fmtMax(S.ang, 4) + "°" : "";
+  const r = {
+    talhao: t && GRADE ? `${t.nome} · ${fmt(GRADE.areaTal, 2)} ha` : "Escolha o talhão",
+    pista: !S.pontoA ? "Sem linha AB" : `${pu ? pu.nome : "A e B digitados"} · ${rumo} · pista ${S.pista1 > 0 ? "+" : ""}${Math.round(S.pista1)}`,
+    tamanho: `${S.nC} × ${S.nR} quadrados de ${fmtMax(S.W, 2)} × ${fmtMax(S.L, 2)} m`,
+    trat: `${S.trats.length} tratamentos · ${S.modo === "doses" ? "vazões" : "produtos"}`,
+    resumo: GRADE ? `${fmt(ok)} quadrados · ${fmt(ok * GRADE.areaQ, 2)} ha` : "",
+    arquivos: S.pontoA ? "PDF e arquivos de aplicação" : "Falta a linha AB"
+  };
+  Object.entries(r).forEach(([k, v]) => { const e = $("res-" + k); if (e) e.textContent = v; });
+}
+const DOBRAS = "tabuleiro.dobras";
+(() => { let d = {}; try { d = JSON.parse(lsGet(DOBRAS) || "{}") || {}; } catch (e) {}
+  document.querySelectorAll("details[data-dobra]").forEach(el => { if (d[el.dataset.dobra] === false) el.open = false;
+    el.addEventListener("toggle", () => { d[el.dataset.dobra] = el.open; lsSet(DOBRAS, JSON.stringify(d)); }); }); })();
+const abrirAte = el => { for (let d = el && el.closest("details"); d; d = d.parentElement && d.parentElement.closest("details")) d.open = true; };
 function escolherTalhao(nome, ajustar){
   S.talhao = nome; $("talhao").value = nome;
   if (ajustar) { S.ang = null; S.rumoFixo = false; S.pontoA = null; S.pontoB = null; S.abTxt = null; S.linhaId = null; S.ensaioId = null; ajustarAoTalhao(); }
@@ -938,9 +1000,9 @@ function faltaAplicacao(lista){ // trava os arquivos de aplicação: nenhum sai 
   lista.forEach(t => { const i = S.trats.indexOf(t); if (!isFinite(num(t.dose))) { falta.push(`vazão do ${t.cod}${t.nome ? " (" + t.nome + ")" : ""}`); campos.push(document.querySelector(`[data-i="${i}"][data-k="dose"]`)); } });
   if (!falta.length) return false;
   const txt = falta.length > 1 ? falta.slice(0, -1).join(", ") + " e " + falta[falta.length - 1] : falta[0];
-  arqMsg("erro", `<b>Falta preencher ${esc(txt)}</b>No passo 3 Tratamentos. Sem isso a coluna sairia vazia (NULL) no arquivo.`);
+  arqMsg("erro", `<b>Falta preencher ${esc(txt)}</b>No passo 4 Tratamentos. Sem isso a coluna sairia vazia (NULL) no arquivo.`);
   campos.filter(Boolean).forEach(c => c.setAttribute("aria-invalid", "true"));
-  const c0 = campos.find(Boolean); if (c0) { c0.scrollIntoView({behavior:"smooth", block:"center"}); setTimeout(() => c0.focus({preventScroll:true}), 300); }
+  const c0 = campos.find(Boolean); if (c0) { abrirAte(c0); c0.scrollIntoView({behavior:"smooth", block:"center"}); setTimeout(() => c0.focus({preventScroll:true}), 300); }
   return true;
 }
 const CAMPO_TAXA = [{nome:"TAXA", tipo:"N", tam:6, dec:0}]; // arquivos de aplicação: só a taxa, número inteiro (L/ha)
@@ -980,12 +1042,12 @@ function renderRxBtns(){
   const ic = '<svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>';
   if (S.modo === "doses") {
     $("rxBtns").innerHTML = `<button class="nd-btn primario grande nd-onda" type="button" data-zonas>${ic}Zonas de todas as vazões (shapefile)</button>`
-      + `<details class="alt"><summary>Ou uma prescrição pronta por quadrado</summary><div class="trs"><button class="nd-btn grande nd-onda" type="button" data-rx="">${ic}Prescrição por quadrado (shapefile)</button></div></details>`;
+      + `<details class="alt"><summary><span>Ou uma prescrição pronta por quadrado</span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><div class="trs"><button class="nd-btn grande nd-onda" type="button" data-rx="">${ic}Prescrição por quadrado (shapefile)</button></div></details>`;
     $("rxDica").textContent = `Vazões diferentes: tudo num arquivo só, com ${S.trats.length} zonas (uma por vazão, só a coluna TAXA). Uma passada só, com a vazão mudando de zona para zona.`;
   } else {
     const prods = S.trats.map((t, i) => [t, i]).filter(([t]) => !ehTest(t));
     $("rxBtns").innerHTML = prods.map(([t, i], k) => `<button class="nd-btn ${k ? "" : "primario"} grande nd-onda" type="button" data-zona="${i}">${ic}Zona ${esc(t.cod)}${t.nome ? " · " + esc(t.nome) : ""} (aplicação ${k + 1})</button>`).join("")
-      + `<details class="alt"><summary>Outros formatos</summary><div class="trs"><button class="nd-btn grande nd-onda" type="button" data-zonas>${ic}Todas as zonas num arquivo (para conferir)</button>`
+      + `<details class="alt"><summary><span>Outros formatos</span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><div class="trs"><button class="nd-btn grande nd-onda" type="button" data-zonas>${ic}Todas as zonas num arquivo (para conferir)</button>`
       + prods.map(([t, i], k) => `<button class="nd-btn grande nd-onda" type="button" data-rx="${i}">${ic}Prescrição por quadrado ${esc(t.cod)}</button>`).join("") + `</div></details>`;
     const nT = S.trats.length - prods.length;
     $("rxDica").textContent = `Produtos diferentes: ${prods.length} arquivos, um por teste, cada um só com a zona daquele teste (os quadrados sorteados para ele). Cada arquivo é uma aplicação, com o produto do teste no tanque. ${nT ? "A testemunha não tem arquivo: ela fica fora de todas as zonas e não recebe nada." : ""}`;
@@ -1075,7 +1137,7 @@ const ARMAZEM = {
   }
 };
 function carregarLocal(){ const o = localLer(); ["linhas", "ensaios"].forEach(t => { SALVOS[t] = Object.entries(o[t] || {}).map(([id, d]) => ({id, ...d})); });
-  const pc = (o.config || {}).pistas; SALVOS.pistas = pc ? pc.linhas || [] : []; SALVOS.pistasInfo = pc ? {importadoEm:pc.importadoEm} : null; renderPistas();
+  const pc = (o.config || {}).pistas; SALVOS.pistas = pc ? pc.linhas || [] : []; SALVOS.pistasOk = true; SALVOS.pistasInfo = pc ? {importadoEm:pc.importadoEm} : null; renderPistas();
   SALVOS.pronto = true; renderSalvos(); }
 async function iniciarSalvos(){
   const usar = window.claude && typeof claude.use === "function";
@@ -1086,7 +1148,7 @@ async function iniciarSalvos(){
     const pode = SALVOS.user ? await SALVOS.user.can("data.write") : null; SALVOS.podeEscrever = pode !== false; } catch (e) {}
   let respondeu = false; const t = setTimeout(() => { if (!respondeu) { $("linhasMsg").textContent = $("ensMsg").textContent = "Ainda não consegui ler os salvos. Verifique a internet."; } }, 10000);
   db.collection("config").onSnapshot(snap => { const d = snap.docs.find(x => x.id === "pistas"), v = d && d.data();
-    SALVOS.pistas = v ? v.linhas || [] : []; SALVOS.pistasInfo = v ? {importadoEm:v.importadoEm} : null; renderPistas(); },
+    SALVOS.pistas = v ? v.linhas || [] : []; SALVOS.pistasOk = true; SALVOS.pistasInfo = v ? {importadoEm:v.importadoEm} : null; renderPistas(); },
     () => { $("pistasMsg").textContent = "Não consegui ler as pistas agora."; });
   ["linhas", "ensaios"].forEach(tipo => db.collection(tipo).onSnapshot(snap => {
     if (!snap.metadata.fromCache) { respondeu = true; clearTimeout(t); }
@@ -1211,34 +1273,43 @@ const ordemPista = (x, y) => { const k = p => (/^ap\s*\d*$/i.test(p.nome) ? "0" 
 const pistasDoTalhao = () => (SALVOS.pistas || []).filter(p => String(p.talhao).toUpperCase() === String(S.talhao).toUpperCase()).sort(ordemPista);
 const mesmoPonto = (p, q) => p && q && Math.abs(p[0] - q[0]) < 2e-7 && Math.abs(p[1] - q[1]) < 2e-7;
 const pistaEmUso = p => p.tipo === "reta" && mesmoPonto(p.a, S.pontoA) && mesmoPonto(p.b, S.pontoB);
+const RP = {sel:null, tal:null}; // pista escolhida na lista (só para ver) e o talhão da última vez
 function renderPistas(){
-  const ps = pistasDoTalhao(), todas = SALVOS.pistas || [];
-  $("pistasResumo").textContent = todas.length ? `${ps.length ? ps.length + (ps.length === 1 ? " pista" : " pistas") + " no " + S.talhao : "Nenhuma pista de aplicação no " + S.talhao} · ${todas.length} no total, de ${new Set(todas.map(p => p.talhao)).size} talhões${SALVOS.pistasInfo ? " · importadas em " + dataHora(SALVOS.pistasInfo.importadoEm) : ""}`
-    : "Nenhuma pista importada ainda. Importe o .zip das linhas de orientação exportado do Operations Center.";
-  $("pistasLista").innerHTML = ps.map(p => {
-    const uso = pistaEmUso(p), m = medidaPista(p.a, p.b), curta = p.tipo === "reta" && m < 50;
-    return `<div class="pista${uso ? " uso" : ""}">
-      <div class="pista-cab"><b>${esc(p.nome)}</b><span class="nd-pill">${p.tipo === "reta" ? "Reta" : "Curva"} · ${fmt(m, 0)} m</span>${uso ? '<span class="nd-pill ok"><svg class="nd-ic" aria-hidden="true"><use href="#i-circle-check"/></svg>Em uso</span>' : ""}</div>
+  const ps = pistasDoTalhao(), todas = SALVOS.pistas || [], sel = $("pistaSel"), uso = ps.find(pistaEmUso);
+  if (SALVOS.pistasOk && RP.tal !== S.talhao) { RP.tal = S.talhao; $("abBox").open = !ps.length && !S.pontoA; }
+  if (!ps.some(p => p.id === RP.sel)) RP.sel = uso ? uso.id : null;
+  const rot = p => `${p.nome} · ${p.tipo === "reta" ? fmtMax(rumoMonitor(p.a, p.b), 4) + "°" : "curva"} · ${fmt(medidaPista(p.a, p.b), 0)} m${pistaEmUso(p) ? " · em uso" : ""}`;
+  sel.innerHTML = ps.length ? `<option value="">Escolha a pista (${ps.length})</option>` + ps.map(p => `<option value="${esc(p.id)}"${p.id === RP.sel ? " selected" : ""}>${esc(rot(p))}</option>`).join("")
+    : `<option value="">${todas.length ? "Nenhuma pista AP neste talhão" : SALVOS.pistasOk ? "Nenhuma pista importada" : "Carregando…"}</option>`;
+  sel.disabled = !ps.length;
+  $("pistasResumo").textContent = !todas.length ? "Importe o .zip das linhas de orientação do Operations Center em Digitar os pontos A e B."
+    : !ps.length ? `Sem pista AP no ${S.talhao}: digite os pontos A e B abaixo.`
+    : `Pistas AP do Operations Center${SALVOS.pistasInfo ? ", importadas em " + dataHora(SALVOS.pistasInfo.importadoEm) : ""}. Escolha uma para ver o rumo e os pontos.`;
+  const p = ps.find(x => x.id === RP.sel), box = $("pistaInfo");
+  box.hidden = !p;
+  if (p) { const u = pistaEmUso(p), m = medidaPista(p.a, p.b), curta = p.tipo === "reta" && m < 50;
+    box.classList.toggle("uso", u);
+    box.innerHTML = `<div class="pista-cab"><b>${esc(p.nome)}</b><span class="nd-pill">${p.tipo === "reta" ? "Reta" : "Curva"} · ${fmt(m, 0)} m</span>${u ? '<span class="nd-pill ok"><svg class="nd-ic" aria-hidden="true"><use href="#i-circle-check"/></svg>Em uso</span>' : ""}</div>
       ${p.tipo === "reta" ? `<div class="pista-rumo"><span class="val">${fmtMax(rumoMonitor(p.a, p.b), 4)}°</span><span class="rot">rumo no monitor</span></div>` : ""}
       <div class="pista-pts"><span class="pt" aria-label="Ponto A">A</span><span>${fmtMax(p.a[0], 7)} · ${fmtMax(p.a[1], 7)}</span><span class="pt" aria-label="Ponto B">B</span><span>${fmtMax(p.b[0], 7)} · ${fmtMax(p.b[1], 7)}</span></div>
-      ${p.tipo !== "reta" ? '<p class="nota aviso">Pista curva: o tabuleiro precisa de uma pista reta.</p>' : curta ? `<p class="nota aviso">A e B estão a só ${fmt(m, 0)} m: o rumo pode sair impreciso. Confira no monitor.</p>` : ""}
-      ${p.tipo === "reta" ? `<button class="nd-btn ${uso ? "" : "primario"} nd-onda" type="button" data-pista="${esc(p.id)}">${uso ? "Usar de novo" : "Usar esta pista"}</button>` : ""}
-    </div>`; }).join("");
+      ${p.tipo !== "reta" ? '<p class="nota aviso"><svg class="nd-ic" aria-hidden="true"><use href="#i-triangle-alert"/></svg> Pista curva: o tabuleiro precisa de uma pista reta.</p>' : curta ? `<p class="nota aviso"><svg class="nd-ic" aria-hidden="true"><use href="#i-triangle-alert"/></svg> A e B estão a só ${fmt(m, 0)} m: o rumo pode sair impreciso. Confira no monitor.</p>` : ""}
+      ${p.tipo === "reta" && !u ? `<button class="nd-btn primario nd-onda" type="button" data-pista="${esc(p.id)}"><svg class="nd-ic" aria-hidden="true"><use href="#i-check"/></svg>Usar esta pista</button>` : ""}`; }
   desenharPistas();
 }
 function usarPista(id){
   const p = (SALVOS.pistas || []).find(x => x.id === id); if (!p || p.tipo !== "reta") return;
-  S.abTxt = null; S.pontoA = [...p.a]; S.pontoB = [...p.b]; S.linhaId = null; aplicarAB();
+  S.abTxt = null; S.pontoA = [...p.a]; S.pontoB = [...p.b]; S.linhaId = null; aplicarAB(); RP.sel = p.id;
   fixarPosicaoAtual(); salvar(); preencherCampos(); atualizar(); renderSalvos(); renderPistas();
   aviso(`Pista ${p.nome} em uso: rumo ${fmtMax(rumoMonitor(p.a, p.b), 4)}° no monitor`);
 }
-$("pistasLista").addEventListener("click", e => { const b = e.target.closest("[data-pista]"); if (b) usarPista(b.dataset.pista); });
+$("pistaSel").addEventListener("change", e => { RP.sel = e.target.value || null; renderPistas(); });
+$("pistaInfo").addEventListener("click", e => { const b = e.target.closest("[data-pista]"); if (b) usarPista(b.dataset.pista); });
 let LP = null;
 function desenharPistas(){ // as pistas do talhão no mapa: tracejadas; a que está em uso, mais grossa
   if (!MAP) return; if (!LP) LP = L.layerGroup().addTo(MAP); LP.clearLayers();
   pistasDoTalhao().forEach(p => {
-    const uso = pistaEmUso(p), lls = (p.pts || [p.a, p.b]).map(q => [q[0], q[1]]);
-    L.polyline(lls, {color: uso ? COR.limite : COR.branco, weight: uso ? 4 : 2, dashArray: uso ? null : "6 6", opacity: .95, interactive:false}).addTo(LP);
+    const uso = pistaEmUso(p), vista = p.id === RP.sel, lls = (p.pts || [p.a, p.b]).map(q => [q[0], q[1]]);
+    L.polyline(lls, {color: uso ? COR.limite : COR.branco, weight: uso ? 4 : vista ? 3.5 : 2, dashArray: uso || vista ? null : "6 6", opacity: .95, interactive:false}).addTo(LP);
     L.marker(lls[Math.floor(lls.length / 2)] || lls[0], {interactive:false, keyboard:false, icon:L.divIcon({className:"qlbl", html:esc(p.nome), iconSize:[90, 16], iconAnchor:[45, 20]})}).addTo(LP);
   });
 }
