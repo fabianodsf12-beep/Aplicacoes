@@ -47,6 +47,7 @@ details[open] > summary > .seta{transform:rotate(180deg)}
 .trs{display:flex;flex-direction:column;gap:var(--space-3)}
 .tr{display:grid;grid-template-columns:20px 60px minmax(0,1fr) 84px 44px;grid-template-areas:"c k n d x";gap:var(--space-2);align-items:end}
 .tr .cor{grid-area:c;width:20px;height:20px;border-radius:var(--radius-sm);margin-bottom:14px;background:var(--c);border:1px solid var(--line)}
+.tr .rm[aria-disabled="true"]{opacity:.45}
 .tr .k{grid-area:k}.tr .nm{grid-area:n}.tr .ds{grid-area:d}.tr .rm{grid-area:x;margin-bottom:2px}
 @media (max-width:520px){.tr{grid-template-columns:20px 72px minmax(0,1fr) 44px;grid-template-areas:"c k d x" ". n n n";padding-bottom:var(--space-3);border-bottom:1px solid var(--line2)}}
 .tr .nd-campo{font-size:12.5px}
@@ -696,7 +697,7 @@ function renderTrats(){
     <label class="nd-campo k">Código<input class="nd-inp" data-i="${i}" data-k="cod" value="${esc(t.cod)}" maxlength="4" autocomplete="off"></label>
     <label class="nd-campo nm">Nome<input class="nd-inp" data-i="${i}" data-k="nome" value="${esc(t.nome)}" autocomplete="off" placeholder="Produto"></label>
     <label class="nd-campo ds">Vazão (L/ha)<input class="nd-inp" data-i="${i}" data-k="dose" value="${esc(t.dose)}" inputmode="decimal" placeholder="a definir"></label>
-    <button class="nd-btn icone leve rm" type="button" data-rm="${i}" aria-label="Remover ${esc(t.nome || t.cod)}" ${S.trats.length <= 2 ? "disabled" : ""}><svg class="nd-ic" aria-hidden="true"><use href="#i-trash-2"/></svg></button>
+    <button class="nd-btn icone leve rm" type="button" data-rm="${i}" aria-label="Remover ${esc(t.nome || t.cod)}" ${S.trats.length <= 2 ? 'aria-disabled="true" title="Mínimo de 2 tratamentos"' : ""}><svg class="nd-ic" aria-hidden="true"><use href="#i-trash-2"/></svg></button>
   </div>`).join("");
   $("btnAddTr").disabled = S.trats.length >= MAX_TRATS;
   const n = S.trats.length;
@@ -869,9 +870,13 @@ $("trs").addEventListener("change", e => {
   if (k === "cod") { v = v.toUpperCase().replace(/[^A-Z0-9+]/g, "").slice(0, 4); if (!v || S.trats.some((t, j) => j !== i && t.cod === v)) { aviso("Use um código diferente para cada tratamento."); el.value = S.trats[i].cod; return; } }
   if (k === "dose" && v && !(num(v) >= 0)) { aviso("Vazão inválida. Use L/ha, por exemplo 50."); el.value = S.trats[i].dose; return; }
   if (k === "dose" && v && String(Math.round(num(v))) !== v) { const r = String(Math.round(num(v))); aviso(`Vazão arredondada para ${r} L/ha: a taxa vai como número inteiro.`); v = r; }
-  S.trats[i][k] = v; salvar(); renderTrats(); atualizar(); arqMsg("", "");
+  // não redesenha a lista aqui: o change dispara ao sair do campo, e redesenhar no meio do clique engolia o toque na lixeira
+  S.trats[i][k] = v; el.value = v; salvar(); atualizar(); arqMsg("", "");
+  const rm = el.closest(".tr")?.querySelector("[data-rm]"); if (rm) rm.setAttribute("aria-label", `Remover ${S.trats[i].nome || S.trats[i].cod}`);
 });
-$("trs").addEventListener("click", e => { const b = e.target.closest("[data-rm]"); if (!b || S.trats.length <= 2) return; S.trats.splice(+b.dataset.rm, 1); salvar(); renderTrats(); atualizar(); });
+$("trs").addEventListener("click", e => { const b = e.target.closest("[data-rm]"); if (!b) return;
+  if (S.trats.length <= 2) { aviso("O ensaio precisa de pelo menos 2 tratamentos (um produto e a testemunha)."); return; }
+  const t = S.trats[+b.dataset.rm]; S.trats.splice(+b.dataset.rm, 1); salvar(); renderTrats(); atualizar(); aviso(`${t.cod}${t.nome ? " · " + t.nome : ""} removido`); });
 $("btnAddTr").addEventListener("click", () => { if (S.trats.length >= MAX_TRATS) return; const cods = ["A","B","C","D","E","F","G","H","I","J"]; const cod = cods.find(c => !S.trats.some(t => t.cod === c));
   S.trats.splice(S.trats.length - (S.trats.some(t => num(t.dose) === 0) ? 1 : 0), 0, {cod, nome:"", dose:""}); salvar(); renderTrats(); atualizar(); });
 $("modo").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.modo = b.dataset.v; salvar(); renderTrats(); atualizar(); });
