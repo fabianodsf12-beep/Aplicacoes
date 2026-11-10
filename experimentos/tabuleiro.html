@@ -45,11 +45,24 @@ details[open] > summary > .seta{transform:rotate(180deg)}
 .nd-campo .un span{color:var(--muted);font-weight:500;white-space:nowrap}
 .dica{font-size:13.5px;color:var(--muted);margin:0}
 .trs{display:flex;flex-direction:column;gap:var(--space-3)}
-.tr{display:grid;grid-template-columns:20px 60px minmax(0,1fr) 84px 44px;grid-template-areas:"c k n d x";gap:var(--space-2);align-items:end}
-.tr .cor{grid-area:c;width:20px;height:20px;border-radius:var(--radius-sm);margin-bottom:14px;background:var(--c);border:1px solid var(--line)}
+.tr{position:relative;display:grid;grid-template-columns:32px 60px minmax(0,1fr) 84px 44px;grid-template-areas:"c k n d x";gap:var(--space-2);align-items:end}
+/* cor do tratamento: o quadradinho abre a paleta da base (graf-1 a graf-8 e cinza) */
+.tr .cor-btn{grid-area:c;width:32px;height:44px;padding:0;border:0;background:transparent;border-radius:var(--radius-md);display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.tr .cor-btn .cor{width:24px;height:24px;border-radius:var(--radius-sm);background:var(--c);border:1px solid var(--line);box-shadow:0 0 0 0 var(--brand);transition:box-shadow var(--dur-media) var(--curva)}
+.tr .cor-btn:hover .cor,.tr .cor-btn[aria-expanded="true"] .cor{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--line)}
+.tr .cor-btn:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+.paleta{position:absolute;z-index:20;top:calc(100% + 4px);left:0;background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius-xl);box-shadow:var(--sombra-3);padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2);width:max-content;max-width:calc(100vw - 32px)}
+.paleta b{font-size:13px;font-weight:600}
+.paleta-grade{display:grid;grid-template-columns:repeat(3,auto);gap:var(--space-2)}
+.paleta-grade button{display:flex;align-items:center;gap:var(--space-2);min-height:44px;padding:0 var(--space-2);border:1px solid var(--line2);border-radius:var(--radius-md);background:var(--panel);color:var(--ink);font:500 13.5px var(--font-body);cursor:pointer;text-align:left}
+.paleta-grade button:hover{border-color:var(--line)}
+.paleta-grade button[aria-pressed="true"]{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+.paleta-grade button:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+.paleta-grade .amostra{flex:0 0 auto;width:26px;height:26px;border-radius:var(--radius-sm);background:var(--c);border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font:600 13px var(--font-display);color:var(--tx)}
+.paleta .dica{max-width:340px}
 .tr .rm[aria-disabled="true"]{opacity:.45}
 .tr .k{grid-area:k}.tr .nm{grid-area:n}.tr .ds{grid-area:d}.tr .rm{grid-area:x;margin-bottom:2px}
-@media (max-width:520px){.tr{grid-template-columns:20px 72px minmax(0,1fr) 44px;grid-template-areas:"c k d x" ". n n n";padding-bottom:var(--space-3);border-bottom:1px solid var(--line2)}}
+@media (max-width:520px){.paleta{right:0;width:auto;max-width:none}.paleta-grade{grid-template-columns:repeat(2,minmax(0,1fr))}.tr{grid-template-columns:32px 72px minmax(0,1fr) 44px;grid-template-areas:"c k d x" ". n n n";padding-bottom:var(--space-3);border-bottom:1px solid var(--line2)}}
 .tr .nd-campo{font-size:12.5px}
 .tr .nd-inp{padding:0 var(--space-2)}
 .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3)}
@@ -634,7 +647,15 @@ function textoPosicao(){
   const fora = GRADE.quads.length - GRADE.quads.filter(q => q.ok).length;
   return `${pistas}; ${ini} e ${fim}. Comprimento de ${fmt(x.comp, 0)} m. ${fmt(GRADE.quads.length - fora)} quadrados dentro${fora ? `, ${fmt(fora)} fora do talhão (tracejados)` : ", nenhum fora"}.`;
 }
-function corTrat(i){ const t = S.trats[i]; if (!t) return COR.test; if (ehTest(t)) return COR.test; let k = 0; for (let j = 0; j < i; j++) if (num(S.trats[j].dose) !== 0) k++; return COR.trat[k % COR.trat.length]; }
+const PALETA = [["graf-1","Verde"],["graf-2","Azul"],["graf-3","Magenta"],["graf-4","Violeta"],["graf-5","Oliva"],["graf-6","Ciano"],["graf-7","Mostarda"],["graf-8","Rosa"],["graf-outros","Cinza"]]
+  .map(([k, nome], i) => ({k, nome, hex: i < 8 ? COR.trat[i] : COR.test}));
+function chavesCores(){ // cor escolhida (t.cor) vale; os outros pegam a próxima cor livre (testemunha: cinza)
+  const usadas = new Set(S.trats.map(t => t.cor).filter(k => PALETA.some(p => p.k === k)));
+  return S.trats.map(t => { if (t.cor && PALETA.some(p => p.k === t.cor)) return t.cor;
+    if (ehTest(t) && !usadas.has("graf-outros")) { usadas.add("graf-outros"); return "graf-outros"; }
+    const p = PALETA.slice(0, 8).find(p => !usadas.has(p.k)) || PALETA[0]; usadas.add(p.k); return p.k; });
+}
+function corTrat(i){ const k = chavesCores()[i]; return (PALETA.find(p => p.k === k) || {hex:COR.test}).hex; }
 const MAX_TRATS = 9; // 8 testes (graf-1 a graf-8) + testemunha
 function desenharGrade(){
   if (!MAP) return;
@@ -693,7 +714,7 @@ $("pista1").value = S.pontoA ? Math.round(S.pista1) : "";
 }
 function renderTrats(){
   $("trs").innerHTML = S.trats.map((t, i) => `<div class="tr">
-    <span class="cor" style="--c:${corTrat(i)}" aria-hidden="true"></span>
+    <button class="cor-btn" type="button" data-cor="${i}" aria-haspopup="dialog" aria-expanded="false" aria-label="Cor de ${esc(t.cod)}: ${esc(nomeCor(i))}. Trocar a cor"><span class="cor" style="--c:${corTrat(i)}"></span></button>
     <label class="nd-campo k">Código<input class="nd-inp" data-i="${i}" data-k="cod" value="${esc(t.cod)}" maxlength="4" autocomplete="off"></label>
     <label class="nd-campo nm">Nome<input class="nd-inp" data-i="${i}" data-k="nome" value="${esc(t.nome)}" autocomplete="off" placeholder="Produto"></label>
     <label class="nd-campo ds">Vazão (L/ha)<input class="nd-inp" data-i="${i}" data-k="dose" value="${esc(t.dose)}" inputmode="decimal" placeholder="a definir"></label>
@@ -874,7 +895,32 @@ $("trs").addEventListener("change", e => {
   S.trats[i][k] = v; el.value = v; salvar(); atualizar(); arqMsg("", "");
   const rm = el.closest(".tr")?.querySelector("[data-rm]"); if (rm) rm.setAttribute("aria-label", `Remover ${S.trats[i].nome || S.trats[i].cod}`);
 });
-$("trs").addEventListener("click", e => { const b = e.target.closest("[data-rm]"); if (!b) return;
+const nomeCor = i => (PALETA.find(p => p.k === chavesCores()[i]) || {}).nome || "";
+function fecharPaleta(foco){ const p = document.querySelector(".paleta"); if (!p) return; const i = p.dataset.i; p.remove();
+  const b = document.querySelector(`[data-cor="${i}"]`); if (b) { b.setAttribute("aria-expanded", "false"); if (foco) b.focus(); } }
+function abrirPaleta(i, btn){
+  fecharPaleta(); const ks = chavesCores(), dona = k => S.trats.findIndex((t, j) => ks[j] === k);
+  const el = document.createElement("div"); el.className = "paleta"; el.dataset.i = i; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", `Cor de ${S.trats[i].cod}`);
+  el.innerHTML = `<b>Cor de ${esc(S.trats[i].cod)}${S.trats[i].nome ? " · " + esc(S.trats[i].nome) : ""}</b><div class="paleta-grade">${PALETA.map(p => { const j = dona(p.k), tx = contraste(p.hex, "#FFFFFF") >= 3 ? COR.branco : (TK.ink || "#16201B");
+    return `<button type="button" data-k="${p.k}" aria-pressed="${ks[i] === p.k}"><span class="amostra" style="--c:${p.hex};--tx:${tx}" aria-hidden="true">${j >= 0 && j !== +i ? esc(S.trats[j].cod) : ""}</span>${p.nome}${j >= 0 && j !== +i ? `<span class="nd-sr"> (usada por ${esc(S.trats[j].cod)})</span>` : ""}</button>`; }).join("")}</div>
+    <p class="dica">A letra na cor mostra quem já usa. Escolher uma cor usada troca as cores dos dois.</p>`;
+  btn.closest(".tr").appendChild(el); btn.setAttribute("aria-expanded", "true");
+  (el.querySelector('[aria-pressed="true"]') || el.querySelector("button")).focus();
+}
+function escolherCor(i, k){
+  const ks = chavesCores(), j = ks.findIndex((x, n) => x === k && n !== i);
+  ks.forEach((x, n) => { S.trats[n].cor = x; }); // fixa as cores de hoje: escolher uma não mexe nas dos outros
+  if (j >= 0) S.trats[j].cor = ks[i]; // troca: o outro fica com a cor que era deste
+  S.trats[i].cor = k; salvar(); renderTrats(); atualizar();
+  aviso(j >= 0 ? `${S.trats[i].cod} e ${S.trats[j].cod} trocaram de cor` : `${S.trats[i].cod} agora é ${nomeCor(i).toLowerCase()}`);
+  const b = document.querySelector(`[data-cor="${i}"]`); if (b) b.focus();
+}
+document.addEventListener("click", e => { const p = document.querySelector(".paleta"); if (p && !p.contains(e.target) && !e.target.closest("[data-cor]")) fecharPaleta(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && document.querySelector(".paleta")) fecharPaleta(true); });
+$("trs").addEventListener("click", e => {
+  const pk = e.target.closest(".paleta [data-k]"); if (pk) { escolherCor(+pk.closest(".paleta").dataset.i, pk.dataset.k); return; }
+  const cb = e.target.closest("[data-cor]"); if (cb) { if (cb.getAttribute("aria-expanded") === "true") fecharPaleta(); else abrirPaleta(+cb.dataset.cor, cb); return; }
+  const b = e.target.closest("[data-rm]"); if (!b) return;
   if (S.trats.length <= 2) { aviso("O ensaio precisa de pelo menos 2 tratamentos (um produto e a testemunha)."); return; }
   const t = S.trats[+b.dataset.rm]; S.trats.splice(+b.dataset.rm, 1); salvar(); renderTrats(); atualizar(); aviso(`${t.cod}${t.nome ? " · " + t.nome : ""} removido`); });
 $("btnAddTr").addEventListener("click", () => { if (S.trats.length >= MAX_TRATS) return; const cods = ["A","B","C","D","E","F","G","H","I","J"]; const cod = cods.find(c => !S.trats.some(t => t.cod === c));
