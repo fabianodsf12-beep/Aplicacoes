@@ -65,6 +65,27 @@ details[open] > summary > .seta{transform:rotate(180deg)}
 @media (max-width:520px){.paleta{right:0;width:auto;max-width:none}.paleta-grade{grid-template-columns:repeat(2,minmax(0,1fr))}.tr{grid-template-columns:32px 72px minmax(0,1fr) 44px;grid-template-areas:"c k d x" ". n n n";padding-bottom:var(--space-3);border-bottom:1px solid var(--line2)}}
 .tr .nd-campo{font-size:12.5px}
 .tr .nd-inp{padding:0 var(--space-2)}
+/* aplicações: calda de cada tratamento por dia; tanques = caldas iguais juntas */
+#aplSeg,.ver-mapa{flex-wrap:wrap}
+.ver-mapa{align-self:flex-start}
+.apl-trs{display:flex;flex-direction:column;gap:var(--space-2)}
+.apl-tr{display:grid;grid-template-columns:20px minmax(0,1fr);gap:var(--space-1) var(--space-2);align-items:center}
+.apl-tr .nd-inp{grid-column:1 / -1} /* a calda costuma ser longa: campo na largura toda */
+.apl-tr .cor,.tanque .cor{width:20px;height:20px;border-radius:var(--radius-sm);background:var(--c);border:1px solid var(--line)}
+.apl-cod{display:flex;align-items:baseline;gap:var(--space-2);min-width:0;font-family:var(--font-display);font-weight:600;font-size:17px;line-height:1.15}
+.apl-cod small{font-family:var(--font-body);font-weight:400;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.tanques{display:flex;flex-direction:column;gap:var(--space-2)}
+.tq-tit{font-size:14px;font-weight:600}
+.tanque{display:grid;grid-template-columns:20px minmax(0,1fr);gap:var(--space-2) var(--space-3);align-items:start;padding:var(--space-3);border:1px solid var(--line2);border-radius:var(--radius-xl);background:var(--panel2)}
+.tanque .cor{margin-top:2px}
+.tq-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.tq-txt b{font-weight:600;overflow-wrap:anywhere}
+.tq-txt span{font-size:13px;color:var(--muted)}
+.tanque .nd-btn{grid-column:2;justify-self:start}
+.apl-cab{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3)}
+.apl-cab .nome{grid-column:1 / -1}
+#btnPdf,#rxBtns .nd-btn,.tanque .nd-btn{white-space:normal;text-align:left;height:auto;min-height:44px;overflow-wrap:anywhere} /* nomes longos de tratamento quebram a linha em vez de sair do cartão */
+.leg .leg-tit{font-weight:600}
 .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3)}
 .kpis .nd-kpi .val{font-size:28px}
 .leg{display:flex;flex-wrap:wrap;gap:var(--space-2) var(--space-4);font-size:13.5px}
@@ -157,6 +178,7 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
         <div class="mapcol">
           <div id="mapa" role="region" aria-label="Mapa do ensaio"></div>
           <p class="mapmsg" id="mapMsg" aria-live="polite">Carregando o mapa dos talhões…</p>
+          <div class="nd-seg ver-mapa" id="verMapa" role="group" aria-label="O que o mapa mostra" hidden></div>
           <div class="leg" id="legenda" aria-label="Legenda"></div>
           <p class="nd-corpo-pequeno" id="posInfo" aria-live="polite"></p>
         </div>
@@ -351,9 +373,21 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
             </details>
           </section>
 
+          <section class="nd-cartao dobra">
+            <details class="passo-d" open data-dobra="aplic">
+              <summary><h2 class="passo"><span class="n">5</span>Aplicações</h2><span class="resumo" id="res-aplic"></span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+              <div class="corpo">
+                <p class="dica" id="aplDica">Para um programa com mais de uma aplicação, ou quando tratamentos diferentes levam a mesma calda no mesmo dia. Em cada aplicação você escreve a calda de cada tratamento; os que têm a mesma calda saem num arquivo só, numa passada só.</p>
+                <div class="trs" id="aplBox"></div>
+                <div id="aplMsg"></div>
+                <div class="acoes-l"><button class="nd-btn nd-onda" type="button" id="btnAddApl"><svg class="nd-ic gira" aria-hidden="true"><use href="#i-plus"/></svg>Aplicação</button></div>
+              </div>
+            </details>
+          </section>
+
           <section class="nd-cartao dobra" aria-live="polite">
             <details class="passo-d" open data-dobra="resumo">
-              <summary><h2 class="passo"><span class="n">5</span>Resumo</h2><span class="resumo" id="res-resumo"></span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+              <summary><h2 class="passo"><span class="n">6</span>Resumo</h2><span class="resumo" id="res-resumo"></span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
               <div class="corpo">
                 <div class="kpis">
                   <div class="nd-kpi"><span class="rot">Quadrados</span><span class="val" id="kQ">0</span><span class="var" id="kQs"></span></div>
@@ -370,7 +404,7 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 
           <section class="nd-cartao dobra">
             <details class="passo-d" open data-dobra="arquivos">
-              <summary><h2 class="passo"><span class="n">6</span>Arquivos</h2><span class="resumo" id="res-arquivos"></span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+              <summary><h2 class="passo"><span class="n">7</span>Arquivos</h2><span class="resumo" id="res-arquivos"></span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
               <div class="corpo">
                 <button class="nd-btn grande nd-onda nd-estado" type="button" id="btnPdf" data-enviando="Gerando o PDF…" data-feito="PDF pronto"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-file-text"/></svg>Relatório em PDF (croqui, pontos e áreas)</button>
                 <div class="nd-msg aviso" id="rxTrava" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-triangle-alert"/></svg><div><b>Falta a linha AB</b>Escolha a pista (ou digite os pontos A e B) no passo 2 para baixar os arquivos de aplicação. Sem ele, as zonas podem cair entre duas pistas.</div></div>
@@ -664,8 +698,8 @@ function desenharGrade(){
   GRADE.quads.forEach(q => {
     const ll = q.ll.map(p => [p[1], p[0]]), t = S.trats[q.ti];
     if (!q.ok) { L.polygon(ll, {color:COR.branco, weight:.8, dashArray:"3 4", fillOpacity:0, interactive:false}).addTo(LQ); return; }
-    L.polygon(ll, {color:COR.branco, weight:.5, fillColor:corTrat(q.ti), fillOpacity:.78})
-      .bindTooltip(`Q${q.id} · ${esc(t.cod)} ${esc(t.nome)}${isFinite(num(t.dose)) ? " · " + fmt(num(t.dose), 2) + " " + esc(S.unid) : ""}<br>${q.pista == null ? "Passada " + q.c : "Pista " + (q.pista > 0 ? "+" : "") + q.pista + " da linha AB"}, quadrado ${q.r}`)
+    L.polygon(ll, {color:COR.branco, weight:.5, fillColor:corDoQuad(q), fillOpacity:.78})
+      .bindTooltip(`Q${q.id} · ${esc(t.cod)} ${esc(t.nome)}${isFinite(num(t.dose)) ? " · " + fmt(num(t.dose), 2) + " " + esc(S.unid) : ""}<br>${q.pista == null ? "Passada " + q.c : "Pista " + (q.pista > 0 ? "+" : "") + q.pista + " da linha AB"}, quadrado ${q.r}${dicaAplQuad(t)}`)
       .addTo(LQ);
     L.marker([q.centro[1], q.centro[0]], {interactive:false, keyboard:false, icon:L.divIcon({className:"qlbl", html:esc(t.cod), iconSize:[24,16], iconAnchor:[12,8]})}).addTo(LR);
   });
@@ -730,7 +764,7 @@ function renderTrats(){
   $("trDica").textContent += S.modo === "produtos" ? " Produtos diferentes: cada produto vai numa passada própria, com a sua prescrição (bicos abertos só nos quadrados dele)." : " Vazões diferentes: uma passada só, com a vazão mudando de zona para zona.";
 }
 function renderLegenda(){
-  const itens = S.trats.map((t, i) => `<span><i style="--c:${corTrat(i)}"></i>${esc(t.cod)}${t.nome ? " · " + esc(t.nome) : ""}</span>`).join("") + '<span><i class="fora"></i>Fora (bordadura)</span>' + (S.pontoA ? '<span><i class="ab"></i>Linha AB</span>' : "");
+  const itens = legendaItensHtml() + '<span><i class="fora"></i>Fora (bordadura)</span>' + (S.pontoA ? '<span><i class="ab"></i>Linha AB</span>' : "");
   $("legenda").innerHTML = itens;
   const lm = $("legMapa"); if (lm) lm.innerHTML = itens;
 }
@@ -760,7 +794,7 @@ function renderResumo(){
   av.innerHTML = msgs.map(([c, t, d]) => `<div class="nd-msg ${c}"><svg class="nd-ic" aria-hidden="true"><use href="#i-${c === "erro" ? "circle-x" : c === "aviso" ? "triangle-alert" : "info"}"/></svg><div><b>${t}</b>${d}</div></div>`).join("");
 }
 function atualizar(){
-  calcular(); desenharGrade(); renderLegenda(); renderResumo(); renderRxBtns(); travarSemPontoA(); renderPistas();
+  calcular(); desenharGrade(); renderLegenda(); renderResumo(); renderRxBtns(); travarSemPontoA(); renderPistas(); renderAplic();
   $("posInfo").textContent = $("posInfo2").textContent = textoPosicao();
   const t = talhaoAtual();
   $("talInfo").textContent = t && GRADE ? `${t.nome}: ${fmt(GRADE.areaTal, 2)} ha${t.origem === "importado" ? " (limite importado)" : ""}.` : "";
@@ -774,6 +808,7 @@ function renderResumos(){
     pista: !S.pontoA ? "Sem linha AB" : `${pu ? pu.nome : "A e B digitados"} · ${rumo} · pista ${S.pista1 > 0 ? "+" : ""}${Math.round(S.pista1)}`,
     tamanho: `${S.nC} × ${S.nR} quadrados de ${fmtMax(S.W, 2)} × ${fmtMax(S.L, 2)} m`,
     trat: `${S.trats.length} tratamentos · ${S.modo === "doses" ? "vazões" : "produtos"}`,
+    aplic: (n => n ? `${n} ${n === 1 ? "aplicação" : "aplicações"}` : "Nenhuma (opcional)")(aplicacoes().length),
     resumo: GRADE ? `${fmt(ok)} quadrados · ${fmt(ok * GRADE.areaQ, 2)} ha` : "",
     arquivos: S.pontoA ? "PDF e arquivos de aplicação" : "Falta a linha AB"
   };
@@ -888,7 +923,8 @@ $("btnMedir").addEventListener("click", () => {
 $("trs").addEventListener("change", e => {
   const el = e.target, i = +el.dataset.i, k = el.dataset.k; if (!S.trats[i] || !k) return;
   let v = el.value.trim();
-  if (k === "cod") { v = v.toUpperCase().replace(/[^A-Z0-9+]/g, "").slice(0, 4); if (!v || S.trats.some((t, j) => j !== i && t.cod === v)) { aviso("Use um código diferente para cada tratamento."); el.value = S.trats[i].cod; return; } }
+  if (k === "cod") { v = v.toUpperCase().replace(/[^A-Z0-9+]/g, "").slice(0, 4); if (!v || S.trats.some((t, j) => j !== i && t.cod === v)) { aviso("Use um código diferente para cada tratamento."); el.value = S.trats[i].cod; return; }
+    const velho = S.trats[i].cod; aplicacoes().forEach(ap => { if (ap.caldas && velho in ap.caldas) { ap.caldas[v] = ap.caldas[velho]; delete ap.caldas[velho]; } }); }
   if (k === "dose" && v && !(num(v) >= 0)) { aviso("Vazão inválida. Use L/ha, por exemplo 50."); el.value = S.trats[i].dose; return; }
   if (k === "dose" && v && String(Math.round(num(v))) !== v) { const r = String(Math.round(num(v))); aviso(`Vazão arredondada para ${r} L/ha: a taxa vai como número inteiro.`); v = r; }
   // não redesenha a lista aqui: o change dispara ao sair do campo, e redesenhar no meio do clique engolia o toque na lixeira
@@ -922,7 +958,7 @@ $("trs").addEventListener("click", e => {
   const cb = e.target.closest("[data-cor]"); if (cb) { if (cb.getAttribute("aria-expanded") === "true") fecharPaleta(); else abrirPaleta(+cb.dataset.cor, cb); return; }
   const b = e.target.closest("[data-rm]"); if (!b) return;
   if (S.trats.length <= 2) { aviso("O ensaio precisa de pelo menos 2 tratamentos (um produto e a testemunha)."); return; }
-  const t = S.trats[+b.dataset.rm]; S.trats.splice(+b.dataset.rm, 1); salvar(); renderTrats(); atualizar(); aviso(`${t.cod}${t.nome ? " · " + t.nome : ""} removido`); });
+  const t = S.trats[+b.dataset.rm]; S.trats.splice(+b.dataset.rm, 1); aplicacoes().forEach(ap => { if (ap.caldas) delete ap.caldas[t.cod]; }); salvar(); renderTrats(); atualizar(); aviso(`${t.cod}${t.nome ? " · " + t.nome : ""} removido`); });
 $("btnAddTr").addEventListener("click", () => { if (S.trats.length >= MAX_TRATS) return; const cods = ["A","B","C","D","E","F","G","H","I","J"]; const cod = cods.find(c => !S.trats.some(t => t.cod === c));
   S.trats.splice(S.trats.length - (S.trats.some(t => num(t.dose) === 0) ? 1 : 0), 0, {cod, nome:"", dose:""}); salvar(); renderTrats(); atualizar(); });
 $("modo").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.modo = b.dataset.v; salvar(); renderTrats(); atualizar(); });
@@ -1015,8 +1051,8 @@ const fechado = q => [...q.ll, q.ll[0]];
 function arqMsg(tipo, texto){ $("arqMsg").innerHTML = texto ? `<div class="nd-msg ${tipo}"><svg class="nd-ic" aria-hidden="true"><use href="#i-${tipo === "erro" ? "circle-x" : "circle-check"}"/></svg><div>${texto}</div></div>` : ""; }
 function exigirGrade(){ if (!GRADE || !GRADE.quads.some(q => q.ok)) { arqMsg("erro", "<b>Nada para baixar</b>Escolha o talhão e coloque o ensaio dentro dele."); return false; } return true; }
 /* Zonas: os quadrados de cada tratamento viram uma zona só (polígono de várias partes, sem linhas internas) */
-function aneisDaZona(ti){
-  const cel = new Set(GRADE.quads.filter(q => q.ok && q.ti === ti).map(q => (q.c - 1) + "," + (q.r - 1)));
+function aneisDaZona(ti){ // ti: um tratamento, ou a lista dos tratamentos de um tanque (zona única, sem linhas entre eles)
+  const tis = [].concat(ti), cel = new Set(GRADE.quads.filter(q => q.ok && tis.includes(q.ti)).map(q => (q.c - 1) + "," + (q.r - 1)));
   const tem = (c, r) => cel.has(c + "," + r), arestas = new Map(), add = (a, b) => { const k = a.join(","); if (!arestas.has(k)) arestas.set(k, []); arestas.get(k).push({a, b, usada:false}); };
   cel.forEach(k => { const [c, r] = k.split(",").map(Number); // vértices (i = passada, j = posição); interior à esquerda
     if (!tem(c, r - 1)) add([c, r], [c + 1, r]);
@@ -1103,6 +1139,7 @@ function renderRxBtns(){
     const nT = S.trats.length - prods.length;
     $("rxDica").textContent = `Produtos diferentes: ${prods.length} arquivos, um por teste, cada um só com a zona daquele teste (os quadrados sorteados para ele). Cada arquivo é uma aplicação, com o produto do teste no tanque. ${nT ? "A testemunha não tem arquivo: ela fica fora de todas as zonas e não recebe nada." : ""}`;
   }
+  if (aplicacoes().length) $("rxDica").textContent = "Este ensaio tem aplicações cadastradas: os arquivos de cada dia, com as caldas iguais juntas, estão no passo 5 Aplicações. Os botões abaixo são por tratamento. " + $("rxDica").textContent;
 }
 function travarSemPontoA(){
   const sem = !S.pontoA;
@@ -1295,7 +1332,7 @@ $("ensFiltro").addEventListener("click", e => { const b = e.target.closest("butt
 function abrirEnsaio(id){
   const en = SALVOS.ensaios.find(x => x.id === id); if (!en || !en.plano) return;
   if (!TALHOES.some(t => t.nome === en.talhao)) { msgSalvos("ensMsg", `O talhão ${en.talhao} não está no mapa. Importe o limite dele primeiro.`); renderSalvos(); return; }
-  S = {...PADRAO, ...en.plano}; migrarPlano(); S.ensaioId = en.id; S.abTxt = null; salvar(); escolherTalhao(en.talhao, false); renderSalvos(); aviso(`Ensaio "${en.nome}" aberto`);
+  S = {...PADRAO, ...en.plano}; migrarPlano(); VER = -1; APL = 0; S.ensaioId = en.id; S.abTxt = null; salvar(); escolherTalhao(en.talhao, false); renderSalvos(); aviso(`Ensaio "${en.nome}" aberto`);
 }
 $("ensSel").addEventListener("change", () => { const id = $("ensSel").value; if (id && id !== S.ensaioId) abrirEnsaio(id); });
 $("btnApagarEnsaio").addEventListener("click", async () => {
@@ -1309,11 +1346,140 @@ $("btnNovoEnsaio").addEventListener("click", () => { // começa do zero no talh�
   if (!SALVOS.confNovo) { SALVOS.confNovo = true; renderSalvos(); clearTimeout(SALVOS._tn); SALVOS._tn = setTimeout(() => { SALVOS.confNovo = false; renderSalvos(); }, 4000); return; }
   SALVOS.confNovo = false; clearTimeout(SALVOS._tn);
   const tal = S.talhao; // zera tudo: só fica o talhão escolhido (sem linha AB, sem tratamentos, tamanho padrão)
-  S = {...PADRAO, talhao:tal, trats:PADRAO.trats.map(t => ({...t}))};
+  S = {...PADRAO, talhao:tal, trats:PADRAO.trats.map(t => ({...t}))}; VER = -1; APL = 0;
   $("ensaioForm").hidden = true; $("linhaForm").hidden = true; $("linhaSel").value = "";
   ajustarAoTalhao(); salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar(); renderSalvos(); arqMsg("", "");
   aviso(`Novo ensaio no ${tal}: tudo zerado`); window.scrollTo({top:0, behavior:"smooth"});
 });
+
+/* ---------- aplicações: o que cada tratamento recebe em cada dia; calda igual = mesmo tanque e mesmo arquivo ---------- */
+var VER = -1, APL = 0, APL_SIG = "", APL_CONF = null, APL_T = null; // VER: o que o mapa mostra (-1 = tratamentos); APL: aplicação aberta no passo 5
+const MAX_APL = 8;
+function aplicacoes(){ return Array.isArray(S.aplic) ? S.aplic : []; }
+function normCalda(x){ return String(x || "").trim().replace(/\s+/g, " "); }
+function chaveCalda(x){ return semAcento(normCalda(x)).toLowerCase().replace(/\s*\+\s*/g, "+"); }
+function tanquesDe(ap){ // tratamentos com a mesma calda (sem diferenciar maiúsculas e acentos) formam um tanque
+  const grupos = [], porChave = new Map(), sem = [];
+  S.trats.forEach((t, ti) => { const c = normCalda((ap.caldas || {})[t.cod]); if (!c) { sem.push(ti); return; }
+    const k = chaveCalda(c); if (!porChave.has(k)) { const g = {calda:c, tis:[]}; porChave.set(k, g); grupos.push(g); } porChave.get(k).tis.push(ti); });
+  return {grupos, sem};
+}
+function coresTanques(ap){ // cor do primeiro tratamento do tanque; nunca o cinza, que é o "sem aplicação"
+  const usadas = new Set([COR.test]);
+  return tanquesDe(ap).grupos.map(g => { let c = corTrat(g.tis[0]); if (usadas.has(c)) c = (PALETA.slice(0, 8).find(p => !usadas.has(p.hex)) || PALETA[0]).hex; usadas.add(c); return c; });
+}
+function quadsDe(tis){ return GRADE ? GRADE.quads.filter(q => q.ok && tis.includes(q.ti)).length : 0; }
+function codsDe(tis){ return tis.map(i => S.trats[i].cod).join(", "); }
+function nomeAp(ap, a){ return normCalda(ap.nome) || `${a + 1}ª aplicação`; }
+function dataBr(iso){ const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ""); return m ? `${m[3]}/${m[2]}/${m[1]}` : ""; }
+function nomeArqTanque(a, g){ return `${nomeBase()}_AP${a + 1}_${g.tis.map(i => semAcento(S.trats[i].cod).replace(/[^A-Za-z0-9]/g, "")).join("")}`; }
+function corDoQuad(q){
+  const ap = VER >= 0 ? aplicacoes()[VER] : null; if (!ap) return corTrat(q.ti);
+  const k = tanquesDe(ap).grupos.findIndex(g => g.tis.includes(q.ti)); return k < 0 ? COR.test : coresTanques(ap)[k];
+}
+function dicaAplQuad(t){ const ap = VER >= 0 ? aplicacoes()[VER] : null; return ap ? `<br>${esc(nomeAp(ap, VER))}: ${esc(normCalda((ap.caldas || {})[t.cod]) || "sem aplicação")}` : ""; }
+function legendaItensHtml(){
+  const ap = VER >= 0 ? aplicacoes()[VER] : null;
+  if (!ap) return S.trats.map((t, i) => `<span><i style="--c:${corTrat(i)}"></i>${esc(t.cod)}${t.nome ? " · " + esc(t.nome) : ""}</span>`).join("");
+  const {grupos, sem} = tanquesDe(ap), cores = coresTanques(ap);
+  return `<span class="leg-tit">${esc(nomeAp(ap, VER))}${ap.data ? " · " + dataBr(ap.data) : ""}</span>`
+    + grupos.map((g, k) => `<span><i style="--c:${cores[k]}"></i>Tanque ${k + 1} · ${esc(g.calda)} (${esc(codsDe(g.tis))})</span>`).join("")
+    + (sem.length ? `<span><i style="--c:${COR.test}"></i>Sem aplicação (${esc(codsDe(sem))})</span>` : "");
+}
+function aplMsg(tipo, texto){ $("aplMsg").innerHTML = texto ? `<div class="nd-msg ${tipo}"><svg class="nd-ic" aria-hidden="true"><use href="#i-${tipo === "erro" ? "circle-x" : "circle-check"}"/></svg><div>${texto}</div></div>` : ""; }
+function renderAplic(forcar){
+  const aps = aplicacoes(); if (APL >= aps.length) APL = Math.max(0, aps.length - 1); if (VER >= aps.length) VER = -1;
+  const sig = JSON.stringify([aps.length, APL, APL_CONF, S.trats.map(t => [t.cod, t.nome, t.cor, t.dose])]);
+  if (forcar || sig !== APL_SIG) { APL_SIG = sig; montarAplic(); }
+  renderTanques(); renderVerMapa();
+  $("btnAddApl").disabled = aps.length >= MAX_APL;
+}
+function montarAplic(){ // só remonta quando muda a estrutura: assim o que está sendo digitado não perde o foco
+  const aps = aplicacoes(), box = $("aplBox"); $("aplDica").hidden = aps.length > 0;
+  if (!aps.length) { box.innerHTML = ""; return; }
+  const ap = aps[APL];
+  box.innerHTML = `<div class="nd-seg" id="aplSeg" role="group" aria-label="Aplicação aberta">${aps.map((a, k) => `<button type="button" data-apl="${k}" aria-pressed="${k === APL}">${rotAba(a, k)}</button>`).join("")}</div>
+    <div class="apl-cab">
+      <label class="nd-campo nome">Nome<input class="nd-inp" data-ap="nome" value="${esc(ap.nome || "")}" placeholder="${APL + 1}ª aplicação" autocomplete="off" maxlength="40"></label>
+      <label class="nd-campo">Data<input class="nd-inp" type="date" data-ap="data" value="${esc(ap.data || "")}"></label>
+      <label class="nd-campo">Vazão<span class="un"><input class="nd-inp" data-ap="vazao" inputmode="numeric" value="${esc(ap.vazao ?? "")}" placeholder="50"><span>L/ha</span></span></label>
+    </div>
+    <div class="apl-trs" role="group" aria-label="Calda de cada tratamento">
+      ${S.trats.map((t, i) => `<div class="apl-tr"><span class="cor" style="--c:${corTrat(i)}" aria-hidden="true"></span><span class="apl-cod" aria-hidden="true">${esc(t.cod)}<small>${esc(t.nome || "")}</small></span><input class="nd-inp" data-calda="${esc(t.cod)}" list="aplCaldas" value="${esc((ap.caldas || {})[t.cod] || "")}" placeholder="Sem aplicação" autocomplete="off" aria-label="Calda do ${esc(t.cod)}${t.nome ? " (" + esc(t.nome) + ")" : ""} na ${esc(nomeAp(ap, APL))}"></div>`).join("")}
+    </div>
+    <datalist id="aplCaldas"></datalist>
+    <p class="dica">Escreva a calda de cada tratamento neste dia; em branco é sem aplicação. Calda com o mesmo texto vai no mesmo tanque e no mesmo arquivo. No campo, as caldas já escritas aparecem para escolher.</p>
+    <div class="tanques" id="aplTanques" aria-live="polite"></div>
+    <div class="acoes-l"><button class="nd-btn leve nd-onda" type="button" id="btnApagarApl"><svg class="nd-ic" aria-hidden="true"><use href="#i-trash-2"/></svg>${APL_CONF === APL ? "Toque de novo para apagar" : "Apagar esta aplicação"}</button></div>`;
+}
+function rotAba(a, k){ return `${k + 1}ª${a.data ? " · " + dataBr(a.data).slice(0, 5) : ""}`; }
+function renderTanques(){
+  const box = $("aplTanques"), ap = aplicacoes()[APL]; if (!box || !ap) return;
+  const {grupos, sem} = tanquesDe(ap), cores = coresTanques(ap), aQ = GRADE ? GRADE.areaQ : 0, vz = num(ap.vazao), trava = !S.pontoA ? "disabled" : "";
+  const ic = '<svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>';
+  box.innerHTML = (grupos.length ? `<span class="tq-tit">${grupos.length} ${grupos.length === 1 ? "tanque" : "tanques"} nesta aplicação</span>` : '<p class="dica">Nenhum tratamento com calda nesta aplicação.</p>')
+    + grupos.map((g, k) => { const nq = quadsDe(g.tis), ha = nq * aQ;
+      return `<div class="tanque"><span class="cor" style="--c:${cores[k]}" aria-hidden="true"></span><div class="tq-txt"><b>Tanque ${k + 1} · ${esc(g.calda)}</b><span>${g.tis.length > 1 ? "Juntos: " : ""}${esc(codsDe(g.tis))} · ${fmt(nq)} quadrados · ${fmt(ha, 2)} ha${isFinite(vz) && vz > 0 ? ` · ${fmt(vz * ha, 0)} L de calda` : ""}</span></div><button class="nd-btn ${k ? "" : "primario"} nd-onda" type="button" data-tanque="${k}" ${trava}>${ic}Arquivo do tanque ${k + 1}</button></div>`; }).join("")
+    + (sem.length ? `<div class="tanque"><span class="cor" style="--c:${COR.test}" aria-hidden="true"></span><div class="tq-txt"><b>Sem aplicação</b><span>${esc(codsDe(sem))} · ${fmt(quadsDe(sem))} quadrados · ${fmt(quadsDe(sem) * aQ, 2)} ha</span></div><button class="nd-btn leve nd-onda" type="button" data-semapl ${trava}>${ic}Sem aplicação como limite</button></div>` : "")
+    + (trava ? '<p class="dica">Os arquivos saem depois de escolher a pista (linha AB) no passo 2.</p>' : "");
+  const dl = $("aplCaldas"); if (dl) dl.innerHTML = [...new Map(aplicacoes().flatMap(a => Object.values(a.caldas || {})).map(normCalda).filter(Boolean).map(c => [chaveCalda(c), c])).values()].map(c => `<option value="${esc(c)}">`).join("");
+}
+function renderVerMapa(){
+  const aps = aplicacoes(), el = $("verMapa"); el.hidden = !aps.length; if (!aps.length) { el.innerHTML = ""; return; }
+  el.innerHTML = `<button type="button" data-ver="-1" aria-pressed="${VER < 0}">Tratamentos</button>` + aps.map((a, k) => `<button type="button" data-ver="${k}" aria-pressed="${VER === k}">${rotAba(a, k)}</button>`).join("");
+}
+function verNoMapa(v){ VER = v; if (v >= 0) APL = v; renderAplic(true); desenharGrade(); renderLegenda(); }
+function vazaoApOk(a){
+  const ap = aplicacoes()[a], v = num(ap.vazao); if (isFinite(v) && v > 0) return true;
+  aplMsg("erro", `<b>Falta a vazão da ${esc(nomeAp(ap, a))}</b>Ela vai na coluna TAXA de todos os arquivos deste dia, em L/ha.`);
+  const c = document.querySelector('#aplBox [data-ap="vazao"]'); if (c) { abrirAte(c); c.setAttribute("aria-invalid", "true"); c.focus(); }
+  return false;
+}
+function baixarTanque(a, k){
+  const ap = aplicacoes()[a], g = ap && tanquesDe(ap).grupos[k]; if (!g) return;
+  const nq = quadsDe(g.tis); if (!nq) { aplMsg("erro", "<b>Tanque sem quadrados</b>Esses tratamentos não têm quadrados dentro do talhão."); return; }
+  if (!vazaoApOk(a)) return;
+  const v = taxa(ap.vazao), b = nomeArqTanque(a, g);
+  baixar(zipShp(shapefile([{aneis:aneisDaZona(g.tis), props:{TAXA:v}}], CAMPO_TAXA), b), b + ".zip");
+  aplMsg("", `<b>${esc(b)}.zip baixado</b>Tanque ${k + 1} da ${esc(nomeAp(ap, a))}: ${esc(g.calda)}. ${g.tis.length > 1 ? "Quadrados de " + esc(codsDe(g.tis)) + " juntos numa zona só" : "Quadrados do " + esc(codsDe(g.tis))}: ${fmt(nq)}, ${fmt(nq * GRADE.areaQ, 2)} ha, TAXA ${v} (L/ha). Fora da zona, bicos fechados.`);
+}
+function baixarSemAplic(a){
+  const ap = aplicacoes()[a]; if (!ap) return; const {sem} = tanquesDe(ap);
+  const fe = GRADE ? GRADE.quads.filter(q => q.ok && sem.includes(q.ti)).map(q => ({anel:fechado(q), props:{ID:q.id, TRAT:S.trats[q.ti].cod, NOME:"Sem aplicacao"}})) : [];
+  if (!fe.length) { aplMsg("erro", "<b>Nada para baixar</b>Todos os tratamentos têm calda nesta aplicação."); return; }
+  const b = `${nomeBase()}_AP${a + 1}_sem_aplicacao`, sh = shapefile(fe, [{nome:"ID", tipo:"N", tam:6}, {nome:"TRAT", tipo:"C", tam:6}, {nome:"NOME", tipo:"C", tam:20}]);
+  baixar(zipShp(sh, b), b + ".zip");
+  aplMsg("", `<b>${esc(b)}.zip baixado</b>${fmt(fe.length)} quadrados sem aplicação na ${esc(nomeAp(ap, a))} (${esc(codsDe(sem))}), para usar como limites internos se o monitor não fechar os bicos sozinho.`);
+}
+$("btnAddApl").addEventListener("click", () => {
+  const aps = aplicacoes(); if (aps.length >= MAX_APL) return;
+  const ant = aps[aps.length - 1], vz = ant ? ant.vazao : ((S.trats.find(t => num(t.dose) > 0) || {}).dose || "");
+  S.aplic = [...aps, {nome:"", data:"", vazao:vz, caldas:{}}]; APL = S.aplic.length - 1; VER = APL; APL_CONF = null;
+  salvar(); aplMsg("", ""); renderAplic(true); desenharGrade(); renderLegenda(); renderRxBtns(); renderResumos();
+  aviso(`${APL + 1}ª aplicação criada`); const c = document.querySelector("#aplBox [data-calda]"); if (c) c.focus();
+});
+$("verMapa").addEventListener("click", e => { const b = e.target.closest("[data-ver]"); if (b) verNoMapa(+b.dataset.ver); });
+$("aplBox").addEventListener("click", e => {
+  const ab = e.target.closest("[data-apl]"); if (ab) { APL_CONF = null; aplMsg("", ""); verNoMapa(+ab.dataset.apl); return; }
+  const tq = e.target.closest("[data-tanque]"); if (tq) { baixarTanque(APL, +tq.dataset.tanque); return; }
+  if (e.target.closest("[data-semapl]")) { baixarSemAplic(APL); return; }
+  if (e.target.closest("#btnApagarApl")) {
+    if (APL_CONF !== APL) { APL_CONF = APL; renderAplic(); clearTimeout(SALVOS._ta); SALVOS._ta = setTimeout(() => { APL_CONF = null; renderAplic(); }, 4000); return; }
+    const nome = nomeAp(aplicacoes()[APL], APL); S.aplic = aplicacoes().filter((x, k) => k !== APL); APL_CONF = null; APL = Math.max(0, APL - 1); VER = -1;
+    salvar(); aplMsg("", ""); renderAplic(true); desenharGrade(); renderLegenda(); renderRxBtns(); renderResumos(); aviso(`${nome} apagada`);
+  }
+});
+$("aplBox").addEventListener("input", e => {
+  const ap = aplicacoes()[APL], el = e.target; if (!ap) return;
+  if (el.dataset.ap) { ap[el.dataset.ap] = el.value; el.removeAttribute("aria-invalid"); if (el.dataset.ap === "data") { const b = document.querySelector(`#aplSeg [data-apl="${APL}"]`); if (b) b.textContent = rotAba(ap, APL); renderVerMapa(); } }
+  else if (el.dataset.calda) { ap.caldas = {...(ap.caldas || {}), [el.dataset.calda]: el.value}; }
+  else return;
+  salvar(); clearTimeout(APL_T);
+  APL_T = setTimeout(() => { renderTanques(); if (VER === APL) { desenharGrade(); renderLegenda(); } renderResumos(); }, 300); // espera parar de digitar: não redesenha no meio de um clique
+});
+$("aplBox").addEventListener("change", e => { const ap = aplicacoes()[APL], el = e.target; if (!ap) return;
+  if (el.dataset.ap === "vazao" && el.value.trim()) { const v = num(el.value); if (!(v > 0)) { aplMsg("erro", "<b>Vazão inválida</b>Use L/ha, por exemplo 50."); return; } if (String(Math.round(v)) !== el.value.trim()) { ap.vazao = String(Math.round(v)); el.value = ap.vazao; salvar(); aviso(`Vazão arredondada para ${ap.vazao} L/ha: a taxa vai como número inteiro.`); } }
+  if (el.dataset.calda || el.dataset.ap === "nome") { const v = normCalda(el.value); if (v !== el.value) { el.value = v; if (el.dataset.calda) ap.caldas[el.dataset.calda] = v; else ap.nome = v; salvar(); } } });
 
 /* ---------- pistas de aplicação do Operations Center (linhas AB "AP…" de cada talhão) ---------- */
 const ehAP = nome => /^ap/i.test(String(nome || "").trim()); // AP, AP 02, AP_SOJA, AP_MILHO 02, Aplic_PV26…
@@ -1426,7 +1592,12 @@ async function gerarPDF(){
       return [tr.cod, tr.nome || "—", fmt(cont[i]), fmt(a, 2) + " ha", ehTest(tr) ? "0 (sem aplicação)" : isFinite(d) ? fmtMax(d, 2) + " L/ha" : "a definir", isFinite(pr) && !ehTest(tr) ? fmt(pr, 0) + " L" : "—"]; });
     const caldaTot = S.trats.reduce((s2, tr, i) => s2 + (isFinite(num(tr.dose)) ? num(tr.dose) * cont[i] * aQ : 0), 0);
     r.tabela({cabecalho:["Código", "Tratamento", "Quadrados", "Área", "Vazão", "Calda"], linhas, numericas:[2, 3, 5], total:["", "Total", fmt(totQ), fmt(totA, 2) + " ha", "", fmt(caldaTot, 0) + " L"]});
-    r.texto(S.modo === "produtos"
+    if (aplicacoes().length) { // programa: o que cada tratamento recebe em cada aplicação
+      r.secao("Programa de aplicações");
+      r.tabela({cabecalho:["Tratamento", ...aplicacoes().map((ap, a) => `${nomeAp(ap, a)}${ap.data ? " · " + dataBr(ap.data) : ""}`)],
+        linhas:S.trats.map(tr => [`${tr.cod}${tr.nome ? " · " + tr.nome : ""}`, ...aplicacoes().map(ap => normCalda((ap.caldas || {})[tr.cod]) || "—")])});
+      r.texto(`Em cada aplicação, os tratamentos com a mesma calda vão no mesmo tanque e no mesmo arquivo (uma zona só). Traço: sem aplicação. As páginas seguintes trazem o croqui e os tanques de cada aplicação.`);
+    } else r.texto(S.modo === "produtos"
       ? `${prods.length} aplicações, uma por teste, cada uma com o seu produto no tanque e o arquivo da zona daquele teste. A testemunha fica fora de todas as zonas e não recebe nada.`
       : "Uma aplicação só, com a vazão mudando de zona para zona (arquivo único com todas as zonas).");
 
@@ -1478,10 +1649,10 @@ async function gerarPDF(){
     doc.setDrawColor(...CI); doc.setLineWidth(0.4); doc.line(ex, ey, ex + esc * esc1, ey); doc.line(ex, ey - 1.5, ex, ey); doc.line(ex + esc * esc1, ey - 1.5, ex + esc * esc1, ey);
     doc.setFont(FT, "normal"); doc.setFontSize(8); doc.text(`${fmt(esc)} m`, ex + esc * esc1 / 2, ey - 2, {align:"center"});
     r.y = by + bh + 4;
-    const legenda = (y0, croqui) => { // legenda: tratamentos, linha AB, limite (no croqui: tratamentos e quadrado fora)
+    const legenda = (y0, croqui, itens) => { // legenda: tratamentos, linha AB, limite (no croqui: tratamentos e quadrado fora)
       let lx = M, ly = y0; doc.setFont(FT, "normal"); doc.setFontSize(8.5);
       const item = (desenha, txt) => { const w = 7 + doc.getTextWidth(txt) + 6; if (lx + w > PW - M) { lx = M; ly += 5.5; } desenha(lx, ly); doc.setTextColor(...CI); doc.text(txt, lx + 5.5, ly + 2.8); lx += w; };
-      S.trats.forEach((tr, i) => item((a, b2) => { doc.setFillColor(...rgbHex(corTrat(i))); doc.rect(a, b2, 3.6, 3.6, "F"); }, `${tr.cod} · ${tr.nome || tr.cod}`));
+      (itens || S.trats.map((tr, i) => [corTrat(i), `${tr.cod} · ${tr.nome || tr.cod}`])).forEach(([hx, tx]) => item((a, b2) => { doc.setFillColor(...rgbHex(hx)); doc.rect(a, b2, 3.6, 3.6, "F"); }, tx));
       if (croqui) { item((a, b2) => { doc.setDrawColor(...CL); doc.setLineWidth(0.3); doc.setLineDashPattern([0.8, 0.8], 0); doc.rect(a, b2, 3.6, 3.6, "S"); doc.setLineDashPattern([], 0); }, "Fora do ensaio (bordadura)"); return ly + 7; }
       if (S.pontoA) item((a, b2) => { doc.setDrawColor(...CI); doc.setLineWidth(0.4); doc.setLineDashPattern([1.2, 0.8], 0); doc.line(a, b2 + 1.8, a + 4, b2 + 1.8); doc.setLineDashPattern([], 0); }, "Linha AB");
       item((a, b2) => { doc.setDrawColor(...CP); doc.setLineWidth(0.35); doc.rect(a, b2, 3.6, 3.6, "S"); }, "Limite do talhão e carreadores");
@@ -1489,8 +1660,9 @@ async function gerarPDF(){
     };
     r.y = legenda(r.y);
 
-    /* ----- croqui por pista (esquemático, alinhado à linha AB) ----- */
-    r.y = 1e4; r.secao("Croqui do ensaio por pista");
+    /* ----- croqui por pista (esquemático, alinhado à linha AB); um para os tratamentos e um por aplicação ----- */
+    const croqui = (titulo, corQ, itens, antes) => {
+    r.y = 1e4; r.secao(titulo); if (antes) antes();
     const nC = S.nC, nR = S.nR, cx0 = M + 16, topo = r.y + 12, base = PH - M - 28;
     const escC = Math.min((PW - M - cx0 - 2) / (nC * S.W), (base - topo) / (nR * S.L)), cw = S.W * escC, ch = S.L * escC;
     const gx = cx0 + (PW - M - cx0 - nC * cw) / 2, gy = topo;
@@ -1501,8 +1673,8 @@ async function gerarPDF(){
     GRADE.quads.forEach(q => {
       const qx = gx + (q.c - 1) * cw, qy = gy + (nR - q.r) * ch, tr = S.trats[q.ti];
       if (!q.ok) { doc.setDrawColor(...CL); doc.setLineWidth(0.2); doc.setLineDashPattern([0.8, 0.8], 0); doc.rect(qx + 0.3, qy + 0.3, cw - 0.6, ch - 0.6, "S"); doc.setLineDashPattern([], 0); return; }
-      doc.setFillColor(...rgbHex(corTrat(q.ti))); doc.setDrawColor(...CB); doc.setLineWidth(0.3); doc.rect(qx, qy, cw, ch, "FD");
-      doc.setFont(FN, "bold"); doc.setFontSize(Math.max(6, Math.min(10, cw * 1.6))); doc.setTextColor(...(ehTest(tr) || contraste(corTrat(q.ti), "#FFFFFF") < 3.5 ? CI : CB));
+      doc.setFillColor(...rgbHex(corQ(q))); doc.setDrawColor(...CB); doc.setLineWidth(0.3); doc.rect(qx, qy, cw, ch, "FD");
+      doc.setFont(FN, "bold"); doc.setFontSize(Math.max(6, Math.min(10, cw * 1.6))); doc.setTextColor(...(contraste(corQ(q), "#FFFFFF") < 3.5 ? CI : CB));
       doc.text(tr.cod, qx + cw / 2, qy + ch / 2 + 1.2, {align:"center"});
     });
     for (let rr = 1; rr <= nR; rr++) { const yy = gy + (nR - rr + 1) * ch, u = GRADE.u0 + (rr - 1) * S.L;
@@ -1514,7 +1686,18 @@ async function gerarPDF(){
     let yNota = gy + nR * ch + 9; doc.setFontSize(8); doc.setTextColor(...CI);
     const nota = doc.splitTextToSize(`Números em cima: pista a partir da linha AB${S.pontoA ? "" : " (sem Ponto A: P1, P2… são só as colunas)"}. Números à esquerda: distância do início de cada fileira até a cabeceira ${x.ladoA} (lado A). Rumo ${fmtMax(S.ang, 4)}°, de A para B. Quadrado tracejado: fora do ensaio (bordadura).`, PW - 2 * M);
     doc.text(nota, M, yNota); r.y = yNota + nota.length * 4 + 2;
-    legenda(r.y, true);
+    legenda(r.y, true, itens);
+    };
+    croqui("Croqui do ensaio por pista", q => corTrat(q.ti));
+    aplicacoes().forEach((ap, a) => {
+      const {grupos, sem} = tanquesDe(ap), cores = coresTanques(ap), vz = num(ap.vazao), idx = new Map();
+      grupos.forEach((g, k) => g.tis.forEach(ti => idx.set(ti, k)));
+      croqui(`${nomeAp(ap, a)}${ap.data ? " · " + dataBr(ap.data) : ""}${isFinite(vz) && vz > 0 ? " · " + fmt(vz) + " L/ha" : ""}`, q => idx.has(q.ti) ? cores[idx.get(q.ti)] : COR.test,
+        [...grupos.map((g, k) => [cores[k], `Tanque ${k + 1} · ${g.calda} (${codsDe(g.tis)})`]), ...(sem.length ? [[COR.test, `Sem aplicação (${codsDe(sem)})`]] : [])],
+        () => r.tabela({cabecalho:["Tanque", "Calda", "Tratamentos", "Área", "Calda total", "Arquivo"],
+          linhas:[...grupos.map((g, k) => { const ha = quadsDe(g.tis) * aQ; return [String(k + 1), g.calda, codsDe(g.tis), fmt(ha, 2) + " ha", isFinite(vz) && vz > 0 ? fmt(vz * ha, 0) + " L" : "—", nomeArqTanque(a, g) + ".zip"]; }),
+            ...(sem.length ? [["—", "Sem aplicação", codsDe(sem), fmt(quadsDe(sem) * aQ, 2) + " ha", "—", "fora das zonas"]] : [])], numericas:[3, 4]}));
+    });
 
     const blob = r.salvar(null).output("blob");
     await baixar(blob, nomeBase() + "_relatorio.pdf");
