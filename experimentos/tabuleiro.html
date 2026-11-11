@@ -1618,12 +1618,27 @@ async function gerarPDF(){
       ...cantos.map(([n, c]) => [n, coordTxt(c)])]});
     if (!S.pontoA) r.texto("Atenção: sem o Ponto A da linha AB, este croqui não está preso às pistas do pulverizador. Informe o Ponto A antes de gerar os arquivos de aplicação.");
 
+    const legenda = (y0, croqui, itens, medir) => { // legenda: tratamentos, linha AB, limite (no croqui: tratamentos e quadrado fora). medir: só calcula onde termina
+      let lx = M, ly = y0; doc.setFont(FT, "normal"); doc.setFontSize(8.5);
+      const item = (desenha, txt) => { // nome comprido quebra em várias linhas e ocupa a linha toda
+        const linhas = doc.splitTextToSize(txt, PW - 2 * M - 7), w = 7 + Math.max(...linhas.map(l => doc.getTextWidth(l))) + 6;
+        if (lx > M && lx + w > PW - M) { lx = M; ly += 5.5; }
+        if (!medir) { desenha(lx, ly); doc.setTextColor(...CI); doc.text(linhas, lx + 5.5, ly + 2.8); }
+        if (linhas.length > 1) { ly += 4 * (linhas.length - 1); lx = PW; } else lx += w;
+      };
+      (itens || S.trats.map((tr, i) => [corTrat(i), `${tr.cod} · ${tr.nome || tr.cod}`])).forEach(([hx, tx]) => item((a, b2) => { doc.setFillColor(...rgbHex(hx)); doc.rect(a, b2, 3.6, 3.6, "F"); }, tx));
+      if (croqui) { item((a, b2) => { doc.setDrawColor(...CL); doc.setLineWidth(0.3); doc.setLineDashPattern([0.8, 0.8], 0); doc.rect(a, b2, 3.6, 3.6, "S"); doc.setLineDashPattern([], 0); }, "Fora do ensaio (bordadura)"); return ly + 7; }
+      if (S.pontoA) item((a, b2) => { doc.setDrawColor(...CI); doc.setLineWidth(0.4); doc.setLineDashPattern([1.2, 0.8], 0); doc.line(a, b2 + 1.8, a + 4, b2 + 1.8); doc.setLineDashPattern([], 0); }, "Linha AB");
+      item((a, b2) => { doc.setDrawColor(...CP); doc.setLineWidth(0.35); doc.rect(a, b2, 3.6, 3.6, "S"); }, "Limite do talhão e carreadores");
+      return ly + 7;
+    };
     /* ----- mapa de localização (geometria real) ----- */
-    if (PH - M - 40 - r.y < 115) r.y = 1e4; // mapa vai para a página seguinte só se não couber
+    const legH0 = legenda(0, false, undefined, true); // espaço da legenda embaixo do mapa
+    if (PH - M - 6 - legH0 - r.y < 115) r.y = 1e4; // mapa vai para a página seguinte só se não couber
     r.secao("Mapa de localização no talhão");
     const P = projecao(S.centro[0], S.centro[1]), xy = t.rings.map(rg => rg.map(P.fwd)), todos = xy.flat();
     const mnx = Math.min(...todos.map(q => q[0])), mxx = Math.max(...todos.map(q => q[0])), mny = Math.min(...todos.map(q => q[1])), mxy = Math.max(...todos.map(q => q[1]));
-    const bx = M, by = r.y, bw = PW - 2 * M, bh = Math.min(PH - M - 40 - by, 175);
+    const bx = M, by = r.y, bw = PW - 2 * M, bh = Math.min(PH - M - 6 - legH0 - by, 175);
     const esc1 = Math.min((bw - 10) / (mxx - mnx), (bh - 10) / (mxy - mny)), ox = bx + (bw - (mxx - mnx) * esc1) / 2, oy = by + (bh - (mxy - mny) * esc1) / 2;
     const mm = q => [ox + (q[0] - mnx) * esc1, oy + (mxy - q[1]) * esc1];
     const poli = (pts, est) => { const d = []; for (let i = 1; i < pts.length; i++) d.push([pts[i][0] - pts[i-1][0], pts[i][1] - pts[i-1][1]]); doc.lines(d, pts[0][0], pts[0][1], [1, 1], est, true); };
@@ -1649,21 +1664,15 @@ async function gerarPDF(){
     doc.setDrawColor(...CI); doc.setLineWidth(0.4); doc.line(ex, ey, ex + esc * esc1, ey); doc.line(ex, ey - 1.5, ex, ey); doc.line(ex + esc * esc1, ey - 1.5, ex + esc * esc1, ey);
     doc.setFont(FT, "normal"); doc.setFontSize(8); doc.text(`${fmt(esc)} m`, ex + esc * esc1 / 2, ey - 2, {align:"center"});
     r.y = by + bh + 4;
-    const legenda = (y0, croqui, itens) => { // legenda: tratamentos, linha AB, limite (no croqui: tratamentos e quadrado fora)
-      let lx = M, ly = y0; doc.setFont(FT, "normal"); doc.setFontSize(8.5);
-      const item = (desenha, txt) => { const w = 7 + doc.getTextWidth(txt) + 6; if (lx + w > PW - M) { lx = M; ly += 5.5; } desenha(lx, ly); doc.setTextColor(...CI); doc.text(txt, lx + 5.5, ly + 2.8); lx += w; };
-      (itens || S.trats.map((tr, i) => [corTrat(i), `${tr.cod} · ${tr.nome || tr.cod}`])).forEach(([hx, tx]) => item((a, b2) => { doc.setFillColor(...rgbHex(hx)); doc.rect(a, b2, 3.6, 3.6, "F"); }, tx));
-      if (croqui) { item((a, b2) => { doc.setDrawColor(...CL); doc.setLineWidth(0.3); doc.setLineDashPattern([0.8, 0.8], 0); doc.rect(a, b2, 3.6, 3.6, "S"); doc.setLineDashPattern([], 0); }, "Fora do ensaio (bordadura)"); return ly + 7; }
-      if (S.pontoA) item((a, b2) => { doc.setDrawColor(...CI); doc.setLineWidth(0.4); doc.setLineDashPattern([1.2, 0.8], 0); doc.line(a, b2 + 1.8, a + 4, b2 + 1.8); doc.setLineDashPattern([], 0); }, "Linha AB");
-      item((a, b2) => { doc.setDrawColor(...CP); doc.setLineWidth(0.35); doc.rect(a, b2, 3.6, 3.6, "S"); }, "Limite do talhão e carreadores");
-      return ly + 7;
-    };
     r.y = legenda(r.y);
 
     /* ----- croqui por pista (esquemático, alinhado à linha AB); um para os tratamentos e um por aplicação ----- */
     const croqui = (titulo, corQ, itens, antes) => {
     r.y = 1e4; r.secao(titulo); if (antes) antes();
-    const nC = S.nC, nR = S.nR, cx0 = M + 16, topo = r.y + 12, base = PH - M - 28;
+    doc.setFont(FT, "normal"); doc.setFontSize(8);
+    const nota = doc.splitTextToSize(`Números em cima: pista a partir da linha AB${S.pontoA ? "" : " (sem Ponto A: P1, P2… são só as colunas)"}. Números à esquerda: distância do início de cada fileira até a cabeceira ${x.ladoA} (lado A). Rumo ${fmtMax(S.ang, 4)}°, de A para B. Quadrado tracejado: fora do ensaio (bordadura).`, PW - 2 * M);
+    const legH = legenda(0, true, itens, true);
+    const nC = S.nC, nR = S.nR, cx0 = M + 16, topo = r.y + 12, base = PH - M - 3 - legH - (nota.length * 4 + 2) - 9;
     const escC = Math.min((PW - M - cx0 - 2) / (nC * S.W), (base - topo) / (nR * S.L)), cw = S.W * escC, ch = S.L * escC;
     const gx = cx0 + (PW - M - cx0 - nC * cw) / 2, gy = topo;
     doc.setFont(FT, "normal"); doc.setFontSize(8); doc.setTextColor(...CM);
@@ -1683,8 +1692,7 @@ async function gerarPDF(){
     doc.text(`${cap(x.ladoA)} · lado A · início do ensaio`, gx + nC * cw / 2, gy + nR * ch + 4.5, {align:"center"});
     // seta do sentido A -> B
     const sx = gx + nC * cw + 5; if (sx < PW - M) { doc.setDrawColor(...CI); doc.setLineWidth(0.4); doc.line(sx, gy + nR * ch, sx, gy + 6); doc.setFillColor(...CI); doc.triangle(sx, gy + 2, sx - 1.6, gy + 6, sx + 1.6, gy + 6, "F"); }
-    let yNota = gy + nR * ch + 9; doc.setFontSize(8); doc.setTextColor(...CI);
-    const nota = doc.splitTextToSize(`Números em cima: pista a partir da linha AB${S.pontoA ? "" : " (sem Ponto A: P1, P2… são só as colunas)"}. Números à esquerda: distância do início de cada fileira até a cabeceira ${x.ladoA} (lado A). Rumo ${fmtMax(S.ang, 4)}°, de A para B. Quadrado tracejado: fora do ensaio (bordadura).`, PW - 2 * M);
+    let yNota = gy + nR * ch + 9; doc.setFont(FT, "normal"); doc.setFontSize(8); doc.setTextColor(...CI);
     doc.text(nota, M, yNota); r.y = yNota + nota.length * 4 + 2;
     legenda(r.y, true, itens);
     };
