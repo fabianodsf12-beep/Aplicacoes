@@ -62,6 +62,13 @@ select.inp{appearance:auto}
 .list b{flex-grow:1;font-weight:600}
 .list small{color:var(--muted);font-size:14px}
 .empty{padding:18px 12px;color:var(--muted);text-align:center;font-size:14px}
+/* movimento da base: cabeçalho parado na troca de tela; esqueleto das listas enquanto carregam */
+header.top{view-transition-name:nd-topo}
+.esq-lista{display:flex;flex-direction:column}
+.esq-lista > div{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-bottom:1px solid var(--line2)}
+.esq-lista > div:last-child{border-bottom:0}
+.esq-lista .nd-esq.c{width:45%}
+#cargaHome:empty{display:none}
 .prod{display:grid;grid-template-columns:minmax(0,1fr) 92px 44px;gap:8px;align-items:end;padding:12px;border:1px solid var(--line2);border-radius:12px;background:var(--panel2)}
 .prod .full{grid-column:1/-1}
 .prod .tot{grid-column:1/-1;display:flex;justify-content:space-between;font-size:14px;color:var(--muted)}
@@ -156,6 +163,7 @@ select.inp{appearance:auto}
 <!-- INÍCIO -->
 <section id="s-home" hidden>
   <main>
+    <div class="card" id="cargaHome"></div>
     <div class="card nd-feito" id="feitoHome" hidden role="status"><svg viewBox="0 0 76 76" aria-hidden="true"><circle cx="38" cy="38" r="34" pathLength="1"/><path d="M24 39l10 10 19-21" pathLength="1"/></svg><b id="feitoT">Execução registrada</b><span class="hint" id="feitoS"></span></div>
     <button type="button" class="act nd-onda" data-go="programar"><span class="n">1</span><span class="tx"><span class="t">Programar aplicação</span><span class="s">Talhões, operação, data e produtos</span></span></button>
     <button type="button" class="act nd-onda" data-go="executar"><span class="n">2</span><span class="tx"><span class="t">Registrar execução</span><span class="s">Data, área aplicada e nº da OS do Protector</span></span><span class="badge" id="bPend" hidden></span></button>
@@ -163,7 +171,7 @@ select.inp{appearance:auto}
     <button type="button" class="act nd-onda" data-go="talhoes"><span class="n">4</span><span class="tx"><span class="t">Talhões e plantio</span><span class="s">Lançar plantio em vários ou cadastrar talhão</span></span><span class="badge" id="bPlant" hidden></span></button>
     <div class="card" style="gap:4px">
       <h2 style="margin-bottom:6px">Últimos lançamentos</h2>
-      <div id="recentes"><div class="empty">Carregando…</div></div>
+      <div class="nd-carrega" id="recBox" aria-busy="true"><div class="esqueleto esq-lista" aria-hidden="true"><div><span class="nd-esq c"></span><span class="nd-esq l"></span></div><div><span class="nd-esq c"></span><span class="nd-esq l"></span></div></div><div class="conteudo"><div id="recentes"></div></div></div>
     </div>
     <button type="button" class="back" id="btnCfg" style="color:var(--muted);align-self:center;font-size:14px">Trocar usuário ou senha</button>
   </main>
@@ -250,7 +258,7 @@ select.inp{appearance:auto}
     </div>
     <div class="card" style="gap:4px">
       <h2 style="margin-bottom:6px">Últimos registros</h2>
-      <div id="cLista"><div class="empty">Carregando…</div></div>
+      <div class="nd-carrega" id="cBox" aria-busy="true"><div class="esqueleto esq-lista" aria-hidden="true"><div><span class="nd-esq c"></span><span class="nd-esq l"></span></div><div><span class="nd-esq c"></span><span class="nd-esq l"></span></div></div><div class="conteudo"><div id="cLista"></div></div></div>
     </div>
   </main>
 </section>
@@ -331,14 +339,29 @@ async function getListas(){
   net("busy", "Atualizando listas…");
   try {
     const r = await fetch(DATA_URL + "?acao=listas", {cache:"no-store", redirect:"follow"});
-    const j = await r.json();
+    cargaEtapa(1);
+    const j = await r.json(); cargaEtapa(2);
     if (!j.ok) throw new Error(j.error || "erro no script");
     L = j; lsSet("lancar.listas", JSON.stringify(j));
     net("vivo", "Listas atualizadas às " + new Date().toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}));
     refreshAll();
   } catch (e) {
     net("err", navigator.onLine === false ? "Sem internet. Mostrando as últimas listas salvas." : "Não consegui atualizar as listas (" + (e.message || e) + ")");
-  }
+    if (!L) ["recBox", "cBox"].forEach(id => { $(id === "recBox" ? "recentes" : "cLista").innerHTML = '<div class="empty">Sem as listas da planilha agora. Tente de novo com sinal.</div>'; if (window.Nadiana) Nadiana.pronto($(id)); });
+  } finally { cargaFim(); }
+}
+/* primeira carga sem listas guardadas: abertura com o símbolo; passando de 3 s, a barra com etapas no início */
+const CARGA = {c:null, t:null};
+function cargaInicio(){
+  if (L || !window.Nadiana || !Nadiana.abertura) return;
+  Nadiana.abertura("Abrindo os Lançamentos");
+  CARGA.t = setTimeout(() => { Nadiana.abertura.fim(); if (!Nadiana.etapas) return;
+    CARGA.c = Nadiana.etapas($("cargaHome"), ["Conectando à planilha", "Lendo talhões, programações e produtos", "Montando as listas"], {titulo:"Buscando as listas da planilha"}); CARGA.c.etapa(CARGA.i || 0); }, 3000);
+}
+function cargaEtapa(i){ CARGA.i = i; if (CARGA.c) CARGA.c.etapa(i); }
+function cargaFim(){
+  clearTimeout(CARGA.t); CARGA.t = null; if (window.Nadiana && Nadiana.abertura) Nadiana.abertura.fim();
+  if (CARGA.c) { CARGA.c.fim(); CARGA.c = null; $("cargaHome").innerHTML = ""; $("cargaHome").className = "card"; }
 }
 async function enviar(payload){
   if (!webOn()) throw new Error("O endereço do script ainda não foi configurado.");
@@ -355,8 +378,17 @@ async function enviar(payload){
 /* ---------- navegação ---------- */
 const TITULOS = {home:["Lançamentos","Programação, execução e plantio"], programar:["Programar aplicação","Uma programação para vários talhões de uma vez"],
   executar:["Registrar execução","Liga a aplicação feita à programação e à OS"], talhoes:["Talhões e plantio","Datas de plantio e cadastro"], chuva:["Chuva","Pluviometria diária"], config:["Lançamentos","Entrar neste aparelho"]};
+/* troca de tela (base Nadiana): o cartão do início cresce até a tela e ela encolhe de volta para ele no Voltar */
+let TELA = null;
 function show(tela){
   if (!cfg.nome || !cfg.cod) tela = "config";
+  const ant = TELA, de = ant && $("s-" + ant), para = $("s-" + tela); TELA = tela;
+  if (!ant || ant === tela || !window.Nadiana || !Nadiana.trocar) { mostrar(tela); return; }
+  const cartao = (t) => document.querySelector(`#s-home [data-go="${t}"]`);
+  const op = ant === "home" && cartao(tela) ? {modo:"cresce", cartao:cartao(tela)} : tela === "home" && cartao(ant) ? {modo:"encolhe", cartao:cartao(ant)} : {modo: tela === "home" ? "volta" : "frente"};
+  Nadiana.trocar(() => mostrar(tela), {...op, de, para});
+}
+function mostrar(tela){
   document.querySelectorAll("section[id^=s-]").forEach(s => s.hidden = s.id !== "s-" + tela);
   $("btnBack").hidden = tela === "home" || (tela === "config" && !(cfg.nome && cfg.cod));
   $("brandMini").hidden = !$("btnBack").hidden;
@@ -386,11 +418,18 @@ function statusTxt(p){
 }
 
 /* ---------- início ---------- */
+function contaBadge(id, n, um, varios){ // contador do cartão: o número novo entra rolando (Nadiana.rolar)
+  const b = $(id); b.hidden = !n; if (!n) return;
+  let s = b.querySelector(".num"); const novo = !s;
+  if (novo) { b.textContent = ""; s = document.createElement("span"); s.className = "num"; const r = document.createElement("span"); r.className = "rot"; b.append(s, " ", r); }
+  b.querySelector(".rot").textContent = n === 1 ? um : varios;
+  if (novo || !window.Nadiana || !Nadiana.rolar) { s.textContent = n; s._ndRola = n; } else Nadiana.rolar(s, n);
+}
 function renderHome(){
   const np = new Set(pendentes().map(p => p.t)).size;
-  $("bPend").hidden = !np; $("bPend").textContent = np + (np === 1 ? " talhão" : " talhões");
+  contaBadge("bPend", np, "talhão", "talhões");
   const sp = L.talhoes.filter(t => t.ativo && !t.plantio).length;
-  $("bPlant").hidden = !sp; $("bPlant").textContent = sp + " sem plantio";
+  contaBadge("bPlant", sp, "sem plantio", "sem plantio");
   const ch = (L.chuvas || []).filter(c => c.data === hojeIso());
   $("bChuva").hidden = false; $("bChuva").textContent = ch.length ? "hoje: " + ha(ch.reduce((s, c) => s + c.mm, 0) / ch.length, 1) + " mm" : "sem registro hoje";
   const P = Object.fromEntries(L.progs.map(p => [p.id, p]));
@@ -407,6 +446,7 @@ function renderHome(){
     const ts = g.itens.map(i => (P[i.id] || {}).t || i.id), op = (P[g.r.id] || {}).op || "";
     return `<div class="rec"><span><b>Execução ${ts.map(esc).join(", ")}</b><small>${esc(op)}, aplicada em ${fd(g.r.data)}</small></span><small style="text-align:right">${quando}<br>${esc(g.r.quem)}</small></div>`;
   }).join("") : '<div class="empty">Nenhum lançamento feito pelo formulário ainda.</div>';
+  if (window.Nadiana) Nadiana.pronto($("recBox"));
 }
 
 /* ---------- programar ---------- */
@@ -589,6 +629,7 @@ function renderChuva(){
   const c = L.chuvas || [];
   $("cLista").innerHTML = c.length ? c.slice(0, 12).map(x => `<div class="rain"><span><b>${fd(x.data)}</b> <small class="hint">${DIAS[new Date(dn(x.data)*864e5).getUTCDay()]}</small></span><b>${ha(x.mm, 1)} mm</b></div>`).join("")
     : '<div class="empty">Nenhuma chuva registrada ainda.</div>';
+  if (window.Nadiana) Nadiana.pronto($("cBox"));
 }
 $("cSave").addEventListener("click", async () => {
   msg("cMsg", "", "");
@@ -813,6 +854,7 @@ $("pcSave").addEventListener("click", async () => {
 (function init(){
   try { const c = JSON.parse(lsGet("lancar.listas") || "null"); if (c && c.ok) { L = c; net("", "Últimas listas salvas"); } } catch(e) {}
   route();
+  cargaInicio();
   getListas();
   carregarPlantio();
   document.addEventListener("visibilitychange", () => { if (!document.hidden) { getListas(); carregarPlantio(); } });
