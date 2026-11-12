@@ -18,7 +18,8 @@
 /* Estilos só desta tela. Cores sempre por var(--token). */
 *{box-sizing:border-box}
 .layout{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--space-5);padding-block:var(--space-5)}
-@media (min-width:1100px){.layout{grid-template-columns:400px minmax(0,1fr);align-items:start}.mapcol{position:sticky;top:84px;order:2}.side{order:1}}
+/* computador: o mapa fica parado ocupando a altura da tela; só a coluna dos passos rola */
+@media (min-width:900px){.layout{grid-template-columns:minmax(340px,400px) minmax(0,1fr);align-items:start}.mapcol{position:sticky;top:84px;order:2;height:calc(100vh - 100px);height:calc(100dvh - 100px);gap:var(--space-2)}.side{order:1}#mapa{flex:1 1 auto;height:auto;min-height:280px}#legenda{display:none}.mapmsg,#posInfo{flex:0 0 auto}}
 [hidden]{display:none !important} /* o que está escondido fica escondido, mesmo com display dos componentes */
 .side{display:flex;flex-direction:column;gap:var(--space-4);min-width:0}
 /* passos que dobram: o cabeçalho abre e fecha; fechado, mostra o resumo do passo */
@@ -36,7 +37,6 @@ details[open] > summary > .seta{transform:rotate(180deg)}
 .tres{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-3);align-items:end}
 .mapcol{display:flex;flex-direction:column;gap:var(--space-3);min-width:0}
 #mapa{height:62vh;min-height:360px;border-radius:var(--radius-2xl);border:1px solid var(--line2);box-shadow:var(--sombra-1);background:var(--panel2)}
-@media (min-width:1100px){#mapa{height:calc(100vh - 170px)}}
 .passo{display:flex;align-items:center;gap:var(--space-3)}
 .passo .n{flex:0 0 auto;width:28px;height:28px;border-radius:var(--radius-pill);background:var(--brand-soft);color:var(--brand);font-family:var(--font-display);font-weight:600;font-size:17px;display:inline-flex;align-items:center;justify-content:center}
 .dois{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3)}
@@ -142,7 +142,7 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 .qlbl{font:600 12px var(--font-display);color:var(--brand-ink);text-shadow:0 0 3px var(--nadiana-preto),0 0 2px var(--nadiana-preto);text-align:center;line-height:16px;pointer-events:none}
 .ctl{background:var(--panel);color:var(--ink);border-radius:var(--radius-lg);box-shadow:var(--sombra-2);padding:var(--space-2) var(--space-3);font-size:12.5px}
 .ctl.norte{display:flex;flex-direction:column;align-items:center;padding:var(--space-1) var(--space-2);font:600 13px var(--font-display);line-height:1}
-.ctl.legmap{display:flex;flex-direction:column;gap:4px;max-width:180px}
+.ctl.legmap{display:flex;flex-direction:column;gap:4px;max-width:260px;max-height:40vh;overflow:auto}
 .ctl.legmap span{display:flex;align-items:center;gap:6px}
 .ctl.legmap i{width:12px;height:12px;border-radius:var(--radius-xs);background:var(--c);flex:0 0 auto;border:1px solid var(--line)}
 .ctl.legmap i.fora{background:transparent;border:1.5px dashed var(--muted)}
@@ -176,9 +176,9 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
     <main class="nd-wrap largo">
       <div class="layout">
         <div class="mapcol">
+          <div class="nd-seg ver-mapa" id="verMapa" role="group" aria-label="O que o mapa mostra" hidden></div>
           <div id="mapa" role="region" aria-label="Mapa do ensaio"></div>
           <p class="mapmsg" id="mapMsg" aria-live="polite">Carregando o mapa dos talhões…</p>
-          <div class="nd-seg ver-mapa" id="verMapa" role="group" aria-label="O que o mapa mostra" hidden></div>
           <div class="leg" id="legenda" aria-label="Legenda"></div>
           <p class="nd-corpo-pequeno" id="posInfo" aria-live="polite"></p>
         </div>
@@ -377,7 +377,7 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
             <details class="passo-d" open data-dobra="aplic">
               <summary><h2 class="passo"><span class="n">5</span>Aplicações</h2><span class="resumo" id="res-aplic"></span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
               <div class="corpo">
-                <p class="dica" id="aplDica">Para um programa com mais de uma aplicação, ou quando tratamentos diferentes levam a mesma calda no mesmo dia. Em cada aplicação você escreve a calda de cada tratamento; os que têm a mesma calda saem num arquivo só, numa passada só.</p>
+                <p class="dica" id="aplDica">Os arquivos do pulverizador saem aqui, por aplicação. Crie a 1ª aplicação: ela já vem com a calda de cada tratamento igual ao nome dele; troque pelo que vai no tanque. Tratamentos com a mesma calda saem num arquivo só, numa passada só.</p>
                 <div class="trs" id="aplBox"></div>
                 <div id="aplMsg"></div>
                 <div class="acoes-l"><button class="nd-btn nd-onda" type="button" id="btnAddApl"><svg class="nd-ic gira" aria-hidden="true"><use href="#i-plus"/></svg>Aplicação</button></div>
@@ -404,30 +404,29 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 
           <section class="nd-cartao dobra">
             <details class="passo-d" open data-dobra="arquivos">
-              <summary><h2 class="passo"><span class="n">7</span>Arquivos</h2><span class="resumo" id="res-arquivos"></span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+              <summary><h2 class="passo"><span class="n">7</span>Relatório</h2><span class="resumo" id="res-arquivos"></span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
               <div class="corpo">
                 <button class="nd-btn grande nd-onda nd-estado" type="button" id="btnPdf" data-enviando="Gerando o PDF…" data-feito="PDF pronto"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-file-text"/></svg>Relatório em PDF (croqui, pontos e áreas)</button>
                 <div class="nd-msg aviso" id="rxTrava" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-triangle-alert"/></svg><div><b>Falta a linha AB</b>Escolha a pista (ou digite os pontos A e B) no passo 2 para baixar os arquivos de aplicação. Sem ele, as zonas podem cair entre duas pistas.</div></div>
                 <div class="trs" id="rxBtns"></div>
-                <div class="acoes-l">
-                  <button class="nd-btn nd-onda" type="button" id="btnLim"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>Testemunhas como limite</button>
+                <div class="acoes-l" id="limBox"><button class="nd-btn nd-onda" type="button" id="btnLim"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>Testemunhas como limite</button></div>
+                <p class="dica" id="rxDica"></p>
+                <div id="arqMsg"></div>
+                <details class="alt"><summary><span>Outros formatos (Google Earth e planilha)</span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><div class="trs"><div class="acoes-l">
                   <button class="nd-btn nd-onda" type="button" id="btnKml"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>KML (Google Earth)</button>
                   <button class="nd-btn nd-onda" type="button" id="btnCsv"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>Planilha (CSV)</button>
                   <button class="nd-btn nd-onda" type="button" id="btnGj"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>GeoJSON</button>
-                </div>
-                <div id="arqMsg"></div>
-                <p class="dica" id="rxDica"></p>
-                <details class="alt"><summary><span>O que vai em cada arquivo</span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><div class="trs"><p class="dica">Cada arquivo de zona tem uma linha com todos os quadrados daquele teste juntos (só a coluna TAXA, em L/ha, número inteiro); as prescrições prontas têm um polígono por quadrado, também só com TAXA. Tudo em coordenadas geográficas WGS84. O KML e a planilha servem para a equipe achar os quadrados no campo e para a análise depois da colheita.</p></div></details>
+                </div></div></details>
+                <details class="alt"><summary><span>O que vai em cada arquivo</span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><div class="trs"><p class="dica">Os arquivos do pulverizador saem no passo 5 Aplicações, um por tanque de cada aplicação: uma zona só com os quadrados dos tratamentos daquela calda, com a coluna TAXA (vazão em L/ha, número inteiro), em coordenadas geográficas WGS84. O "Sem aplicação como limite" traz os quadrados que ficam sem nada naquele dia. O PDF traz o programa, as referências da linha AB, o croqui e os tanques de cada aplicação. O KML e a planilha servem para a equipe achar os quadrados no campo e para a análise depois da colheita.</p></div></details>
                 <details class="alt"><summary><span>Como levar para o M4030</span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><div class="trs">
                   <ol class="passos-jd">
-                    <li>Produtos diferentes: baixe um arquivo por teste (Zona A, Zona B…). Cada arquivo tem só os quadrados sorteados para aquele teste. Não descompacte o .zip.</li>
-                    <li>No Operations Center, envie cada arquivo em Arquivos e crie a prescrição daquele teste, usando a coluna TAXA. Fora da zona, bicos fechados.</li>
-                    <li>Cada teste é uma aplicação separada, com o seu produto no tanque. A testemunha não tem arquivo: fica fora de todas as zonas. Lave o tanque entre um produto e outro.</li>
-                    <li>Vazões diferentes da mesma calda: um arquivo só com todas as zonas e a coluna TAXA, numa aplicação só.</li>
+                    <li>No passo 5, em cada aplicação, baixe o arquivo de cada tanque. Não descompacte o .zip.</li>
+                    <li>No Operations Center, envie cada arquivo em Arquivos e crie a prescrição daquele tanque, usando a coluna TAXA. Fora da zona, bicos fechados.</li>
+                    <li>Cada tanque é uma passada, com a sua calda. Os tratamentos sem aplicação ficam fora de todas as zonas. Lave o tanque entre uma calda e outra.</li>
                     <li>Mande para o monitor pela transferência de dados, ou leve por pendrive.</li>
                     <li>Ligue o desligamento bico a bico (Section Control) e trabalhe com sinal de correção (SF3 ou RTK).</li>
-                    <li>Antes do produto, faça um teste só com água em 3 ou 4 quadrados e confira o mapa do aplicado: a testemunha tem que sair sem aplicação.</li>
-                    <li>Se o monitor não fechar os bicos com vazão 0, use o arquivo "Testemunhas como limite" como limites internos do talhão; o Section Control fecha os bicos dentro deles.</li>
+                    <li>Antes do produto, faça um teste só com água em 3 ou 4 quadrados e confira o mapa do aplicado: os quadrados sem aplicação têm que sair sem nada.</li>
+                    <li>Se o monitor não fechar os bicos fora da zona, use o "Sem aplicação como limite" daquela aplicação como limites internos do talhão; o Section Control fecha os bicos dentro deles.</li>
                   </ol>
                   <p class="dica">Os nomes dos menus mudam com a versão do monitor. Guarde o mapa do aplicado: ele mostra o que cada quadrado recebeu de fato.</p>
                 </div></details>
@@ -810,7 +809,7 @@ function renderResumos(){
     trat: `${S.trats.length} tratamentos · ${S.modo === "doses" ? "vazões" : "produtos"}`,
     aplic: (n => n ? `${n} ${n === 1 ? "aplicação" : "aplicações"}` : "Nenhuma (opcional)")(aplicacoes().length),
     resumo: GRADE ? `${fmt(ok)} quadrados · ${fmt(ok * GRADE.areaQ, 2)} ha` : "",
-    arquivos: S.pontoA ? "PDF e arquivos de aplicação" : "Falta a linha AB"
+    arquivos: "PDF do planejamento"
   };
   Object.entries(r).forEach(([k, v]) => { const e = $("res-" + k); if (e) e.textContent = v; });
 }
@@ -1125,27 +1124,22 @@ function baixarZonaTeste(ti){
   baixar(zipShp(shapefile(fe, CAMPO_TAXA), b), b + ".zip");
   arqMsg("", `<b>Zona ${esc(t.cod)} baixada</b>${fmt(nq)} quadrados, ${fmt(nq * GRADE.areaQ, 2)} ha, só do ${esc(t.nome || t.cod)}. TAXA ${taxa(d)} (L/ha). Fora da zona, bicos fechados.`);
 }
-function renderRxBtns(){
-  const ic = '<svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>';
-  if (S.modo === "doses") {
-    $("rxBtns").innerHTML = `<button class="nd-btn primario grande nd-onda" type="button" data-zonas>${ic}Zonas de todas as vazões (shapefile)</button>`
-      + `<details class="alt"><summary><span>Ou uma prescrição pronta por quadrado</span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><div class="trs"><button class="nd-btn grande nd-onda" type="button" data-rx="">${ic}Prescrição por quadrado (shapefile)</button></div></details>`;
+function renderRxBtns(){ // os arquivos do pulverizador ficam no passo 5 (por tanque). Aqui só o caso "vazões diferentes", que é um arquivo único
+  const ic = '<svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>', doses = S.modo === "doses";
+  $("limBox").hidden = !doses;
+  if (doses) {
+    $("rxBtns").innerHTML = `<button class="nd-btn grande nd-onda" type="button" data-zonas>${ic}Zonas de todas as vazões (shapefile)</button>`;
     $("rxDica").textContent = `Vazões diferentes: tudo num arquivo só, com ${S.trats.length} zonas (uma por vazão, só a coluna TAXA). Uma passada só, com a vazão mudando de zona para zona.`;
   } else {
-    const prods = S.trats.map((t, i) => [t, i]).filter(([t]) => !ehTest(t));
-    $("rxBtns").innerHTML = prods.map(([t, i], k) => `<button class="nd-btn ${k ? "" : "primario"} grande nd-onda" type="button" data-zona="${i}">${ic}Zona ${esc(t.cod)}${t.nome ? " · " + esc(t.nome) : ""} (aplicação ${k + 1})</button>`).join("")
-      + `<details class="alt"><summary><span>Outros formatos</span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><div class="trs"><button class="nd-btn grande nd-onda" type="button" data-zonas>${ic}Todas as zonas num arquivo (para conferir)</button>`
-      + prods.map(([t, i], k) => `<button class="nd-btn grande nd-onda" type="button" data-rx="${i}">${ic}Prescrição por quadrado ${esc(t.cod)}</button>`).join("") + `</div></details>`;
-    const nT = S.trats.length - prods.length;
-    $("rxDica").textContent = `Produtos diferentes: ${prods.length} arquivos, um por teste, cada um só com a zona daquele teste (os quadrados sorteados para ele). Cada arquivo é uma aplicação, com o produto do teste no tanque. ${nT ? "A testemunha não tem arquivo: ela fica fora de todas as zonas e não recebe nada." : ""}`;
+    $("rxBtns").innerHTML = "";
+    $("rxDica").textContent = aplicacoes().length ? "Os arquivos do pulverizador estão no passo 5 Aplicações: um por tanque, com as caldas iguais juntas." : "Os arquivos do pulverizador saem no passo 5 Aplicações. Crie a 1ª aplicação lá.";
   }
-  if (aplicacoes().length) $("rxDica").textContent = "Este ensaio tem aplicações cadastradas: os arquivos de cada dia, com as caldas iguais juntas, estão no passo 5 Aplicações. Os botões abaixo são por tratamento. " + $("rxDica").textContent;
 }
 function travarSemPontoA(){
   const sem = !S.pontoA;
   $("rxBtns").querySelectorAll("button").forEach(b => { b.disabled = sem; });
   $("btnLim").disabled = sem;
-  $("rxTrava").hidden = !sem;
+  $("rxTrava").hidden = !sem || S.modo !== "doses";
 }
 $("rxBtns").addEventListener("click", e => { const z = e.target.closest("[data-zona]"); if (z) { baixarZonaTeste(+z.dataset.zona); return; } if (e.target.closest("[data-zonas]")) { baixarZonas(); return; } const b = e.target.closest("[data-rx]"); if (!b) return; if (S.modo === "doses") baixarRxDoses(); else baixarRxProduto(+b.dataset.rx); });
 const CAMPOS_RX = CAMPO_TAXA;
@@ -1454,7 +1448,8 @@ function baixarSemAplic(a){
 $("btnAddApl").addEventListener("click", () => {
   const aps = aplicacoes(); if (aps.length >= MAX_APL) return;
   const ant = aps[aps.length - 1], vz = ant ? ant.vazao : ((S.trats.find(t => num(t.dose) > 0) || {}).dose || "");
-  S.aplic = [...aps, {nome:"", data:"", vazao:vz, caldas:{}}]; APL = S.aplic.length - 1; VER = APL; APL_CONF = null;
+  const caldas = aps.length ? {} : Object.fromEntries(S.trats.filter(t => !ehTest(t)).map(t => [t.cod, normCalda(t.nome) || t.cod])); // 1ª: cada tratamento com a sua calda (troque pelo que vai no tanque)
+  S.aplic = [...aps, {nome:"", data:"", vazao:vz, caldas}]; APL = S.aplic.length - 1; VER = APL; APL_CONF = null;
   salvar(); aplMsg("", ""); renderAplic(true); desenharGrade(); renderLegenda(); renderRxBtns(); renderResumos();
   aviso(`${APL + 1}ª aplicação criada`); const c = document.querySelector("#aplBox [data-calda]"); if (c) c.focus();
 });
