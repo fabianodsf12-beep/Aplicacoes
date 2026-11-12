@@ -18,8 +18,16 @@
 /* Estilos só desta tela. Cores sempre por var(--token). */
 *{box-sizing:border-box}
 .layout{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--space-5);padding-block:var(--space-5)}
-/* computador: o mapa fica parado ocupando a altura da tela; só a coluna dos passos rola */
-@media (min-width:900px){.layout{grid-template-columns:minmax(340px,400px) minmax(0,1fr);align-items:start}.mapcol{position:sticky;top:84px;order:2;height:calc(100vh - 100px);height:calc(100dvh - 100px);gap:var(--space-2)}.side{order:1}#mapa{flex:1 1 auto;height:auto;min-height:280px}#legenda{display:none}.mapmsg,#posInfo{flex:0 0 auto}}
+/* computador: a página não rola; o mapa ocupa a altura da janela e só a coluna dos passos tem rolagem própria (--layout-h vem do script) */
+@media (min-width:900px){
+  .layout{grid-template-columns:minmax(340px,400px) minmax(0,1fr);grid-template-rows:minmax(0,1fr);height:var(--layout-h,calc(100dvh - 72px));padding-block:var(--space-4)}
+  .mapcol{order:2;min-height:0;gap:var(--space-2)}
+  .side{order:1;position:relative;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:2px var(--space-2) var(--space-2) 2px;margin:-2px 0 0 -2px}
+  #mapa{flex:1 1 auto;height:auto;min-height:0}
+  #legenda{display:none}
+  .mapmsg,#posInfo{flex:0 0 auto}
+  .side .nd-rodape{padding-block:var(--space-2) 0}
+}
 [hidden]{display:none !important} /* o que está escondido fica escondido, mesmo com display dos componentes */
 .side{display:flex;flex-direction:column;gap:var(--space-4);min-width:0}
 /* passos que dobram: o cabeçalho abre e fecha; fechado, mostra o resumo do passo */
@@ -441,9 +449,9 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
               </div>
             </details>
           </section>
+          <footer class="nd-rodape">O limite dos talhões vem da planilha Base_Aplicacoes no Google Drive. O plano fica guardado neste aparelho.</footer>
         </div>
       </div>
-      <footer class="nd-rodape">O limite dos talhões vem da planilha Base_Aplicacoes no Google Drive. O plano fica guardado neste aparelho.</footer>
     </main>
   </div>
 </div>
@@ -1343,7 +1351,7 @@ $("btnNovoEnsaio").addEventListener("click", () => { // começa do zero no talh�
   S = {...PADRAO, talhao:tal, trats:PADRAO.trats.map(t => ({...t}))}; VER = -1; APL = 0;
   $("ensaioForm").hidden = true; $("linhaForm").hidden = true; $("linhaSel").value = "";
   ajustarAoTalhao(); salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar(); renderSalvos(); arqMsg("", "");
-  aviso(`Novo ensaio no ${tal}: tudo zerado`); window.scrollTo({top:0, behavior:"smooth"});
+  aviso(`Novo ensaio no ${tal}: tudo zerado`); window.scrollTo({top:0, behavior:"smooth"}); document.querySelector(".side").scrollTo({top:0, behavior:"smooth"});
 });
 
 /* ---------- aplicações: o que cada tratamento recebe em cada dia; calda igual = mesmo tanque e mesmo arquivo ---------- */
@@ -1877,7 +1885,19 @@ async function carregarMapa(){
   return c && c.gj ? deGeoJSON(c.gj) : [];
 }
 
+/* computador: a área do mapa e dos passos ocupa exatamente o que sobra da janela abaixo do cabeçalho */
+function ajustarAltura(){
+  const lay = document.querySelector(".layout"), raiz = document.documentElement; if (!lay) return;
+  if (innerWidth < 900) { raiz.style.removeProperty("--layout-h"); return; }
+  window.scrollTo(0, 0);
+  let h = innerHeight - lay.getBoundingClientRect().top; raiz.style.setProperty("--layout-h", h + "px");
+  const sobra = raiz.scrollHeight - innerHeight; if (sobra > 0) raiz.style.setProperty("--layout-h", (h - sobra) + "px"); // margens de baixo da página
+  if (MAP) MAP.invalidateSize();
+}
+addEventListener("resize", () => { clearTimeout(ajustarAltura.t); ajustarAltura.t = setTimeout(ajustarAltura, 120); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustarAltura);
 (async function iniciar(){
+  ajustarAltura();
   preencherCampos();
   iniciarSalvos();
   iniciarMapa();
