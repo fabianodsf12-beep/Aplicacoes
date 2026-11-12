@@ -8,6 +8,7 @@
 <link rel="icon" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.png">
 <link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.css">
 <link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/componentes.css">
+<script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/icones.js"></script>
 <script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/nadiana.js" defer></script>
 <style>
 /* Visual da base Nadiana (https://github.com/fabianodsf12-beep/nadiana-design/blob/main/v1/README.md). Tela inicial: faixa de marca em petróleo. */
@@ -23,13 +24,17 @@ main{padding:0 max(20px,env(safe-area-inset-right,0px)) 40px max(20px,env(safe-a
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:var(--space-5)}
 a.card{display:flex;flex-direction:column;gap:var(--space-3_5);background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:var(--sombra-1);padding:22px;text-decoration:none;color:var(--ink);min-height:200px;transition:border-color var(--dur-media) var(--curva),box-shadow var(--dur-media) var(--curva),transform var(--dur-media) var(--curva)}
 a.card:hover{border-color:var(--line);box-shadow:var(--sombra-2);transform:translateY(-2px)}
-.ic{width:52px;height:52px;border-radius:var(--radius-2xl);background:var(--brand-soft);display:inline-flex;align-items:center;justify-content:center;color:var(--brand)}
+.ic{position:relative;width:52px;height:52px;border-radius:var(--radius-2xl);background:var(--brand-soft);display:inline-flex;align-items:center;justify-content:center;color:var(--brand)}
 .card h2{margin:0;font-family:var(--font-display);font-weight:600;font-size:28px;line-height:1.05}
 .card p{margin:0;color:var(--muted);font-size:15px}
 .card .go{margin-top:auto;display:flex;align-items:center;justify-content:space-between;font-weight:600;color:var(--ink);padding-top:var(--space-3);border-top:1px solid var(--line2)}
 .card .go svg{color:var(--brand);transition:transform var(--dur-media) var(--curva)}
 a.card:hover .go svg{transform:translateX(3px)}
-.status{display:flex;flex-wrap:wrap;gap:var(--space-2);margin-top:var(--space-5);min-height:30px;align-items:center;font-size:14px;color:var(--muted)}
+.carga{margin-top:var(--space-5)}
+.carga .esqueleto{display:flex;gap:var(--space-2);align-items:center;min-height:30px}
+.carga .esqueleto .nd-esq{height:26px;border-radius:var(--radius-pill)}
+.status{display:flex;flex-wrap:wrap;gap:var(--space-2);min-height:30px;align-items:center;font-size:14px;color:var(--muted)}
+.etapas{margin-top:var(--space-5);max-width:520px}
 .pill{padding:var(--space-1) var(--space-3);border-radius:var(--radius-pill);font-weight:600;font-size:13.5px;background:var(--panel);border:1px solid var(--line2);color:var(--ink)}
 .pill.w{background:var(--warn-bg);color:var(--warn);border-color:transparent}.pill.b{background:var(--bad-bg);color:var(--bad);border-color:transparent}
 footer{font-size:12.5px;color:var(--muted);margin-top:28px}
@@ -52,37 +57,81 @@ footer{font-size:12.5px;color:var(--muted);margin-top:28px}
         <span class="go">Abrir painel <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></span>
       </a>
       <a class="card nd-onda" href="./lancar.html">
-        <span class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
+        <span class="ic"><span class="nd-selo" id="seloLancar" hidden></span><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
         <h2>Lançamentos</h2>
         <p>Programar aplicação com produtos e doses, registrar execução com o nº da OS e lançar plantio.</p>
         <span class="go">Abrir formulário <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></span>
       </a>
     </div>
-    <div class="status" id="status" aria-live="polite">Verificando a situação de hoje…</div>
+    <div class="nd-carrega carga" id="carga" aria-busy="true">
+      <div class="esqueleto" aria-hidden="true"><span class="nd-esq" style="width:150px"></span><span class="nd-esq" style="width:96px"></span><span class="nd-esq" style="width:130px"></span></div>
+      <div class="conteudo"><div class="status" id="status" aria-live="polite"></div></div>
+    </div>
+    <div class="nd-cartao etapas" id="etapas" hidden></div>
     <footer>Os dados vêm da planilha Base_Aplicacoes no Google Drive.</footer>
   </div>
 </main>
 <script>
 const DATA_URL = "https://script.google.com/macros/s/AKfycbwxeuEaQ6gyYzEo3yWbs4SPVj529WUWqdp04ObgWcei8J8z4SiuciiEiXBFNg7-R2FrKg/exec";
-(async function(){
-  const el = document.getElementById("status");
+const $ = (id) => document.getElementById(id);
+
+/* Contadores das pendências: os números rolam (Nadiana.rolar) e o selo do cartão Lançamentos acompanha */
+const PILLS = [["venc", "pill b", (n) => n > 1 ? "vencidas" : "vencida"], ["hoje", "pill w", () => "para hoje"], ["em7", "pill", () => "nos próximos 7 dias"]];
+function contar(L){
+  const d = new Date(), hoje = new Date(d.getTime() - d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+  const pend = L.progs.filter(p => !p.done);
+  return {venc: pend.filter(p => p.prog && p.prog < hoje).length, hoje: pend.filter(p => p.prog === hoje).length,
+    em7: pend.filter(p => p.prog > hoje && (Date.parse(p.prog) - Date.parse(hoje)) / 864e5 <= 7).length};
+}
+function pintar(c){
+  const el = $("status");
+  if (!el.dataset.montado) {
+    el.innerHTML = '<span class="lbl">Aplicações pendentes:</span>' + PILLS.map(([k, cl]) => `<span class="${cl}" data-k="${k}" hidden><span class="num">0</span> <span class="tx"></span></span>`).join("") +
+      '<span class="nada" hidden>Nenhuma aplicação pendente para os próximos 7 dias.</span>';
+    el.dataset.montado = "1";
+  }
+  let alguma = false;
+  PILLS.forEach(([k, , tx]) => {
+    const p = el.querySelector(`[data-k="${k}"]`), v = c[k];
+    p.hidden = !v; if (!v) return; alguma = true;
+    Nadiana.rolar(p.querySelector(".num"), v); p.querySelector(".tx").textContent = tx(v);
+  });
+  el.querySelector(".lbl").hidden = !alguma; el.querySelector(".nada").hidden = alguma;
+  const s = $("seloLancar"), n = c.venc + c.hoje;
+  s.classList.toggle("erro", c.venc > 0);
+  s.setAttribute("aria-label", n + (n === 1 ? " aplicação vencida ou para hoje" : " aplicações vencidas ou para hoje"));
+  Nadiana.rolar(s, n);
+}
+
+/* Busca a planilha: esqueleto no lugar dos números; acima de 3 s, a barra com etapas; na primeira carga, a abertura */
+document.addEventListener("DOMContentLoaded", async function(){
+  let L = null;
+  try { L = JSON.parse(localStorage.getItem("lancar.listas") || "null"); } catch(e) {}
+  const temCache = !!(L && L.ok);
+  if (temCache) { pintar(contar(L)); Nadiana.pronto($("carga")); }
+  else Nadiana.abertura("Abrindo as Aplicações");
+  let et = null;
+  const demora = setTimeout(() => {
+    if (temCache) return;
+    Nadiana.abertura.fim();
+    const box = $("etapas"); box.hidden = false;
+    et = Nadiana.etapas(box, ["Conectando à planilha", "Lendo as programações", "Contando as pendências"], {titulo: "Buscando a planilha"});
+  }, 3000);
   try {
-    let L = null;
-    try { L = JSON.parse(localStorage.getItem("lancar.listas") || "null"); } catch(e) {}
     const r = await fetch(DATA_URL + "?acao=listas", {cache:"no-store", redirect:"follow"});
-    const j = await r.json(); if (j.ok) { L = j; try { localStorage.setItem("lancar.listas", JSON.stringify(j)); } catch(e) {} }
+    if (et) et.etapa(1);
+    const j = await r.json();
+    if (et) et.etapa(2);
+    if (j.ok) { L = j; try { localStorage.setItem("lancar.listas", JSON.stringify(j)); } catch(e) {} }
     if (!L || !L.ok) throw new Error();
-    const d = new Date(), hoje = new Date(d.getTime() - d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
-    const pend = L.progs.filter(p => !p.done);
-    const venc = pend.filter(p => p.prog && p.prog < hoje).length, hj = pend.filter(p => p.prog === hoje).length;
-    const em7 = pend.filter(p => p.prog > hoje && (Date.parse(p.prog) - Date.parse(hoje)) / 864e5 <= 7).length;
-    const parts = [];
-    if (venc) parts.push(`<span class="pill b">${venc} vencida${venc>1?"s":""}</span>`);
-    if (hj) parts.push(`<span class="pill w">${hj} para hoje</span>`);
-    if (em7) parts.push(`<span class="pill">${em7} nos próximos 7 dias</span>`);
-    el.innerHTML = parts.length ? "Aplicações pendentes: " + parts.join("") : "Nenhuma aplicação pendente para os próximos 7 dias.";
-  } catch (e) { el.textContent = ""; }
-})();
+    pintar(contar(L));
+  } catch (e) { if (!temCache) $("status").textContent = ""; }
+  finally {
+    clearTimeout(demora);
+    if (et) { et.fim(); setTimeout(() => { $("etapas").hidden = true; }, 600); }
+    Nadiana.pronto($("carga")); Nadiana.abertura.fim();
+  }
+});
 </script>
 </body>
 </html>

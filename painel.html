@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.css">
 <link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/componentes.css">
 <script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.js"></script>
+<script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/icones.js"></script>
 <script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/nadiana.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -34,7 +35,17 @@ button,input,select{font:inherit;color:inherit}
 .muted{color:var(--muted)}
 
 /* topo */
-.top{background:var(--panel)}
+.top{background:var(--panel);view-transition-name:nd-topo}
+.barra{view-transition-name:painel-barra}
+.drawer.sem-anim,.scrim.sem-anim{transition:none}
+/* selo fora do botão, que corta o que passa da borda por causa da onda */
+.selo-ancora{position:relative;display:inline-flex}
+.selo-ancora > .nd-selo{top:-8px;left:auto;right:-8px;z-index:1}
+.kpis-carga .esqueleto{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpis-carga .esqueleto > div{background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius-2xl);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.carga-etapas{margin:16px 0 0}
+body.carregando #emptyState,body.carregando #v-geral > :not(#kpisCarga){display:none}
+body.carregando #v-geral{visibility:visible!important}
 .barra{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--panel);border-bottom:1px solid var(--line2);box-shadow:var(--sombra-1)}
 .barra-inner{max-width:1440px;margin:0 auto;padding:8px 20px 0;display:flex;flex-direction:column;gap:6px}
 .filtros{display:flex;flex-wrap:nowrap;align-items:flex-end;gap:14px;overflow-x:auto;scrollbar-width:thin;padding-bottom:2px}
@@ -248,7 +259,7 @@ tbody tr:hover td{background:var(--panel2)}
         </div>
       </a>
       <div class="acoes">
-        <a class="btn nd-onda primary" href="./lancar.html" style="text-decoration:none"><svg class="gira" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Lançar</a>
+        <span class="selo-ancora"><span class="nd-selo erro" id="seloAtr" role="img" hidden></span><a class="btn nd-onda primary" id="btnLancar" href="./lancar.html" style="text-decoration:none"><svg class="gira" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Lançar</a></span>
         <button type="button" class="btn nd-onda" id="btnPdf" title="Baixar o relatório em PDF com os filtros e o período atuais"><svg class="desce" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Baixar PDF</button>
         <button type="button" class="icon-btn nd-onda" id="btnSync" title="Atualizar: buscar a versão mais recente da planilha no Drive" aria-label="Atualizar dados"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg></button>
         <label class="icon-btn nd-onda" for="file" title="Carregar planilha do computador" aria-label="Carregar planilha do computador" style="cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg></label>
@@ -294,6 +305,7 @@ tbody tr:hover td{background:var(--panel2)}
 </div>
 
 <main class="wrap">
+  <div class="card carga-etapas" id="cargaEtapas" hidden></div>
   <div class="card" id="emptyState" style="margin-top:16px" hidden>
     <h2>Nenhum dado carregado</h2>
     <p class="sub" id="emptyMsg" style="font-size:14px;max-width:640px">Assim que o endereço do script do Google estiver configurado, o painel busca a planilha sozinho. Enquanto isso, use Carregar planilha para abrir o arquivo Base_Aplicacoes no seu computador.</p>
@@ -301,7 +313,10 @@ tbody tr:hover td{background:var(--panel2)}
   <div class="filters" id="filters"></div>
 
   <section class="view on" id="v-geral">
-    <div class="kpis" id="kpis"></div>
+    <div class="nd-carrega kpis-carga" id="kpisCarga" data-pronto>
+      <div class="esqueleto" aria-hidden="true"><div><span class="nd-esq c"></span><span class="nd-esq n"></span><span class="nd-esq l"></span></div><div><span class="nd-esq c"></span><span class="nd-esq n"></span><span class="nd-esq l"></span></div><div><span class="nd-esq c"></span><span class="nd-esq n"></span><span class="nd-esq l"></span></div><div><span class="nd-esq c"></span><span class="nd-esq n"></span><span class="nd-esq l"></span></div><div><span class="nd-esq c"></span><span class="nd-esq n"></span><span class="nd-esq l"></span></div><div><span class="nd-esq c"></span><span class="nd-esq n"></span><span class="nd-esq l"></span></div></div>
+      <div class="conteudo"><div class="kpis" id="kpis"></div></div>
+    </div>
     <div class="grid g-5-7">
       <div class="card">
         <div class="card-head"><div><h2>Situação das aplicações</h2><p class="sub">Clique numa situação para filtrar todo o painel.</p></div></div>
@@ -638,6 +653,11 @@ function syncControls(){
 }
 
 /* ---------- visão geral ---------- */
+function seloAtrasadas(M){
+  const n = M.items.filter((i) => passModo(i) && passOp(i) && i.s === "atrasada").length, s = $("seloAtr");
+  s.setAttribute("aria-label", n + (n === 1 ? " aplicação atrasada" : " aplicações atrasadas"));
+  if (window.Nadiana) Nadiana.rolar(s, n); else { s.textContent = n; s.hidden = !n; }
+}
 function renderKPIs(M){
   const base = M.items.filter((i) => passModo(i) && passOp(i));
   const n = base.length || 1;
@@ -1308,6 +1328,24 @@ function openDrawer(t){
   $("drClose").focus();
 }
 function closeDrawer(){ $("drawer").classList.remove("on"); $("scrim").classList.remove("on"); $("drawer").setAttribute("aria-hidden", "true"); }
+/* Troca de tela da base: a gaveta cresce a partir do cartão ou linha tocada e encolhe de volta para ele.
+   No mapa de talhões (desenho em SVG) ela entra pela direita. Sem View Transitions, fica o deslize próprio da gaveta. */
+const comTroca = () => !!(window.Nadiana && document.startViewTransition) && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+let origemDetalhe = null;
+function semAnim(on){ $("drawer").classList.toggle("sem-anim", on); $("scrim").classList.toggle("sem-anim", on); }
+function abrirDetalhe(el, t){
+  if (!comTroca()) { openDrawer(t); return; }
+  const html = el && !(el instanceof SVGElement);
+  origemDetalhe = html ? el : null; semAnim(true);
+  Nadiana.trocar(() => openDrawer(t), html ? {modo: "cresce", cartao: el, para: $("drawer")} : {modo: "frente", para: $("drawer")}).then(() => semAnim(false));
+}
+function fecharDetalhe(){
+  if (!$("drawer").classList.contains("on")) return;
+  if (!comTroca()) { closeDrawer(); return; }
+  const c = origemDetalhe && origemDetalhe.isConnected && origemDetalhe.getClientRects().length ? origemDetalhe : null;
+  origemDetalhe = null; semAnim(true);
+  Nadiana.trocar(closeDrawer, c ? {modo: "encolhe", cartao: c, de: $("drawer")} : {modo: "volta", de: $("drawer")}).then(() => semAnim(false));
+}
 
 /* ---------- render geral ---------- */
 function render(){
@@ -1317,6 +1355,7 @@ function render(){
   $("filters").style.display = has ? "" : "none";
   if (!has) return;
   const M = build();
+  seloAtrasadas(M);
   renderFilters();
   if (S.tab === "geral") { chartBase(); renderKPIs(M); renderDonut(M); renderOps(M); renderCurve(M); renderLoad(M); renderRitmo(M); renderChuva(M); renderPrio(M); renderProd(M); }
   if (S.tab === "geo") renderGeo(M);
@@ -1424,18 +1463,41 @@ async function getJson(url, ms){
   } catch (e) { if (e.name === "AbortError") throw new Error("o Google demorou mais de " + Math.round((ms||90000)/1000) + " s para responder"); throw e; }
   finally { clearTimeout(to); }
 }
+/* Carregamento: sem dados salvos, a abertura cobre a primeira busca e os indicadores ficam em esqueleto;
+   passando de 3 s (na primeira busca ou no Atualizar), entra a barra com as etapas. */
+const carga = {on: false, et: null, timer: 0, passo: 0};
+function cargaInicio(primeira){
+  if (!window.Nadiana || carga.on) return;
+  carga.on = true; carga.passo = 0;
+  if (primeira) { document.body.classList.add("carregando"); Nadiana.pronto($("kpisCarga"), false); Nadiana.abertura("Abrindo o Painel"); }
+  carga.timer = setTimeout(() => {
+    Nadiana.abertura.fim(); $("cargaEtapas").hidden = false;
+    carga.et = Nadiana.etapas($("cargaEtapas"), ["Conectando ao Drive", "Baixando a planilha", "Lendo talhões e programações"], {titulo: "Buscando a planilha"});
+    if (carga.passo) carga.et.etapa(carga.passo);
+  }, 3000);
+}
+function cargaEtapa(i){ carga.passo = i; if (carga.et) carga.et.etapa(i); }
+function cargaFim(){
+  if (!carga.on) return;
+  carga.on = false; clearTimeout(carga.timer);
+  if (carga.et) { carga.et.fim(); carga.et = null; setTimeout(() => { if (!carga.on) $("cargaEtapas").hidden = true; }, 600); }
+  document.body.classList.remove("carregando"); Nadiana.pronto($("kpisCarga")); Nadiana.abertura.fim();
+}
 async function webRefresh(manual){
   if (!webOn()) { if (manual) toast("O endereço do script ainda não foi configurado no painel."); return; }
   if (busy) return; busy = true; $("btnSync").classList.add("spin");
+  if (!S.db || manual) cargaInicio(!S.db);
   try {
     if (!S.db) dataStatus("busy", "Buscando a planilha no Drive…"); else if (manual) dataStatus("busy", "Verificando a planilha…");
     const meta = await getJson(DATA_URL + (DATA_URL.includes("?") ? "&" : "?") + "meta=1", 45000);
     if (!meta.ok) throw new Error(meta.error || "o script não encontrou a planilha");
     if (!manual && webRefresh.bad === meta.modified) return;
     if (S.db && !S.custom && S.modified === meta.modified) { dataStatus("ok", `Dados em dia: planilha salva em ${fmtDT(meta.modified)}`); if (manual) toast("Nenhuma alteração desde a última leitura."); return; }
+    cargaEtapa(1);
     const t0 = Date.now(); const tick = setInterval(() => dataStatus("busy", `Baixando a versão salva em ${fmtDT(meta.modified)}… ${Math.round((Date.now()-t0)/1000)} s`), 1000);
     let j; try { j = await getJson(DATA_URL, 120000); } finally { clearInterval(tick); }
     if (!j.ok || !j.b64) throw new Error(j.error || "o script não devolveu o arquivo");
+    cargaEtapa(2);
     const bin = atob(j.b64), buf = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
     let db; try { db = readBuffer(buf); } catch (pe) { pe.parse = j.modified || meta.modified; throw pe; }
     webRefresh.bad = null;
@@ -1447,7 +1509,7 @@ async function webRefresh(manual){
     if (e && e.parse) webRefresh.bad = e.parse;
     dataStatus("err", (S.db ? `Não consegui atualizar (${msg}). Mostrando os dados salvos em ${S.modified ? fmtDT(S.modified) : "cache"}.` : `Não consegui buscar a planilha: ${msg}.`));
     if (!S.db) $("emptyMsg").textContent = `Não consegui buscar a planilha no Drive: ${msg}. Você pode usar Carregar planilha enquanto isso.`;
-  } finally { busy = false; $("btnSync").classList.remove("spin"); }
+  } finally { busy = false; $("btnSync").classList.remove("spin"); cargaFim(); }
 }
 
 /* ---------- eventos ---------- */
@@ -1472,9 +1534,10 @@ function bind(){
   $("geoSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.geo = b.dataset.v; [...$("geoSeg").children].forEach(x => x.setAttribute("aria-pressed", String(x === b))); render(); });
   $("geoLbl").addEventListener("change", (e) => { S.geoLbl = e.target.checked; render(); });
   $("btnSync").addEventListener("click", () => { if (S.custom && webOn()) S.custom = false; webRefresh(true); });
-  document.querySelector(".tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (!b) return;
-    S.tab = b.dataset.tab; document.querySelectorAll(".tabs [data-tab]").forEach(x => x.setAttribute("aria-selected", String(x === b)));
-    document.querySelectorAll("section.view").forEach(s => s.classList.toggle("on", s.id === "v-" + S.tab)); render(); });
+  document.querySelector(".tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (!b || b.dataset.tab === S.tab) return;
+    const muda = () => { S.tab = b.dataset.tab; document.querySelectorAll(".tabs [data-tab]").forEach(x => x.setAttribute("aria-selected", String(x === b)));
+      document.querySelectorAll("section.view").forEach(s => s.classList.toggle("on", s.id === "v-" + S.tab)); render(); };
+    if (window.Nadiana) Nadiana.trocar(muda, {modo: "suave"}); else muda(); });
   $("zoomSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.zoom = b.dataset.v; [...$("zoomSeg").children].forEach(x => x.setAttribute("aria-pressed", String(x === b))); render(); });
   $("tmSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.tm = b.dataset.v; [...$("tmSeg").children].forEach(x => x.setAttribute("aria-pressed", String(x === b))); render(); });
   $("gSort").addEventListener("change", (e) => { S.gSort = e.target.value; render(); });
@@ -1484,14 +1547,14 @@ function bind(){
     const st = e.target.closest("[data-st]"); if (st) { if (st.dataset.st === "todas") { S.status = "todas"; render(); } else setFilter("status", st.dataset.st); return; }
     const cl = e.target.closest("[data-clear]"); if (cl) { const k = cl.dataset.clear; if (k==="status"||k==="all") S.status="todas"; if (k==="op"||k==="all") S.op=-1; if (k==="modo"||k==="all") S.modo="todas"; if (k==="per"||k==="all") { S.per="tudo"; S.perA=""; S.perB=""; $("perSel").value="tudo"; $("perA").value=""; $("perB").value=""; syncRef(); } syncControls(); render(); return; }
     const so = e.target.closest("[data-sort]"); if (so) { const k = so.dataset.sort; S.sort = {k, d: S.sort.k === k ? -S.sort.d : 1}; render(); return; }
-    const t = e.target.closest("[data-t]"); if (t && !e.target.closest(".drawer")) openDrawer(t.dataset.t);
+    const t = e.target.closest("[data-t]"); if (t && !e.target.closest(".drawer")) abrirDetalhe(t, t.dataset.t);
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeDrawer();
-    if ((e.key === "Enter" || e.key === " ") && e.target.matches("tr[data-t], rect[data-t]")) { e.preventDefault(); openDrawer(e.target.dataset.t); }
+    if (e.key === "Escape") fecharDetalhe();
+    if ((e.key === "Enter" || e.key === " ") && e.target.matches("tr[data-t], rect[data-t]")) { e.preventDefault(); abrirDetalhe(e.target, e.target.dataset.t); }
   });
-  $("scrim").addEventListener("click", closeDrawer);
-  $("drClose").addEventListener("click", closeDrawer);
+  $("scrim").addEventListener("click", fecharDetalhe);
+  $("drClose").addEventListener("click", fecharDetalhe);
   const tip = $("tip");
   document.addEventListener("mousemove", (e) => {
     const el = e.target.closest && e.target.closest("[data-tip]");

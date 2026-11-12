@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.css">
 <link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/componentes.css">
 <script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.js"></script>
+<script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/icones.js"></script>
 <script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/nadiana.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -18,7 +19,7 @@
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 .app{max-width:640px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
-header.top{background:var(--panel);color:var(--ink);padding:10px 16px 14px;position:sticky;top:env(safe-area-inset-top,0px);z-index:10;border-bottom:1px solid var(--line2);box-shadow:var(--sombra-1)}
+header.top{view-transition-name:nd-topo;background:var(--panel);color:var(--ink);padding:10px 16px 14px;position:sticky;top:env(safe-area-inset-top,0px);z-index:10;border-bottom:1px solid var(--line2);box-shadow:var(--sombra-1)}
 .top-row{display:flex;align-items:center;gap:10px}
 .top-row .nd-simbolo{height:32px}
 .top-row a:has(> .nd-simbolo){margin-right:2px}
@@ -93,6 +94,12 @@ select.inp{appearance:auto}
 .act .n{width:46px;height:46px;border-radius:12px;background:var(--brand-soft);display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:22px;font-weight:600;flex-shrink:0;color:var(--brand)}
 .act .tx{display:flex;flex-direction:column;gap:2px;flex-grow:1}
 .act .t{font-size:17px;font-weight:600}.act .s{font-size:14px;color:var(--muted)}
+.act .n{position:relative}
+.act .n .nd-selo{top:-7px;left:auto;right:-7px}
+.recs-carga .esqueleto{display:flex;flex-direction:column}
+.recs-carga .esqueleto .rec > span{display:flex;flex-direction:column;gap:6px;flex:1}
+.recs-carga .esqueleto .rec .nd-esq.l{width:40%}
+.carga-etapas{margin-bottom:4px}
 .act .badge{font-size:13px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--warn-bg);color:var(--warn);white-space:nowrap}
 .rec{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line2)}
 .rec:last-child{border-bottom:0}
@@ -156,14 +163,18 @@ select.inp{appearance:auto}
 <!-- INÍCIO -->
 <section id="s-home" hidden>
   <main>
+    <div class="card carga-etapas" id="cargaEtapas" hidden></div>
     <div class="card nd-feito" id="feitoHome" hidden role="status"><svg viewBox="0 0 76 76" aria-hidden="true"><circle cx="38" cy="38" r="34" pathLength="1"/><path d="M24 39l10 10 19-21" pathLength="1"/></svg><b id="feitoT">Execução registrada</b><span class="hint" id="feitoS"></span></div>
     <button type="button" class="act nd-onda" data-go="programar"><span class="n">1</span><span class="tx"><span class="t">Programar aplicação</span><span class="s">Talhões, operação, data e produtos</span></span></button>
-    <button type="button" class="act nd-onda" data-go="executar"><span class="n">2</span><span class="tx"><span class="t">Registrar execução</span><span class="s">Data, área aplicada e nº da OS do Protector</span></span><span class="badge" id="bPend" hidden></span></button>
+    <button type="button" class="act nd-onda" data-go="executar"><span class="n">2<span class="nd-selo erro" id="sVenc" role="img" hidden></span></span><span class="tx"><span class="t">Registrar execução</span><span class="s">Data, área aplicada e nº da OS do Protector</span></span><span class="badge" id="bPend" hidden></span></button>
     <button type="button" class="act nd-onda" data-go="chuva"><span class="n" style="font-size:20px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 16a5 5 0 1 1 1.5-9.8A6 6 0 0 1 20 9a4 4 0 0 1-1 7.9M8 19l-1 2M12 19l-1 2M16 19l-1 2"/></svg></span><span class="tx"><span class="t">Chuva</span><span class="s">Registrar a pluviometria do dia</span></span><span class="badge" id="bChuva" hidden></span></button>
     <button type="button" class="act nd-onda" data-go="talhoes"><span class="n">4</span><span class="tx"><span class="t">Talhões e plantio</span><span class="s">Lançar plantio em vários ou cadastrar talhão</span></span><span class="badge" id="bPlant" hidden></span></button>
     <div class="card" style="gap:4px">
       <h2 style="margin-bottom:6px">Últimos lançamentos</h2>
-      <div id="recentes"><div class="empty">Carregando…</div></div>
+      <div class="nd-carrega recs-carga" id="recsCarga" aria-busy="true">
+        <div class="esqueleto" aria-hidden="true"><div class="rec"><span><span class="nd-esq t"></span><span class="nd-esq l"></span></span><span class="nd-esq c"></span></div><div class="rec"><span><span class="nd-esq t"></span><span class="nd-esq l"></span></span><span class="nd-esq c"></span></div><div class="rec"><span><span class="nd-esq t"></span><span class="nd-esq l"></span></span><span class="nd-esq c"></span></div></div>
+        <div class="conteudo"><div id="recentes"></div></div>
+      </div>
     </div>
     <button type="button" class="back" id="btnCfg" style="color:var(--muted);align-self:center;font-size:14px">Trocar usuário ou senha</button>
   </main>
@@ -327,18 +338,37 @@ const webOn = () => /^https:\/\/script\.google(usercontent)?\.com\//.test(DATA_U
 
 /* ---------- comunicação ---------- */
 async function getListas(){
-  if (!webOn()) { net("err", "Endereço do script não configurado"); return; }
+  if (!webOn()) { net("err", "Endereço do script não configurado"); if (!L) { $("recentes").innerHTML = '<div class="empty">Sem lançamentos para mostrar.</div>'; Nadiana.pronto($("recsCarga")); } return; }
   net("busy", "Atualizando listas…");
+  const c = !L ? cargaInicio() : null;
   try {
     const r = await fetch(DATA_URL + "?acao=listas", {cache:"no-store", redirect:"follow"});
+    if (c) c.etapa(1);
     const j = await r.json();
     if (!j.ok) throw new Error(j.error || "erro no script");
+    if (c) c.etapa(2);
     L = j; lsSet("lancar.listas", JSON.stringify(j));
     net("vivo", "Listas atualizadas às " + new Date().toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}));
     refreshAll();
   } catch (e) {
     net("err", navigator.onLine === false ? "Sem internet. Mostrando as últimas listas salvas." : "Não consegui atualizar as listas (" + (e.message || e) + ")");
-  }
+    if (!L) { $("recentes").innerHTML = '<div class="empty">Não consegui buscar os lançamentos.</div>'; Nadiana.pronto($("recsCarga")); }
+  } finally { if (c) c.fim(); }
+}
+/* Primeira busca sem listas salvas: a abertura cobre a espera e os últimos lançamentos ficam em esqueleto;
+   passando de 3 s, a barra com etapas mostra onde está. */
+function cargaInicio(){
+  let et = null, passo = 0;
+  if (cfg.nome && cfg.cod) Nadiana.abertura("Abrindo os Lançamentos");
+  const timer = setTimeout(() => {
+    Nadiana.abertura.fim(); $("cargaEtapas").hidden = false;
+    et = Nadiana.etapas($("cargaEtapas"), ["Conectando à planilha", "Lendo talhões e programações", "Montando as listas"], {titulo: "Buscando a planilha"});
+    if (passo) et.etapa(passo);
+  }, 3000);
+  return {
+    etapa(i){ passo = i; if (et) et.etapa(i); },
+    fim(){ clearTimeout(timer); Nadiana.abertura.fim(); if (et) { et.fim(); setTimeout(() => { $("cargaEtapas").hidden = true; }, 600); } }
+  };
 }
 async function enviar(payload){
   if (!webOn()) throw new Error("O endereço do script ainda não foi configurado.");
@@ -355,8 +385,16 @@ async function enviar(payload){
 /* ---------- navegação ---------- */
 const TITULOS = {home:["Lançamentos","Programação, execução e plantio"], programar:["Programar aplicação","Uma programação para vários talhões de uma vez"],
   executar:["Registrar execução","Liga a aplicação feita à programação e à OS"], talhoes:["Talhões e plantio","Datas de plantio e cadastro"], chuva:["Chuva","Pluviometria diária"], config:["Lançamentos","Entrar neste aparelho"]};
+/* Troca de tela da base: "frente" ao abrir uma tela a partir do início, "volta" ao voltar para ele, "suave" entre as outras */
+let telaAtual = null;
 function show(tela){
   if (!cfg.nome || !cfg.cod) tela = "config";
+  const de = telaAtual; telaAtual = tela;
+  if (!de || de === tela) { mostra(tela); return; }
+  const modo = tela === "home" ? "volta" : de === "home" ? "frente" : "suave";
+  Nadiana.trocar(() => mostra(tela), {modo, de: $("s-" + de), para: $("s-" + tela)});
+}
+function mostra(tela){
   document.querySelectorAll("section[id^=s-]").forEach(s => s.hidden = s.id !== "s-" + tela);
   $("btnBack").hidden = tela === "home" || (tela === "config" && !(cfg.nome && cfg.cod));
   $("brandMini").hidden = !$("btnBack").hidden;
@@ -388,9 +426,12 @@ function statusTxt(p){
 /* ---------- início ---------- */
 function renderHome(){
   const np = new Set(pendentes().map(p => p.t)).size;
-  $("bPend").hidden = !np; $("bPend").textContent = np + (np === 1 ? " talhão" : " talhões");
+  contador("bPend", np, np === 1 ? " talhão" : " talhões");
+  const nv = pendentes().filter(p => statusTxt(p)[1] === "b").length;
+  $("sVenc").setAttribute("aria-label", nv + (nv === 1 ? " programação vencida" : " programações vencidas"));
+  Nadiana.rolar($("sVenc"), nv);
   const sp = L.talhoes.filter(t => t.ativo && !t.plantio).length;
-  $("bPlant").hidden = !sp; $("bPlant").textContent = sp + " sem plantio";
+  contador("bPlant", sp, " sem plantio");
   const ch = (L.chuvas || []).filter(c => c.data === hojeIso());
   $("bChuva").hidden = false; $("bChuva").textContent = ch.length ? "hoje: " + ha(ch.reduce((s, c) => s + c.mm, 0) / ch.length, 1) + " mm" : "sem registro hoje";
   const P = Object.fromEntries(L.progs.map(p => [p.id, p]));
@@ -407,6 +448,13 @@ function renderHome(){
     const ts = g.itens.map(i => (P[i.id] || {}).t || i.id), op = (P[g.r.id] || {}).op || "";
     return `<div class="rec"><span><b>Execução ${ts.map(esc).join(", ")}</b><small>${esc(op)}, aplicada em ${fd(g.r.data)}</small></span><small style="text-align:right">${quando}<br>${esc(g.r.quem)}</small></div>`;
   }).join("") : '<div class="empty">Nenhum lançamento feito pelo formulário ainda.</div>';
+  Nadiana.pronto($("recsCarga"));
+}
+/* Contador no selo do cartão: só o número rola (Nadiana.rolar), a unidade fica parada */
+function contador(id, n, unidade){
+  const b = $(id); b.hidden = !n; if (!n) return;
+  if (!b.querySelector(".q")) b.innerHTML = '<span class="q"></span><span class="u"></span>';
+  Nadiana.rolar(b.querySelector(".q"), n); b.querySelector(".u").textContent = unidade;
 }
 
 /* ---------- programar ---------- */
