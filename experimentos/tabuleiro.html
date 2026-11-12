@@ -96,6 +96,8 @@ details[open] > summary > .seta{transform:rotate(180deg)}
 .leg .leg-tit{font-weight:600}
 /* ensaio travado: estrutura só para consulta */
 .passo-d.travado > .corpo{opacity:.62}
+.nd-menu > button.perigo{color:var(--bad)}
+#cargaMapa:empty{display:none}
 .passo-d.travado > summary .passo::after{content:"Travado";margin-left:var(--space-2);font:600 12px var(--font-body);color:var(--muted);border:1px solid var(--line2);border-radius:var(--radius-pill);padding:1px var(--space-2)}
 .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3)}
 .kpis .nd-kpi .val{font-size:28px}
@@ -164,7 +166,7 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 </head>
 <body>
 <div class="nd-app">
-  <nav class="nd-nav" aria-label="Principal">
+  <nav class="nd-nav desliza" aria-label="Principal">
     <div class="marca"><span class="nd-logo"><img src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-logo-vertical.svg" alt="Nadiana Agronegócios"></span></div>
     <a href="./#lembretes"><svg class="nd-ic" aria-hidden="true"><use href="#i-bell"/></svg>Lembretes</a>
     <a href="./#experimentos"><svg class="nd-ic" aria-hidden="true"><use href="#i-sprout"/></svg>Experimentos</a>
@@ -187,7 +189,8 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
     <main class="nd-wrap largo">
       <div class="layout">
         <div class="mapcol">
-          <div class="nd-seg ver-mapa" id="verMapa" role="group" aria-label="O que o mapa mostra" hidden></div>
+          <div class="nd-seg desliza ver-mapa" id="verMapa" role="group" aria-label="O que o mapa mostra" hidden></div>
+          <div class="nd-cartao" id="cargaMapa"></div>
           <div id="mapa" role="region" aria-label="Mapa do ensaio"></div>
           <p class="mapmsg" id="mapMsg" aria-live="polite">Carregando o mapa dos talhões…</p>
           <div class="leg" id="legenda" aria-label="Legenda"></div>
@@ -202,13 +205,20 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
             </label>
             <p class="dica" id="ensInfo"></p>
             <div class="nd-msg ok" id="travaInfo" hidden></div>
-            <div class="nd-seg" id="ensFiltro" role="group" aria-label="Quais ensaios mostrar na lista">
+            <div class="nd-seg desliza" id="ensFiltro" role="group" aria-label="Quais ensaios mostrar na lista">
               <button type="button" data-v="talhao" aria-pressed="true">Deste talhão</button>
               <button type="button" data-v="todos" aria-pressed="false">Todos os talhões</button>
             </div>
             <div class="acoes-l">
               <button class="nd-btn nd-onda" type="button" id="btnNovoEnsaio"><svg class="nd-ic gira" aria-hidden="true"><use href="#i-plus"/></svg><span>Novo ensaio</span></button>
               <button class="nd-btn primario nd-onda" type="button" id="btnSalvarEnsaio"><svg class="nd-ic" aria-hidden="true"><use href="#i-check"/></svg><span>Salvar ensaio</span></button>
+              <span class="nd-menu-ancora" id="ensMaisBox" hidden><button class="nd-btn nd-onda" type="button" id="btnEnsMais" data-nd-menu="menuEns" aria-haspopup="menu" aria-expanded="false" aria-label="Mais ações do ensaio aberto"><svg class="nd-ic" aria-hidden="true"><use href="#i-ellipsis"/></svg></button>
+                <div class="nd-menu esquerda" id="menuEns" role="menu">
+                  <button type="button" role="menuitem" data-ens="novo"><svg class="nd-ic" aria-hidden="true"><use href="#i-copy"/></svg>Salvar como novo</button>
+                  <button type="button" role="menuitem" data-ens="travar"><svg class="nd-ic" aria-hidden="true"><use href="#i-circle-check"/></svg>Travar ensaio</button>
+                  <button type="button" role="menuitem" data-ens="destravar"><svg class="nd-ic" aria-hidden="true"><use href="#i-x"/></svg>Destravar</button>
+                  <button type="button" role="menuitem" class="perigo" data-ens="apagar"><svg class="nd-ic" aria-hidden="true"><use href="#i-trash-2"/></svg>Apagar ensaio</button>
+                </div></span>
               <button class="nd-btn nd-onda" type="button" id="btnSalvarNovo" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-copy"/></svg>Salvar como novo</button>
               <button class="nd-btn leve nd-onda" type="button" id="btnApagarEnsaio" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-trash-2"/></svg><span>Apagar ensaio aberto</span></button>
               <button class="nd-btn nd-onda" type="button" id="btnTravar" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-circle-check"/></svg><span>Travar ensaio</span></button>
@@ -297,7 +307,7 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
                 <div class="posicao" id="posBox">
                   <div class="nd-campo">
                     <span>Cabeceira de referência</span>
-                    <div class="nd-seg" id="inicioLado" role="group" aria-label="Cabeceira de referência">
+                    <div class="nd-seg desliza" id="inicioLado" role="group" aria-label="Cabeceira de referência">
                       <button type="button" data-v="A" aria-pressed="true" id="iniA">Lado A</button>
                       <button type="button" data-v="B" aria-pressed="false" id="iniB">Lado B</button>
                     </div>
@@ -368,7 +378,7 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
               <summary><h2 class="passo"><span class="n">4</span>Tratamentos</h2><span class="resumo" id="res-trat"></span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
               <div class="corpo">
                 <div class="nd-campo">Os tratamentos são
-                  <div class="nd-seg" id="modo" role="group" aria-label="Tipo de tratamento">
+                  <div class="nd-seg desliza" id="modo" role="group" aria-label="Tipo de tratamento">
                     <button type="button" data-v="produtos" aria-pressed="true">Produtos diferentes</button>
                     <button type="button" data-v="doses" aria-pressed="false">Vazões diferentes</button>
                   </div>
@@ -1287,6 +1297,12 @@ async function renderSalvos(){
   const aberto = S.ensaioId && SALVOS.ensaios.find(e => e.id === S.ensaioId);
   $("btnSalvarEnsaio").querySelector("span").textContent = aberto ? `Salvar alterações em "${aberto.nome}"` : "Salvar ensaio";
   $("btnSalvarNovo").hidden = !aberto || !SALVOS.podeEscrever; $("btnSalvarEnsaio").hidden = !SALVOS.podeEscrever;
+  // ações extras no menu ⋯: cada item aparece quando a ação vale; o botão de fora só aparece no segundo toque (confirmar)
+  const itens = {novo:"btnSalvarNovo", travar:"btnTravar", destravar:"btnDestravar", apagar:"btnApagarEnsaio"};
+  Object.entries(itens).forEach(([k, id]) => { $("menuEns").querySelector(`[data-ens="${k}"]`).hidden = $(id).hidden; });
+  $("ensMaisBox").hidden = Object.values(itens).every(id => $(id).hidden);
+  const conf = {btnSalvarNovo:null, btnTravar:SALVOS.confTrava, btnDestravar:SALVOS.confDestrava, btnApagarEnsaio:SALVOS.confApagar};
+  Object.entries(conf).forEach(([id, c]) => { if (!(ab && c === ab.id)) $(id).hidden = true; });
   if (!$("ensMsg").dataset.fixo) $("ensMsg").textContent = SALVOS.pronto ? SALVOS.ondeTxt : "Carregando…";
 }
 function msgSalvos(id, texto){ const el = $(id); el.textContent = texto; el.dataset.fixo = "1"; clearTimeout(el._t); el._t = setTimeout(() => { delete el.dataset.fixo; renderSalvos(); }, 6000); }
@@ -1405,7 +1421,7 @@ function aplMsg(tipo, texto){ $("aplMsg").innerHTML = texto ? `<div class="nd-ms
 function renderAplic(forcar){
   const aps = aplicacoes(); if (APL >= aps.length) APL = Math.max(0, aps.length - 1); if (VER >= aps.length) VER = -1;
   const sig = JSON.stringify([aps.length, APL, APL_CONF, S.trats.map(t => [t.cod, t.nome, t.cor, t.dose])]);
-  if (forcar || sig !== APL_SIG) { APL_SIG = sig; montarAplic(); }
+  if (forcar || sig !== APL_SIG) { APL_SIG = sig; montarAplic(); pilulas(); }
   renderTanques(); renderVerMapa();
   $("btnAddApl").disabled = aps.length >= MAX_APL;
 }
@@ -1413,7 +1429,7 @@ function montarAplic(){ // só remonta quando muda a estrutura: assim o que est�
   const aps = aplicacoes(), box = $("aplBox"); $("aplDica").hidden = aps.length > 0;
   if (!aps.length) { box.innerHTML = ""; return; }
   const ap = aps[APL];
-  box.innerHTML = `<div class="nd-seg" id="aplSeg" role="group" aria-label="Aplicação aberta">${aps.map((a, k) => `<button type="button" data-apl="${k}" aria-pressed="${k === APL}">${rotAba(a, k)}</button>`).join("")}</div>
+  box.innerHTML = `<div class="nd-seg desliza" id="aplSeg" role="group" aria-label="Aplicação aberta">${aps.map((a, k) => `<button type="button" data-apl="${k}" aria-pressed="${k === APL}">${rotAba(a, k)}</button>`).join("")}</div>
     <div class="apl-cab">
       <label class="nd-campo nome">Nome<input class="nd-inp" data-ap="nome" value="${esc(ap.nome || "")}" placeholder="${APL + 1}ª aplicação" autocomplete="off" maxlength="40"></label>
       <label class="nd-campo">Data<input class="nd-inp" type="date" data-ap="data" value="${esc(ap.data || "")}"></label>
@@ -1442,7 +1458,9 @@ function renderTanques(){
 function renderVerMapa(){
   const aps = aplicacoes(), el = $("verMapa"); el.hidden = !aps.length; if (!aps.length) { el.innerHTML = ""; return; }
   el.innerHTML = `<button type="button" data-ver="-1" aria-pressed="${VER < 0}">Tratamentos</button>` + aps.map((a, k) => `<button type="button" data-ver="${k}" aria-pressed="${VER === k}">${rotAba(a, k)}</button>`).join("");
+  pilulas();
 }
+function pilulas(){ if (window.Nadiana && Nadiana.pilulas) requestAnimationFrame(() => Nadiana.pilulas()); } // seletor redesenhado: a pílula volta para a opção escolhida
 function verNoMapa(v){ VER = v; if (v >= 0) APL = v; renderAplic(true); desenharGrade(); renderLegenda(); }
 function vazaoApOk(a){
   const ap = aplicacoes()[a], v = num(ap.vazao); if (isFinite(v) && v > 0) return true;
@@ -1478,7 +1496,7 @@ $("btnAddApl").addEventListener("click", () => {
 });
 $("verMapa").addEventListener("click", e => { const b = e.target.closest("[data-ver]"); if (b) verNoMapa(+b.dataset.ver); });
 $("aplBox").addEventListener("click", e => {
-  const ab = e.target.closest("[data-apl]"); if (ab) { APL_CONF = null; aplMsg("", ""); verNoMapa(+ab.dataset.apl); return; }
+  const ab = e.target.closest("[data-apl]"); if (ab) { APL_CONF = null; aplMsg("", ""); const k = +ab.dataset.apl; if (k !== APL && window.Nadiana && Nadiana.trocar) Nadiana.trocar(() => verNoMapa(k), {modo:"suave", para:$("aplBox")}); else verNoMapa(k); return; }
   const tq = e.target.closest("[data-tanque]"); if (tq) { baixarTanque(APL, +tq.dataset.tanque); return; }
   if (e.target.closest("[data-semapl]")) { baixarSemAplic(APL); return; }
   if (e.target.closest("#btnApagarApl")) {
@@ -1499,6 +1517,11 @@ $("aplBox").addEventListener("change", e => { const ap = aplicacoes()[APL], el =
   if (el.dataset.ap === "vazao" && el.value.trim()) { const v = num(el.value); if (!(v > 0)) { aplMsg("erro", "<b>Vazão inválida</b>Use L/ha, por exemplo 50."); return; } if (String(Math.round(v)) !== el.value.trim()) { ap.vazao = String(Math.round(v)); el.value = ap.vazao; salvar(); aviso(`Vazão arredondada para ${ap.vazao} L/ha: a taxa vai como número inteiro.`); } }
   if (el.dataset.calda || el.dataset.ap === "nome") { const v = normCalda(el.value); if (v !== el.value) { el.value = v; if (el.dataset.calda) ap.caldas[el.dataset.calda] = v; else ap.nome = v; salvar(); } } });
 
+$("menuEns").addEventListener("click", e => {
+  const b = e.target.closest("[data-ens]"); if (!b) return;
+  const id = {novo:"btnSalvarNovo", travar:"btnTravar", destravar:"btnDestravar", apagar:"btnApagarEnsaio"}[b.dataset.ens]; if (!id) return;
+  $(id).click(); setTimeout(() => { const x = $(id); if (!x.hidden) x.focus(); else if (!$("ensaioForm").hidden) $("ensaioNome").focus(); }, 160);
+});
 /* ---------- trava: com o projeto em andamento, a estrutura do ensaio não muda por um clique errado ---------- */
 var TRAVA_OK = null; // null: não travado; true: o desenho de hoje bate com a fotografia; false: não bate
 const PASSOS_TRAVADOS = ["talhao", "pista", "tamanho", "trat"];
@@ -1940,11 +1963,17 @@ function deGeoJSON(gj){
 }
 async function carregarMapa(){
   let c = null; try { c = JSON.parse(lsGet("lancar.mapa") || "null"); } catch (e) {}
+  const N = window.Nadiana, primeira = !c, carga = {c:null, i:0, t:null}, etapa = i => { carga.i = i; if (carga.c) carga.c.etapa(i); };
+  if (primeira && N && N.abertura) { // primeira vez neste aparelho: abertura com o símbolo; passando de 3 s, a barra com etapas
+    N.abertura("Abrindo o Tabuleiro");
+    carga.t = setTimeout(() => { N.abertura.fim(); if (N.etapas) { carga.c = N.etapas($("cargaMapa"), ["Conectando à planilha", "Baixando o mapa dos talhões", "Desenhando os talhões"], {titulo:"Buscando o mapa da fazenda"}); carga.c.etapa(carga.i); } }, 3000);
+  }
   try {
-    const m = await (await fetch(DATA_URL + "?acao=mapa&meta=1", {cache:"no-store", redirect:"follow"})).json();
-    if (m.ok && (!c || c.modified !== m.modified)) { const j = await (await fetch(DATA_URL + "?acao=mapa", {cache:"no-store", redirect:"follow"})).json();
+    const m = await (await fetch(DATA_URL + "?acao=mapa&meta=1", {cache:"no-store", redirect:"follow"})).json(); etapa(1);
+    if (m.ok && (!c || c.modified !== m.modified)) { const j = await (await fetch(DATA_URL + "?acao=mapa", {cache:"no-store", redirect:"follow"})).json(); etapa(2);
       if (j.ok) { c = {modified:j.modified, gj:JSON.parse(j.geojson)}; lsSet("lancar.mapa", JSON.stringify(c)); } }
   } catch (e) {}
+  finally { clearTimeout(carga.t); if (N && N.abertura && primeira) N.abertura.fim(); if (carga.c) { carga.c.fim(); $("cargaMapa").innerHTML = ""; $("cargaMapa").className = "nd-cartao"; } }
   return c && c.gj ? deGeoJSON(c.gj) : [];
 }
 
@@ -1965,6 +1994,7 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustarAlt
   iniciarSalvos();
   iniciarMapa();
   juntarTalhoes([]); preencherLista(); desenharTalhoes();
+  if (document.readyState === "loading") await new Promise(r => document.addEventListener("DOMContentLoaded", r, {once:true})); // nadiana.js (defer) pronto para a abertura
   const faz = await carregarMapa();
   juntarTalhoes(faz); preencherLista(); desenharTalhoes();
   if (!TALHOES.length) { $("mapMsg").textContent = "Não consegui carregar o mapa da fazenda. Importe o limite do talhão em shapefile, GeoPackage, KML ou GeoJSON."; renderLegenda(); renderResumo(); return; }
