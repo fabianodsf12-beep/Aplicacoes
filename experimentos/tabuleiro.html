@@ -94,6 +94,9 @@ details[open] > summary > .seta{transform:rotate(180deg)}
 .apl-cab .nome{grid-column:1 / -1}
 #btnPdf,#rxBtns .nd-btn,.tanque .nd-btn{white-space:normal;text-align:left;height:auto;min-height:44px;overflow-wrap:anywhere} /* nomes longos de tratamento quebram a linha em vez de sair do cartão */
 .leg .leg-tit{font-weight:600}
+/* ensaio travado: estrutura só para consulta */
+.passo-d.travado > .corpo{opacity:.62}
+.passo-d.travado > summary .passo::after{content:"Travado";margin-left:var(--space-2);font:600 12px var(--font-body);color:var(--muted);border:1px solid var(--line2);border-radius:var(--radius-pill);padding:1px var(--space-2)}
 .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3)}
 .kpis .nd-kpi .val{font-size:28px}
 .leg{display:flex;flex-wrap:wrap;gap:var(--space-2) var(--space-4);font-size:13.5px}
@@ -198,6 +201,7 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
               <select class="nd-inp" id="ensSel"><option value="">Carregando…</option></select>
             </label>
             <p class="dica" id="ensInfo"></p>
+            <div class="nd-msg ok" id="travaInfo" hidden></div>
             <div class="nd-seg" id="ensFiltro" role="group" aria-label="Quais ensaios mostrar na lista">
               <button type="button" data-v="talhao" aria-pressed="true">Deste talhão</button>
               <button type="button" data-v="todos" aria-pressed="false">Todos os talhões</button>
@@ -207,6 +211,8 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
               <button class="nd-btn primario nd-onda" type="button" id="btnSalvarEnsaio"><svg class="nd-ic" aria-hidden="true"><use href="#i-check"/></svg><span>Salvar ensaio</span></button>
               <button class="nd-btn nd-onda" type="button" id="btnSalvarNovo" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-copy"/></svg>Salvar como novo</button>
               <button class="nd-btn leve nd-onda" type="button" id="btnApagarEnsaio" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-trash-2"/></svg><span>Apagar ensaio aberto</span></button>
+              <button class="nd-btn nd-onda" type="button" id="btnTravar" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-circle-check"/></svg><span>Travar ensaio</span></button>
+              <button class="nd-btn leve nd-onda" type="button" id="btnDestravar" hidden><span>Destravar</span></button>
             </div>
             <div class="salvar-form" id="ensaioForm" hidden>
               <label class="nd-campo">Nome do ensaio<input class="nd-inp" id="ensaioNome" autocomplete="off" maxlength="80"></label>
@@ -662,7 +668,7 @@ function desenharTalhoes(){
     const sel = t.nome === S.talhao;
     const pg = L.polygon(t.rings.map(r => r.map(p => [p[1], p[0]])), {color: sel ? COR.limite : COR.branco, weight: sel ? 3 : 1.2, fillOpacity: sel ? 0 : .08, fillColor: COR.branco, interactive: !sel});
     pg.bindTooltip(esc(t.nome), {permanent:!sel, direction:"center", className:"tlbl"});
-    pg.on("click", () => { if (medir) return; escolherTalhao(t.nome, true); });
+    pg.on("click", () => { if (medir || t.nome === S.talhao) return; escolherTalhao(t.nome, true); }); // clicar no próprio talhão não zera a pista nem a posição
     pg.addTo(LT);
   });
 }
@@ -801,7 +807,7 @@ function renderResumo(){
   av.innerHTML = msgs.map(([c, t, d]) => `<div class="nd-msg ${c}"><svg class="nd-ic" aria-hidden="true"><use href="#i-${c === "erro" ? "circle-x" : c === "aviso" ? "triangle-alert" : "info"}"/></svg><div><b>${t}</b>${d}</div></div>`).join("");
 }
 function atualizar(){
-  calcular(); desenharGrade(); renderLegenda(); renderResumo(); renderRxBtns(); travarSemPontoA(); renderPistas(); renderAplic();
+  calcular(); aplicarTrava(); desenharGrade(); renderLegenda(); renderResumo(); renderRxBtns(); travarSemPontoA(); renderPistas(); renderAplic();
   $("posInfo").textContent = $("posInfo2").textContent = textoPosicao();
   const t = talhaoAtual();
   $("talInfo").textContent = t && GRADE ? `${t.nome}: ${fmt(GRADE.areaTal, 2)} ha${t.origem === "importado" ? " (limite importado)" : ""}.` : "";
@@ -827,6 +833,7 @@ const DOBRAS = "tabuleiro.dobras";
     el.addEventListener("toggle", () => { d[el.dataset.dobra] = el.open; lsSet(DOBRAS, JSON.stringify(d)); }); }); })();
 const abrirAte = el => { for (let d = el && el.closest("details"); d; d = d.parentElement && d.parentElement.closest("details")) d.open = true; };
 function escolherTalhao(nome, ajustar){
+  if (ajustar && S.travado) { $("talhao").value = S.talhao; aviso("Ensaio travado: para outro talhão, toque em Novo ensaio"); return; }
   S.talhao = nome; $("talhao").value = nome;
   if (ajustar) { S.ang = null; S.rumoFixo = false; S.pontoA = null; S.pontoB = null; S.abTxt = null; S.linhaId = null; S.ensaioId = null; ajustarAoTalhao(); }
   salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar();
@@ -1262,7 +1269,7 @@ async function renderSalvos(){
   const tok = SALVOS.tok = (SALVOS.tok || 0) + 1;
   const nomes = await nomesDe([...new Set(es.map(e => e.por).filter(Boolean))]);
   if (tok !== SALVOS.tok) return; // uma atualização mais nova já desenhou a lista
-  const selE = $("ensSel"), rotulo = e => `${e.nome} · ${todos ? e.talhao + " · " : ""}${dataHora(e.atualizadoEm || e.criadoEm)}`;
+  const selE = $("ensSel"), rotulo = e => `${e.nome} · ${todos ? e.talhao + " · " : ""}${e.plano && e.plano.travado ? "travado · " : ""}${dataHora(e.atualizadoEm || e.criadoEm)}`;
   selE.innerHTML = (es.length ? `<option value="">Escolha um ensaio salvo (${es.length})</option>` : `<option value="">Nenhum ensaio salvo${todos ? "" : " neste talhão"}</option>`)
     + es.map(e => `<option value="${esc(e.id)}">${esc(rotulo(e))}</option>`).join("");
   selE.value = es.some(e => e.id === S.ensaioId) ? S.ensaioId : "";
@@ -1270,7 +1277,11 @@ async function renderSalvos(){
   if (ab) { const pl = ab.plano || {}, nt = (pl.trats || []).length;
     $("ensInfo").textContent = `Aberto: ${ab.nome} · ${ab.talhao} · ${nt} tratamentos · ${pl.nC || "?"} × ${pl.nR || "?"} quadrados${ab.resumo ? " · " + ab.resumo : ""} · salvo em ${dataHora(ab.atualizadoEm || ab.criadoEm)}${ab.por && nomes[ab.por] && nomes[ab.por].name ? " por " + nomes[ab.por].name : ""}.`; }
   else $("ensInfo").textContent = es.length ? "O que está na tela ainda não foi salvo. Escolha um ensaio na lista para abrir, ou salve este." : "Monte o ensaio e toque em Salvar ensaio. Ele entra nesta lista para abrir depois, com posição, tratamentos e vazões.";
-  $("btnApagarEnsaio").hidden = !ab || !SALVOS.podeEscrever;
+  $("btnApagarEnsaio").hidden = !ab || !SALVOS.podeEscrever || !!S.travado;
+  $("btnTravar").hidden = !ab || !SALVOS.podeEscrever || !!S.travado;
+  $("btnTravar").querySelector("span").textContent = SALVOS.confTrava && ab && SALVOS.confTrava === ab.id ? "Toque de novo para travar como está na tela" : "Travar ensaio";
+  $("btnDestravar").hidden = !ab || !SALVOS.podeEscrever || !S.travado;
+  $("btnDestravar").querySelector("span").textContent = SALVOS.confDestrava && ab && SALVOS.confDestrava === ab.id ? "Toque de novo para destravar" : "Destravar";
   $("btnApagarEnsaio").querySelector("span").textContent = SALVOS.confApagar && ab && SALVOS.confApagar === ab.id ? `Toque de novo para apagar "${ab.nome}"` : "Apagar ensaio aberto";
   $("btnNovoEnsaio").querySelector("span").textContent = SALVOS.confNovo ? "Toque de novo: zera tudo" : "Novo ensaio";
   const aberto = S.ensaioId && SALVOS.ensaios.find(e => e.id === S.ensaioId);
@@ -1316,6 +1327,7 @@ function abrirFormEnsaio(novo){ $("ensaioForm").hidden = false; $("ensaioForm").
 $("btnSalvarEnsaio").addEventListener("click", async () => {
   const aberto = S.ensaioId && SALVOS.ensaios.find(e => e.id === S.ensaioId);
   if (!aberto) { abrirFormEnsaio(true); return; }
+  if (S.travado && TRAVA_OK === false) { msgSalvos("ensMsg", "Não salvei: o tabuleiro de hoje não bate com o travado."); return; }
   try { await ARMAZEM.gravar("ensaios", aberto.id, {nome:aberto.nome, talhao:S.talhao, plano:planoParaSalvar(), resumo:resumoEnsaio(), criadoEm:aberto.criadoEm || agoraISO(), atualizadoEm:agoraISO(), por:SALVOS.uid || aberto.por || null});
     aviso(`Ensaio "${aberto.nome}" salvo`); }
   catch (e) { msgSalvos("ensMsg", erroSalvar(e)); }
@@ -1324,10 +1336,11 @@ $("btnSalvarNovo").addEventListener("click", () => abrirFormEnsaio(true));
 $("ensaioCancel").addEventListener("click", () => { $("ensaioForm").hidden = true; });
 $("ensaioOk").addEventListener("click", async () => {
   const nome = $("ensaioNome").value.trim() || `TAB ${S.talhao}`, b = $("ensaioOk"), id = idNovo(); b.disabled = true;
+  const tv = S.travado, th = S.travaHist; delete S.travado; delete S.travaHist; // a cópia nasce destravada
   try { const agora = agoraISO();
     await ARMAZEM.gravar("ensaios", id, {nome, talhao:S.talhao, plano:planoParaSalvar(), resumo:resumoEnsaio(), por:SALVOS.uid, criadoEm:agora, atualizadoEm:agora});
-    S.ensaioId = id; if (!S.codigo) S.codigo = nome; salvar(); preencherCampos(); $("ensaioForm").hidden = true; aviso(`Ensaio "${nome}" salvo`); renderSalvos(); }
-  catch (e) { msgSalvos("ensMsg", erroSalvar(e)); }
+    S.ensaioId = id; if (!S.codigo) S.codigo = nome; salvar(); preencherCampos(); atualizar(); $("ensaioForm").hidden = true; aviso(`Ensaio "${nome}" salvo`); renderSalvos(); }
+  catch (e) { if (tv) S.travado = tv; if (th) S.travaHist = th; msgSalvos("ensMsg", erroSalvar(e)); }
   finally { b.disabled = false; }
 });
 $("ensFiltro").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; [...$("ensFiltro").children].forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderSalvos(); });
@@ -1438,6 +1451,7 @@ function vazaoApOk(a){
   return false;
 }
 function baixarTanque(a, k){
+  if (travaBloqueia(aplMsg)) return;
   const ap = aplicacoes()[a], g = ap && tanquesDe(ap).grupos[k]; if (!g) return;
   const nq = quadsDe(g.tis); if (!nq) { aplMsg("erro", "<b>Tanque sem quadrados</b>Esses tratamentos não têm quadrados dentro do talhão."); return; }
   if (!vazaoApOk(a)) return;
@@ -1446,6 +1460,7 @@ function baixarTanque(a, k){
   aplMsg("", `<b>${esc(b)}.zip baixado</b>Tanque ${k + 1} da ${esc(nomeAp(ap, a))}: ${esc(g.calda)}. ${g.tis.length > 1 ? "Quadrados de " + esc(codsDe(g.tis)) + " juntos numa zona só" : "Quadrados do " + esc(codsDe(g.tis))}: ${fmt(nq)}, ${fmt(nq * GRADE.areaQ, 2)} ha, TAXA ${v} (L/ha). Fora da zona, bicos fechados.`);
 }
 function baixarSemAplic(a){
+  if (travaBloqueia(aplMsg)) return;
   const ap = aplicacoes()[a]; if (!ap) return; const {sem} = tanquesDe(ap);
   const fe = GRADE ? GRADE.quads.filter(q => q.ok && sem.includes(q.ti)).map(q => ({anel:fechado(q), props:{ID:q.id, TRAT:S.trats[q.ti].cod, NOME:"Sem aplicacao"}})) : [];
   if (!fe.length) { aplMsg("erro", "<b>Nada para baixar</b>Todos os tratamentos têm calda nesta aplicação."); return; }
@@ -1483,6 +1498,53 @@ $("aplBox").addEventListener("input", e => {
 $("aplBox").addEventListener("change", e => { const ap = aplicacoes()[APL], el = e.target; if (!ap) return;
   if (el.dataset.ap === "vazao" && el.value.trim()) { const v = num(el.value); if (!(v > 0)) { aplMsg("erro", "<b>Vazão inválida</b>Use L/ha, por exemplo 50."); return; } if (String(Math.round(v)) !== el.value.trim()) { ap.vazao = String(Math.round(v)); el.value = ap.vazao; salvar(); aviso(`Vazão arredondada para ${ap.vazao} L/ha: a taxa vai como número inteiro.`); } }
   if (el.dataset.calda || el.dataset.ap === "nome") { const v = normCalda(el.value); if (v !== el.value) { el.value = v; if (el.dataset.calda) ap.caldas[el.dataset.calda] = v; else ap.nome = v; salvar(); } } });
+
+/* ---------- trava: com o projeto em andamento, a estrutura do ensaio não muda por um clique errado ---------- */
+var TRAVA_OK = null; // null: não travado; true: o desenho de hoje bate com a fotografia; false: não bate
+const PASSOS_TRAVADOS = ["talhao", "pista", "tamanho", "trat"];
+function fotoAtual(){ return GRADE ? GRADE.quads.filter(q => q.ok).map(q => [q.id, S.trats[q.ti].cod, +q.centro[1].toFixed(7), +q.centro[0].toFixed(7)]) : []; }
+function codigoFoto(foto){ let h = 0x811c9dc5; const t = JSON.stringify(foto); for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return `${semAcento(S.talhao).replace(/[^A-Za-z0-9]/g, "").toUpperCase()}-${h.toString(16).toUpperCase().padStart(8, "0").slice(0, 4)}`; }
+function conferirTrava(){ // cada quadrado de hoje tem que ter o mesmo tratamento e o mesmo centro (até 0,5 m) da fotografia tirada ao travar
+  const tr = S.travado; if (!tr || !GRADE) return null;
+  const agora = new Map(fotoAtual().map(f => [f[0], f])), foto = tr.foto || [];
+  if (agora.size !== foto.length) return false;
+  return foto.every(([id, cod, la, lo]) => { const a = agora.get(id); if (!a || a[1] !== cod) return false;
+    return Math.hypot((a[2] - la) * 111320, (a[3] - lo) * 111320 * Math.cos(la * RAD)) < 0.5; });
+}
+function aplicarTrava(){
+  const tr = S.travado; TRAVA_OK = tr ? conferirTrava() : null;
+  PASSOS_TRAVADOS.forEach(k => { const d = document.querySelector(`details[data-dobra="${k}"]`); if (!d) return; d.classList.toggle("travado", !!tr); const c = d.querySelector(".corpo"); if (c) c.inert = !!tr; });
+  const box = $("travaInfo"); box.hidden = !tr; if (!tr) return;
+  const ruim = TRAVA_OK === false; box.className = "nd-msg " + (ruim ? "erro" : "ok");
+  box.innerHTML = ruim
+    ? `<svg class="nd-ic" aria-hidden="true"><use href="#i-circle-x"/></svg><div><b>O tabuleiro não bate com o travado</b>O desenho de hoje está diferente do que foi travado em ${esc(dataHora(tr.em))} (código ${esc(tr.codigo)}). Não baixe arquivos novos: use os que já foram para o Operations Center e avise para corrigir o app.</div>`
+    : `<svg class="nd-ic" aria-hidden="true"><use href="#i-circle-check"/></svg><div><b>Ensaio travado · código ${esc(tr.codigo)}</b>Travado em ${esc(dataHora(tr.em))}${tr.porNome ? " por " + esc(tr.porNome) : ""}${TRAVA_OK ? ", conferido agora" : ""}. Talhão, pista, posição, tamanho e tratamentos não mudam; as aplicações continuam editáveis.</div>`;
+}
+function travaBloqueia(onde){ if (TRAVA_OK !== false) return false; (onde || arqMsg)("erro", "<b>Arquivos bloqueados</b>O tabuleiro de hoje não bate com o que foi travado. Use os arquivos já enviados ao Operations Center."); return true; }
+async function gravarAberto(){ // grava o ensaio aberto como está (mesmo formato de Salvar alterações)
+  const ab = S.ensaioId && SALVOS.ensaios.find(e => e.id === S.ensaioId); if (!ab) throw new Error("Abra um ensaio salvo primeiro.");
+  await ARMAZEM.gravar("ensaios", ab.id, {nome:ab.nome, talhao:S.talhao, plano:planoParaSalvar(), resumo:resumoEnsaio(), criadoEm:ab.criadoEm || agoraISO(), atualizadoEm:agoraISO(), por:SALVOS.uid || ab.por || null});
+  return ab;
+}
+$("btnTravar").addEventListener("click", async () => {
+  if (S.travado) return;
+  if (SALVOS.confTrava !== S.ensaioId) { SALVOS.confTrava = S.ensaioId; renderSalvos(); clearTimeout(SALVOS._tt); SALVOS._tt = setTimeout(() => { SALVOS.confTrava = null; renderSalvos(); }, 5000); return; }
+  SALVOS.confTrava = null; clearTimeout(SALVOS._tt);
+  const foto = fotoAtual(); if (!foto.length) { msgSalvos("ensMsg", "Nada para travar: o ensaio não tem quadrados dentro do talhão."); return; }
+  let porNome = null; try { const n = SALVOS.uid ? await nomesDe([SALVOS.uid]) : {}; porNome = n[SALVOS.uid] && n[SALVOS.uid].name || null; } catch (e) {}
+  S.travado = {em:agoraISO(), por:SALVOS.uid || null, porNome, codigo:codigoFoto(foto), foto};
+  try { const ab = await gravarAberto(); salvar(); atualizar(); renderSalvos(); aviso(`"${ab.nome}" travado · código ${S.travado.codigo}`); }
+  catch (e) { delete S.travado; atualizar(); renderSalvos(); msgSalvos("ensMsg", erroSalvar(e)); }
+});
+$("btnDestravar").addEventListener("click", async () => {
+  if (!S.travado) return;
+  if (SALVOS.confDestrava !== S.ensaioId) { SALVOS.confDestrava = S.ensaioId; renderSalvos(); clearTimeout(SALVOS._td); SALVOS._td = setTimeout(() => { SALVOS.confDestrava = null; renderSalvos(); }, 5000); return; }
+  SALVOS.confDestrava = null; clearTimeout(SALVOS._td);
+  const tv = S.travado; S.travaHist = [...(S.travaHist || []), {codigo:tv.codigo, travadoEm:tv.em, destravadoEm:agoraISO(), por:SALVOS.uid || null}]; delete S.travado;
+  try { const ab = await gravarAberto(); salvar(); atualizar(); renderSalvos(); aviso(`"${ab.nome}" destravado: a estrutura pode ser mudada`); }
+  catch (e) { S.travado = tv; S.travaHist.pop(); atualizar(); renderSalvos(); msgSalvos("ensMsg", erroSalvar(e)); }
+});
 
 /* ---------- pistas de aplicação do Operations Center (linhas AB "AP…" de cada talhão) ---------- */
 const ehAP = nome => /^ap/i.test(String(nome || "").trim()); // AP, AP 02, AP_SOJA, AP_MILHO 02, Aplic_PV26…
@@ -1572,6 +1634,7 @@ const contraste = (a, b) => { const la = lumin(a), lb = lumin(b); return (Math.m
 const rgbHex = h => { h = (h || "#000000").replace("#", ""); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); };
 const coordTxt = c => c ? `${fmtMax(c[0], 7)}; ${fmtMax(c[1], 7)}` : "não informado";
 async function gerarPDF(){
+  if (travaBloqueia()) return;
   if (!GRADE || !GRADE.quads.some(q => q.ok)) { arqMsg("erro", "<b>Nada para o relatório</b>Escolha o talhão e coloque o ensaio dentro dele."); return; }
   const btn = $("btnPdf"); if (window.Nadiana && Nadiana.estado) Nadiana.estado(btn, "enviando");
   try {
@@ -1580,7 +1643,7 @@ async function gerarPDF(){
     if (!window.NadianaPDF) await carregarScript(GH_BASE + "pdf.js");
     const t = talhaoAtual(), ok = GRADE.quads.filter(q => q.ok), x = posicao(), ab = rumoAB();
     const nome = S.codigo || `TAB ${S.talhao} 26/27`, prods = S.trats.filter(tr => !ehTest(tr));
-    const r = await NadianaPDF.novo({titulo: `Ensaio em tabuleiro · ${S.talhao}`, subtitulo: `${nome} · ${prods.length} ${prods.length === 1 ? "teste" : "testes"}${S.trats.length > prods.length ? " + testemunha" : ""} · ${S.modo === "produtos" ? "produtos diferentes" : "vazões diferentes"}`, logo: LOGO_PDF});
+    const r = await NadianaPDF.novo({titulo: `Ensaio em tabuleiro · ${S.talhao}`, subtitulo: `${S.travado ? "Travado em " + dataBr(String(S.travado.em).slice(0, 10)) + " · código " + S.travado.codigo + " · " : ""}${nome} · ${prods.length} ${prods.length === 1 ? "teste" : "testes"}${S.trats.length > prods.length ? " + testemunha" : ""} · ${S.modo === "produtos" ? "produtos diferentes" : "vazões diferentes"}`, logo: LOGO_PDF});
     const doc = r.doc, PW = doc.internal.pageSize.getWidth(), PH = doc.internal.pageSize.getHeight(), M = 15;
     const fl = doc.getFontList(), FT = fl.Barlow ? "Barlow" : "helvetica", FN = fl.BarlowCondensed ? "BarlowCondensed" : "helvetica";
     const TKp = (window.NadianaTokens || {}).light || {}, CI = rgbHex(TKp.ink), CM = rgbHex(TKp.muted), CP = rgbHex(TKp["nadiana-petroleo"]), CL = rgbHex(TKp.line), CC = rgbHex(TKp["mapa-campo"]), CB = rgbHex(TKp.panel);
