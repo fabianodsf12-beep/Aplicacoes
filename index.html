@@ -32,6 +32,12 @@ a.card:hover .go svg{transform:translateX(3px)}
 .status{display:flex;flex-wrap:wrap;gap:var(--space-2);margin-top:var(--space-5);min-height:30px;align-items:center;font-size:14px;color:var(--muted)}
 .pill{padding:var(--space-1) var(--space-3);border-radius:var(--radius-pill);font-weight:600;font-size:13.5px;background:var(--panel);border:1px solid var(--line2);color:var(--ink)}
 .pill.w{background:var(--warn-bg);color:var(--warn);border-color:transparent}.pill.b{background:var(--bad-bg);color:var(--bad);border-color:transparent}
+.ic{position:relative}
+.ic .nd-selo{top:-7px;left:auto;right:-9px}
+.carrega-status{margin-top:var(--space-5)}
+.carrega-status .status{margin-top:0}
+.carrega-status .esqueleto{display:flex;align-items:center;gap:var(--space-2);min-height:30px}
+.carrega-status .esqueleto .nd-esq{height:24px;border-radius:var(--radius-pill)}
 footer{font-size:12.5px;color:var(--muted);margin-top:28px}
 </style>
 </head>
@@ -46,43 +52,61 @@ footer{font-size:12.5px;color:var(--muted);margin-top:28px}
   <div class="wrap">
     <div class="cards">
       <a class="card nd-onda" href="./painel.html">
-        <span class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
+        <span class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="nd-selo erro" id="seloPainel" hidden></span></span>
         <h2>Painel</h2>
         <p>Acompanhar o andamento: o que está no prazo, atrasado ou na janela, cronograma por talhão e consumo de produtos.</p>
         <span class="go">Abrir painel <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></span>
       </a>
       <a class="card nd-onda" href="./lancar.html">
-        <span class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
+        <span class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="nd-selo" id="seloLancar" hidden></span></span>
         <h2>Lançamentos</h2>
         <p>Programar aplicação com produtos e doses, registrar execução com o nº da OS e lançar plantio.</p>
         <span class="go">Abrir formulário <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></span>
       </a>
     </div>
-    <div class="status" id="status" aria-live="polite">Verificando a situação de hoje…</div>
+    <div class="nd-carrega carrega-status" id="statusBox" aria-busy="true">
+      <div class="esqueleto" aria-hidden="true"><span class="nd-esq" style="width:140px"></span><span class="nd-esq" style="width:92px"></span><span class="nd-esq" style="width:170px"></span></div>
+      <div class="conteudo"><div class="status" id="status" aria-live="polite"></div></div>
+    </div>
     <footer>Os dados vêm da planilha Base_Aplicacoes no Google Drive.</footer>
   </div>
 </main>
 <script>
 const DATA_URL = "https://script.google.com/macros/s/AKfycbwxeuEaQ6gyYzEo3yWbs4SPVj529WUWqdp04ObgWcei8J8z4SiuciiEiXBFNg7-R2FrKg/exec";
-(async function(){
-  const el = document.getElementById("status");
+/* situação de hoje: esqueleto enquanto busca; selos nos cartões (vencidas no Painel, para hoje nos Lançamentos); abertura só na primeira vez */
+function situacao(L){
+  const el = document.getElementById("status"), N = window.Nadiana;
+  const d = new Date(), hoje = new Date(d.getTime() - d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+  const pend = L.progs.filter(p => !p.done);
+  const venc = pend.filter(p => p.prog && p.prog < hoje).length, hj = pend.filter(p => p.prog === hoje).length;
+  const em7 = pend.filter(p => p.prog > hoje && (Date.parse(p.prog) - Date.parse(hoje)) / 864e5 <= 7).length;
+  const parts = [];
+  if (venc) parts.push(`<span class="pill b"><span data-n="venc">${venc}</span> vencida${venc>1?"s":""}</span>`);
+  if (hj) parts.push(`<span class="pill w"><span data-n="hj">${hj}</span> para hoje</span>`);
+  if (em7) parts.push(`<span class="pill"><span data-n="em7">${em7}</span> nos próximos 7 dias</span>`);
+  const ant = situacao.ant || {}; situacao.ant = {venc, hj, em7};
+  el.innerHTML = parts.length ? "Aplicações pendentes: " + parts.join("") : "Nenhuma aplicação pendente para os próximos 7 dias.";
+  if (N && N.rolar) el.querySelectorAll("[data-n]").forEach(s => { const k = s.dataset.n; if (ant[k] != null && ant[k] !== situacao.ant[k]) { s.textContent = ant[k]; N.rolar(s, situacao.ant[k]); } });
+  const selo = (id, v, nome) => { const s = document.getElementById(id); s.setAttribute("aria-label", v + " " + nome); if (N && N.rolar) N.rolar(s, v); else { s.textContent = v; s.hidden = !v; } };
+  selo("seloPainel", venc, venc === 1 ? "aplicação vencida" : "aplicações vencidas");
+  selo("seloLancar", hj, hj === 1 ? "aplicação para hoje" : "aplicações para hoje");
+}
+async function iniciar(){
+  const box = document.getElementById("statusBox"), N = window.Nadiana;
+  let L = null;
+  try { L = JSON.parse(localStorage.getItem("lancar.listas") || "null"); } catch(e) {}
+  if (L && L.ok) { situacao(L); if (N) N.pronto(box); }                         // o que ficou guardado aparece na hora
+  const primeira = !(L && L.ok);
+  if (primeira && N && N.abertura) { N.abertura("Abrindo as aplicações"); setTimeout(() => N.abertura.fim(), 2500); } // só na primeira vez, e no máximo 2,5 s: os cartões já funcionam
   try {
-    let L = null;
-    try { L = JSON.parse(localStorage.getItem("lancar.listas") || "null"); } catch(e) {}
     const r = await fetch(DATA_URL + "?acao=listas", {cache:"no-store", redirect:"follow"});
     const j = await r.json(); if (j.ok) { L = j; try { localStorage.setItem("lancar.listas", JSON.stringify(j)); } catch(e) {} }
     if (!L || !L.ok) throw new Error();
-    const d = new Date(), hoje = new Date(d.getTime() - d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
-    const pend = L.progs.filter(p => !p.done);
-    const venc = pend.filter(p => p.prog && p.prog < hoje).length, hj = pend.filter(p => p.prog === hoje).length;
-    const em7 = pend.filter(p => p.prog > hoje && (Date.parse(p.prog) - Date.parse(hoje)) / 864e5 <= 7).length;
-    const parts = [];
-    if (venc) parts.push(`<span class="pill b">${venc} vencida${venc>1?"s":""}</span>`);
-    if (hj) parts.push(`<span class="pill w">${hj} para hoje</span>`);
-    if (em7) parts.push(`<span class="pill">${em7} nos próximos 7 dias</span>`);
-    el.innerHTML = parts.length ? "Aplicações pendentes: " + parts.join("") : "Nenhuma aplicação pendente para os próximos 7 dias.";
-  } catch (e) { el.textContent = ""; }
-})();
+    situacao(L);
+  } catch (e) { if (primeira) document.getElementById("status").textContent = ""; }
+  finally { if (N) { N.pronto(box); if (primeira && N.abertura) N.abertura.fim(); } else box.setAttribute("data-pronto", ""); }
+}
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", iniciar); else iniciar(); // nadiana.js vem com defer
 </script>
 </body>
 </html>
