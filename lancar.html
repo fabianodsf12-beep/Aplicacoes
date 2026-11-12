@@ -3,50 +3,57 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#FFFFFF">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#18211D" media="(prefers-color-scheme: dark)">
 <title>Lançamentos – Aplicações Reata</title>
 <link rel="icon" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.png">
 <link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.css">
+<link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/componentes.css">
+<script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.js"></script>
+<script src="https://fabianodsf12-beep.github.io/nadiana-design/v1/nadiana.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
-:root{
-  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){}}
-:root[data-theme="dark"]{}
+/* Visual da base Nadiana (https://github.com/fabianodsf12-beep/nadiana-design/blob/main/v1/README.md): cores e fontes vêm de tokens.css da base */
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
-*,*::before,*::after{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:'Barlow','Segoe UI',system-ui,sans-serif;font-size:16px;line-height:1.4}
-button,input,select,textarea{font:inherit;color:inherit}
-:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .app{max-width:640px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
-header.top{background:var(--panel);color:var(--ink);padding:10px 16px 14px;position:sticky;top:0;z-index:10;border-bottom:1px solid var(--line2);box-shadow:var(--sombra-1)}
-.top-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.back{display:inline-flex;align-items:center;gap:4px;color:var(--ink);text-decoration:none;font-size:15px;min-height:44px;border:0;background:transparent;padding:0;cursor:pointer}
-.top h1{margin:6px 0 0;font-family:'Barlow Condensed','Barlow',sans-serif;font-weight:600;font-size:28px;line-height:1.05}
+header.top{background:var(--panel);color:var(--ink);padding:10px 16px 14px;position:sticky;top:env(safe-area-inset-top,0px);z-index:10;border-bottom:1px solid var(--line2);box-shadow:var(--sombra-1)}
+.top-row{display:flex;align-items:center;gap:10px}
+.top-row .nd-simbolo{height:32px}
+.top-row a:has(> .nd-simbolo){margin-right:2px}
+.back{display:inline-flex;align-items:center;gap:4px;color:var(--ink);text-decoration:none;font-size:15px;font-weight:500;min-height:44px;border:0;background:transparent;padding:0;cursor:pointer}
+.top h1{margin:4px 0 0;font-family:var(--font-display);font-weight:600;font-size:28px;line-height:1.05}
 .top p{margin:4px 0 0;font-size:14px;color:var(--muted)}
-.top a.link{color:var(--ink);font-size:14px;display:inline-flex;align-items:center;gap:6px;min-height:44px;text-decoration:none;border:1px solid var(--line);border-radius:10px;padding:0 12px}
+.top a.link{margin-left:auto;color:var(--ink);font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:6px;min-height:40px;text-decoration:none;border:1px solid var(--line);border-radius:var(--radius-md);padding:0 12px;background:var(--panel);transition:background var(--dur-rapida) var(--curva),border-color var(--dur-rapida) var(--curva)}
+.top a.link:hover{background:var(--panel2);border-color:var(--muted)}
+.top a.link svg{color:var(--brand)}
 .net{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin-top:6px}
 .net i{width:8px;height:8px;border-radius:50%;background:var(--ok)}
-.net.err i{background:var(--s-atrasada)}.net.busy i{background:var(--s-janela)}
+.net.err i{background:var(--bad)}.net.busy i{background:var(--s-janela)}
+.net.vivo i{position:relative}
+.net.vivo i::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;animation:nd-ping 1.8s var(--curva) infinite}
 main{padding:16px;display:flex;flex-direction:column;gap:14px;flex-grow:1}
-.card{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px}
-.card h2{margin:0;font-size:17px;font-weight:600}
+.card{background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:var(--sombra-1);padding:16px;display:flex;flex-direction:column;gap:14px}
+.card h2{margin:0;font-family:var(--font-display);font-size:19px;font-weight:600;line-height:1.15}
 .hint{font-size:13.5px;color:var(--muted);margin:0}
 label.f{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500}
-.inp{height:48px;padding:0 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);font-size:16px;width:100%;min-width:0}
+.inp{height:48px;padding:0 14px;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--panel);font-size:16px;width:100%;min-width:0;transition:border-color var(--dur-rapida) var(--curva),box-shadow var(--dur-rapida) var(--curva)}
+.inp:hover{border-color:var(--muted)}
+.inp:focus{border-color:var(--brand);outline:none;box-shadow:0 0 0 3px var(--brand-soft)}
+.inp:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 textarea.inp{height:auto;padding:12px 14px;resize:vertical}
 select.inp{appearance:auto}
 .row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.seg button{flex:1;height:46px;border:0;background:var(--panel);font-size:15px;font-weight:500;cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink)}
+.seg{display:flex;padding:3px;gap:3px;border-radius:var(--radius-lg);background:var(--line2)}
+.seg button{flex:1;height:42px;border:0;border-radius:var(--radius-md);background:transparent;color:var(--muted);font-size:15px;font-weight:500;cursor:pointer;transition:background var(--dur-media) var(--curva),color var(--dur-media) var(--curva)}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);font-weight:600;box-shadow:var(--sombra-1)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:4px 4px 4px 12px;border-radius:999px;background:var(--brand-soft);color:var(--ink);font-size:14px;font-weight:600}
 .chip span{font-weight:400;color:var(--muted)}
 .chip button{width:34px;height:34px;border:0;border-radius:50%;background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .grp{display:flex;flex-wrap:wrap;gap:6px}
-.grp button{min-width:48px;height:42px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel);font-size:14px;font-weight:500;cursor:pointer}
+.grp button{min-width:48px;height:42px;padding:0 12px;border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--panel);font-size:14px;font-weight:500;cursor:pointer;transition:background var(--dur-rapida) var(--curva)}
 .grp button[aria-pressed="true"]{background:var(--brand-soft);border-color:var(--brand)}
 .list{display:flex;flex-direction:column;max-height:340px;overflow-y:auto;border:1px solid var(--line2);border-radius:10px}
 .list label{display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid var(--line2);min-height:48px;cursor:pointer}
@@ -59,10 +66,13 @@ select.inp{appearance:auto}
 .prod .full{grid-column:1/-1}
 .prod .tot{grid-column:1/-1;display:flex;justify-content:space-between;font-size:14px;color:var(--muted)}
 .prod .tot b{color:var(--ink)}
-.icon{width:44px;height:48px;border:1px solid var(--line);border-radius:10px;background:var(--panel);display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
-.ghost{height:48px;border:1px dashed var(--brand);border-radius:10px;background:transparent;color:var(--brand);font-weight:600;font-size:15px;cursor:pointer}
+.icon{width:44px;height:48px;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--panel);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted)}
+.icon:hover{background:var(--panel2);color:var(--ink)}
+.ghost{height:48px;border:1px dashed var(--brand);border-radius:var(--radius-lg);background:transparent;color:var(--brand);font-weight:600;font-size:15px;cursor:pointer;transition:background var(--dur-rapida) var(--curva)}
+.ghost:hover{background:var(--brand-soft)}
 [data-theme="dark"] .ghost{color:var(--ok);border-color:var(--ok)}
-.pend{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid var(--line);border-radius:12px;cursor:pointer;background:var(--panel)}
+.pend{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid var(--line);border-radius:var(--radius-xl);cursor:pointer;background:var(--panel);transition:border-color var(--dur-rapida) var(--curva)}
+.pend:hover{border-color:var(--muted)}
 .pend:has(input:checked){border:2px solid var(--brand);background:var(--brand-soft);padding:13px}
 .pend input{width:22px;height:22px;margin:2px 0 0;accent-color:var(--brand);flex-shrink:0}
 .pend .l1{display:flex;justify-content:space-between;gap:8px;align-items:center;font-weight:600}
@@ -71,21 +81,25 @@ select.inp{appearance:auto}
 .pill.w{background:var(--warn-bg);color:var(--warn)}.pill.b{background:var(--bad-bg);color:var(--bad)}.pill.n{background:var(--panel2);color:var(--muted);border:1px solid var(--line2)}
 .check{display:flex;align-items:center;gap:10px;min-height:44px;font-size:15px;cursor:pointer}
 .check input{width:22px;height:22px;accent-color:var(--brand)}
-.foot{position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--line2);padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;z-index:5}
+.foot{position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--line2);box-shadow:0 -4px 12px -6px rgba(16,28,22,.12);padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;z-index:5}
 .foot span{font-size:13.5px;color:var(--muted)}
-.save{height:54px;border:0;border-radius:12px;background:var(--brand);color:var(--brand-ink);font-size:17px;font-weight:600;cursor:pointer}
+.save{height:54px;border:0;border-radius:var(--radius-xl);background:var(--brand);color:var(--brand-ink);font-size:17px;font-weight:600;cursor:pointer;transition:filter var(--dur-rapida) var(--curva),transform var(--dur-rapida) var(--curva)}
+.save:hover{filter:brightness(1.1)}
+.save:active{transform:scale(.99)}
 .save:disabled{opacity:.55;cursor:default}
-.act{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:16px;text-decoration:none;color:var(--ink);min-height:80px;cursor:pointer;text-align:left;width:100%}
-.act .n{width:46px;height:46px;border-radius:12px;background:var(--brand-soft);display:inline-flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:600;flex-shrink:0;color:var(--ink)}
+.act{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:var(--sombra-1);padding:16px;text-decoration:none;color:var(--ink);min-height:80px;cursor:pointer;text-align:left;width:100%;transition:border-color var(--dur-media) var(--curva),box-shadow var(--dur-media) var(--curva),transform var(--dur-media) var(--curva)}
+.act:hover{border-color:var(--line);box-shadow:var(--sombra-2);transform:translateY(-2px)}
+.act:active{transform:none}
+.act .n{width:46px;height:46px;border-radius:12px;background:var(--brand-soft);display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:22px;font-weight:600;flex-shrink:0;color:var(--brand)}
 .act .tx{display:flex;flex-direction:column;gap:2px;flex-grow:1}
 .act .t{font-size:17px;font-weight:600}.act .s{font-size:14px;color:var(--muted)}
 .act .badge{font-size:13px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--warn-bg);color:var(--warn);white-space:nowrap}
 .rec{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line2)}
 .rec:last-child{border-bottom:0}
 .rec b{display:block}.rec small{color:var(--muted);font-size:13.5px}
-.msg{padding:12px 14px;border-radius:10px;font-size:14.5px}
+.msg{padding:12px 14px;border-radius:var(--radius-lg);font-size:14.5px}
 .msg.err{background:var(--bad-bg);color:var(--bad)}.msg.ok{background:var(--brand-soft);color:var(--ink)}
-.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-size:15px;opacity:0;transition:all .25s;z-index:50;pointer-events:none;max-width:90vw;text-align:center}
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--panel);padding:12px 18px;border-radius:var(--radius-xl);box-shadow:var(--sombra-3);font-size:15px;font-weight:500;opacity:0;transition:all var(--dur-lenta) var(--curva);z-index:50;pointer-events:none;max-width:90vw;text-align:center}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 [hidden]{display:none!important}
 .pwrap{position:relative}
@@ -98,13 +112,13 @@ select.inp{appearance:auto}
 .selrow .inp{height:42px;text-align:right}
 .selrow .ed{border-color:var(--brand)}
 .selrow button{width:40px;height:42px;border:0;border-radius:8px;background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
-.sug{position:absolute;left:0;right:0;top:100%;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-top:4px;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.sug{position:absolute;left:0;right:0;top:100%;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-top:4px;max-height:260px;overflow-y:auto;box-shadow:var(--sombra-3)}
 .sug button{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line2);background:transparent;padding:12px 14px;min-height:46px;cursor:pointer;font-size:15px}
 .sug button:last-child{border-bottom:0}
 .sug button:hover,.sug button:focus{background:var(--panel2)}
 .sug small{color:var(--muted);font-size:13px;white-space:nowrap}
 .pmap{position:relative;z-index:0;isolation:isolate;height:380px;border-radius:10px;overflow:hidden;border:1px solid var(--line2);background:var(--panel2)}
-.leaflet-tooltip.tlbl{background:transparent;border:0;box-shadow:none;color:#fff;font:600 12px 'Barlow',sans-serif;text-shadow:0 0 3px #000,0 0 2px #000;padding:0}
+.leaflet-tooltip.tlbl{background:transparent;border:0;box-shadow:none;color:#fff;font:600 12px var(--font-body);text-shadow:0 0 3px #000,0 0 2px #000;padding:0}
 .leaflet-tooltip.tlbl::before{display:none}
 .rain{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line2)}
 .rain:last-child{border-bottom:0}
@@ -115,9 +129,10 @@ select.inp{appearance:auto}
 <div class="app">
 <header class="top">
   <div class="top-row">
+    <a href="./index.html" aria-label="Início"><img class="nd-simbolo" src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.svg" alt="Nadiana"></a>
     <button type="button" class="back" id="btnBack" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Lançamentos</button>
-    <a id="brandMini" href="./index.html" style="font-size:14px;color:var(--muted);text-decoration:none;min-height:44px;display:inline-flex;align-items:center;gap:8px"><img src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.svg" alt="" width="34" height="28" style="height:28px;width:auto">Início · Fazenda Reata</a>
-    <a class="link" href="./painel.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Painel</a>
+    <a id="brandMini" href="./index.html" style="font-size:14px;color:var(--muted);text-decoration:none;min-height:44px;display:inline-flex;align-items:center">Início · Fazenda Reata</a>
+    <a class="link nd-onda" href="./painel.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Painel</a>
   </div>
   <h1 id="ttl">Lançamentos</h1>
   <p id="sub">Programação, execução e plantio</p>
@@ -133,7 +148,7 @@ select.inp{appearance:auto}
       <label class="f">Usuário<input class="inp" id="cfgNome" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Ex.: fabiano"></label>
       <label class="f">Senha<input class="inp" id="cfgCod" type="password" autocomplete="current-password"></label>
       <div id="cfgMsg"></div>
-      <button type="button" class="save" id="cfgSave">Salvar e continuar</button>
+      <button type="button" class="save nd-onda" id="cfgSave">Salvar e continuar</button>
     </div>
   </main>
 </section>
@@ -141,10 +156,11 @@ select.inp{appearance:auto}
 <!-- INÍCIO -->
 <section id="s-home" hidden>
   <main>
-    <button type="button" class="act" data-go="programar"><span class="n">1</span><span class="tx"><span class="t">Programar aplicação</span><span class="s">Talhões, operação, data e produtos</span></span></button>
-    <button type="button" class="act" data-go="executar"><span class="n">2</span><span class="tx"><span class="t">Registrar execução</span><span class="s">Data, área aplicada e nº da OS do Protector</span></span><span class="badge" id="bPend" hidden></span></button>
-    <button type="button" class="act" data-go="chuva"><span class="n" style="font-size:20px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 16a5 5 0 1 1 1.5-9.8A6 6 0 0 1 20 9a4 4 0 0 1-1 7.9M8 19l-1 2M12 19l-1 2M16 19l-1 2"/></svg></span><span class="tx"><span class="t">Chuva</span><span class="s">Registrar a pluviometria do dia</span></span><span class="badge" id="bChuva" hidden></span></button>
-    <button type="button" class="act" data-go="talhoes"><span class="n">4</span><span class="tx"><span class="t">Talhões e plantio</span><span class="s">Lançar plantio em vários ou cadastrar talhão</span></span><span class="badge" id="bPlant" hidden></span></button>
+    <div class="card nd-feito" id="feitoHome" hidden role="status"><svg viewBox="0 0 76 76" aria-hidden="true"><circle cx="38" cy="38" r="34" pathLength="1"/><path d="M24 39l10 10 19-21" pathLength="1"/></svg><b id="feitoT">Execução registrada</b><span class="hint" id="feitoS"></span></div>
+    <button type="button" class="act nd-onda" data-go="programar"><span class="n">1</span><span class="tx"><span class="t">Programar aplicação</span><span class="s">Talhões, operação, data e produtos</span></span></button>
+    <button type="button" class="act nd-onda" data-go="executar"><span class="n">2</span><span class="tx"><span class="t">Registrar execução</span><span class="s">Data, área aplicada e nº da OS do Protector</span></span><span class="badge" id="bPend" hidden></span></button>
+    <button type="button" class="act nd-onda" data-go="chuva"><span class="n" style="font-size:20px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 16a5 5 0 1 1 1.5-9.8A6 6 0 0 1 20 9a4 4 0 0 1-1 7.9M8 19l-1 2M12 19l-1 2M16 19l-1 2"/></svg></span><span class="tx"><span class="t">Chuva</span><span class="s">Registrar a pluviometria do dia</span></span><span class="badge" id="bChuva" hidden></span></button>
+    <button type="button" class="act nd-onda" data-go="talhoes"><span class="n">4</span><span class="tx"><span class="t">Talhões e plantio</span><span class="s">Lançar plantio em vários ou cadastrar talhão</span></span><span class="badge" id="bPlant" hidden></span></button>
     <div class="card" style="gap:4px">
       <h2 style="margin-bottom:6px">Últimos lançamentos</h2>
       <div id="recentes"><div class="empty">Carregando…</div></div>
@@ -159,14 +175,14 @@ select.inp{appearance:auto}
     <div class="card">
       <h2>O quê e quando</h2>
       <label class="f">Operação<select class="inp" id="pOp"></select></label>
-      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Modalidade<div class="seg" id="pModo"><button type="button" data-v="T" aria-pressed="true">Terrestre</button><button type="button" data-v="A" aria-pressed="false">Aérea</button></div></div>
+      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Modalidade<div class="seg nd-desliza" id="pModo"><button type="button" data-v="T" aria-pressed="true">Terrestre</button><button type="button" data-v="A" aria-pressed="false">Aérea</button></div></div>
       <label class="f">Data programada<input class="inp" type="date" id="pData"></label>
     </div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h2>Talhões</h2><span class="hint" id="pSel">nenhum marcado</span></div>
       <div class="selist" id="pChips"></div>
       <p class="hint" id="pChipsHint" hidden>A área vem do cadastro do talhão. Altere se a aplicação for só em parte dele.</p>
-      <div class="seg" id="pVista" role="group" aria-label="Escolher talhões por"><button type="button" data-v="lista" aria-pressed="true">Lista</button><button type="button" data-v="mapa" aria-pressed="false">Mapa</button></div>
+      <div class="seg nd-desliza" id="pVista" role="group" aria-label="Escolher talhões por"><button type="button" data-v="lista" aria-pressed="true">Lista</button><button type="button" data-v="mapa" aria-pressed="false">Mapa</button></div>
       <div id="pVLista" style="display:flex;flex-direction:column;gap:14px">
         <label class="f">Buscar talhão<input class="inp" type="search" id="pBusca" placeholder="Digite RT, BT, SA…" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
         <div><p class="hint" style="margin-bottom:8px">Marcar ou desmarcar um grupo inteiro</p><div class="grp" id="pGrp"></div></div>
@@ -179,14 +195,14 @@ select.inp{appearance:auto}
       <h2>Produtos</h2>
       <label class="f">Receita (preenche os produtos)<select class="inp" id="pRec"></select></label>
       <div id="pProds" style="display:flex;flex-direction:column;gap:10px"></div>
-      <button type="button" class="ghost" id="pAdd">Adicionar produto</button>
+      <button type="button" class="ghost nd-onda" id="pAdd">Adicionar produto</button>
       <p class="hint">O total é a dose vezes a área dos talhões marcados.</p>
 
     </div>
     <div class="card"><label class="f">Observação<textarea class="inp" id="pObs" rows="3" placeholder="Opcional"></textarea></label></div>
     <div id="pMsg"></div>
   </main>
-  <div class="foot"><span id="pResumo">Marque os talhões</span><button type="button" class="save" id="pSave">Salvar programação</button></div>
+  <div class="foot"><span id="pResumo">Marque os talhões</span><button type="button" class="save nd-onda nd-estado" id="pSave" data-enviando="Salvando…" data-feito="Salvo">Salvar programação</button></div>
 </section>
 
 <!-- EXECUTAR -->
@@ -205,7 +221,7 @@ select.inp{appearance:auto}
       </div>
       <label class="check" id="eConclL"><input type="checkbox" id="eConcl" checked>Aplicação concluída neste talhão</label>
       <p class="hint" id="eParc"></p>
-      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Modalidade<div class="seg" id="eModo"><button type="button" data-v="T" aria-pressed="true">Terrestre</button><button type="button" data-v="A" aria-pressed="false">Aérea</button></div></div>
+      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Modalidade<div class="seg nd-desliza" id="eModo"><button type="button" data-v="T" aria-pressed="true">Terrestre</button><button type="button" data-v="A" aria-pressed="false">Aérea</button></div></div>
       <label class="f">Nº da OS no Protector<input class="inp" id="eOS" inputmode="numeric" placeholder="Opcional"></label>
 
     </div>
@@ -216,7 +232,7 @@ select.inp{appearance:auto}
     <div class="card"><label class="f">Observação<textarea class="inp" id="eObs" rows="3" placeholder="Opcional: vento, reaplicação, problema na máquina…"></textarea></label></div>
     <div id="eMsg"></div>
   </main>
-  <div class="foot"><span id="eResumo">Escolha a aplicação</span><button type="button" class="save" id="eSave">Salvar execução</button></div>
+  <div class="foot"><span id="eResumo">Escolha a aplicação</span><button type="button" class="save nd-onda nd-estado" id="eSave" data-enviando="Salvando…" data-feito="Salvo">Salvar execução</button></div>
 </section>
 
 <!-- CHUVA -->
@@ -230,7 +246,7 @@ select.inp{appearance:auto}
       </div>
       <p class="hint">Informe a média de todos os pluviômetros da fazenda no dia. Dia sem chuva também vale lançar como 0 mm. Lançar de novo a mesma data corrige o valor.</p>
       <div id="cMsg"></div>
-      <button type="button" class="save" id="cSave">Salvar chuva</button>
+      <button type="button" class="save nd-onda nd-estado" id="cSave" data-enviando="Salvando…" data-feito="Salvo">Salvar chuva</button>
     </div>
     <div class="card" style="gap:4px">
       <h2 style="margin-bottom:6px">Últimos registros</h2>
@@ -246,7 +262,7 @@ select.inp{appearance:auto}
       <div><h2>Trazer do painel de plantio</h2><p class="hint" style="margin-top:4px">Datas de plantio (aba Diário) e de emergência (aba Safra) do Plantio para os talhões que estão sem elas aqui. Talhão plantado em mais de um dia fica com o dia em que passou da metade da área; sem emergência no Plantio, ela fica em plantio + 5 dias.</p></div>
       <div class="list" id="pcList"></div>
       <div id="pcMsg"></div>
-      <button type="button" class="save" id="pcSave" hidden>Lançar datas</button>
+      <button type="button" class="save nd-onda nd-estado" id="pcSave" data-enviando="Lançando…" data-feito="Lançado" hidden>Lançar datas</button>
     </div>
     <div class="card">
       <div><h2>Lançar plantio em vários talhões</h2><p class="hint" style="margin-top:4px">Preencha só o que for lançar. Campos vazios não apagam o que já existe.</p></div>
@@ -259,7 +275,7 @@ select.inp{appearance:auto}
       <label class="check"><input type="checkbox" id="tTodos">Mostrar também talhões que já têm plantio (para corrigir)</label>
       <div class="list" id="tList"></div>
       <div id="tMsg"></div>
-      <button type="button" class="save" id="tSave">Salvar plantio</button>
+      <button type="button" class="save nd-onda nd-estado" id="tSave" data-enviando="Salvando…" data-feito="Salvo">Salvar plantio</button>
     </div>
     <div class="card">
       <h2>Cadastrar talhão novo</h2>
@@ -272,7 +288,7 @@ select.inp{appearance:auto}
         <label class="f">Variedade<input class="inp" id="nV" placeholder="Opcional"></label>
       </div>
       <div id="nMsg"></div>
-      <button type="button" class="save" id="nSave" style="background:var(--panel);color:var(--brand);border:1.5px solid var(--brand)">Cadastrar talhão</button>
+      <button type="button" class="save nd-onda nd-estado" id="nSave" data-enviando="Salvando…" data-feito="Salvo" style="background:var(--panel);color:var(--brand);border:1.5px solid var(--brand)">Cadastrar talhão</button>
     </div>
   </main>
 </section>
@@ -300,6 +316,7 @@ const tcmp = (a, b) => a.localeCompare(b, "pt", {numeric:true});
 const DIAS = ["dom","seg","ter","qua","qui","sex","sáb"];
 const X = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("on"); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove("on"),3200); }
+function feitoHome(t, sub){ const el = $("feitoHome"); $("feitoT").textContent = t; $("feitoS").textContent = sub || ""; el.hidden = false; Nadiana.feito(el); clearTimeout(feitoHome.t); feitoHome.t = setTimeout(() => { el.hidden = true; }, 6000); }
 function net(kind, txt){ $("net").className = "net " + (kind||""); $("netTxt").textContent = txt; }
 function msg(el, kind, txt){ $(el).innerHTML = txt ? `<div class="msg ${kind}">${esc(txt)}</div>` : ""; }
 
@@ -317,7 +334,7 @@ async function getListas(){
     const j = await r.json();
     if (!j.ok) throw new Error(j.error || "erro no script");
     L = j; lsSet("lancar.listas", JSON.stringify(j));
-    net("", "Listas atualizadas às " + new Date().toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}));
+    net("vivo", "Listas atualizadas às " + new Date().toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}));
     refreshAll();
   } catch (e) {
     net("err", navigator.onLine === false ? "Sem internet. Mostrando as últimas listas salvas." : "Não consegui atualizar as listas (" + (e.message || e) + ")");
@@ -532,11 +549,13 @@ async function mostrarMapaP(){
   $("pMapMsg").textContent = "Toque num talhão para marcar ou desmarcar. Verde: marcado. Cinza: já tem esta operação ou está inativo.";
   estiloMapaP();
 }
+/* cores do mapa (base Nadiana): marcado no verde claro da marca, indisponível em cinza; sobre a imagem de satélite vale sempre o tema claro */
+const MAPA_COR = (() => { const T = (window.NadianaTokens || {}).light || {}; return {marcado: T["nadiana-verde-claro"] || "#04B365", inativo: T.muted || "#4F5C55"}; })();
 function estiloMapaP(){
   if (!MP.layer) return;
   const disp = new Set(disponiveis().map(t => t.t));
   MP.layer.eachLayer(l => { const t = l.feature.properties.talhao, s = P.sel.has(t), d = disp.has(t);
-    l.setStyle({color: s ? "#9fe0bb" : "#ffffff", weight: s ? 3 : 1.4, fillColor: s ? "#2F7553" : d ? "#ffffff" : "#5c6660", fillOpacity: s ? .7 : d ? .12 : .55}); });
+    l.setStyle({color: "#FFFFFF", weight: s ? 3 : 1.4, fillColor: s ? MAPA_COR.marcado : d ? "#FFFFFF" : MAPA_COR.inativo, fillOpacity: s ? .65 : d ? .12 : .6}); });
 }
 $("pVista").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; P.vista = b.dataset.v;
   [...$("pVista").children].forEach(x => x.setAttribute("aria-pressed", String(x === b)));
@@ -553,14 +572,14 @@ $("pSave").addEventListener("click", async () => {
     : prods.find(x => !(num(x.dose) > 0)) ? "Informe a dose de todos os produtos." : "";
   if (erro) { msg("pMsg", "err", erro); return; }
   if (!prods.length && !confirm("Salvar a programação sem produtos? Dá para lançar os produtos depois na planilha.")) return;
-  const b = $("pSave"); b.disabled = true; b.textContent = "Salvando…";
+  const b = $("pSave"); Nadiana.estado(b, "enviando");
   try {
     const j = await enviar({acao:"programar", op:$("pOp").value, modo:P.modo, data:$("pData").value, talhoes, receita:$("pRec").value,
       produtos: prods.map(x => ({p:x.p.trim(), dose:num(x.dose)})), obs:$("pObs").value, permitirRepetida:$("pRep").checked, areas});
     toast(j.msg); P.sel.clear(); P.areas = {}; P.prods = []; P.busca = ""; $("pBusca").value = ""; $("pObs").value = ""; $("pRec").value = ""; $("pRep").checked = false;
     renderProdsUI(); await getListas(); location.hash = "home";
   } catch (e) { msg("pMsg", "err", e.message || String(e)); }
-  finally { b.disabled = false; b.textContent = "Salvar programação"; }
+  finally { Nadiana.estado(b, null); }
 });
 
 /* ---------- chuva ---------- */
@@ -577,12 +596,12 @@ $("cSave").addEventListener("click", async () => {
   if (!$("cData").value) { msg("cMsg", "err", "Informe a data."); return; }
   if (mm == null || mm < 0) { msg("cMsg", "err", "Informe a chuva em mm (0 se não choveu)."); return; }
   if ($("cData").value > hojeIso()) { msg("cMsg", "err", "A data não pode ser no futuro."); return; }
-  const b = $("cSave"); b.disabled = true; b.textContent = "Salvando…";
+  const b = $("cSave"); Nadiana.estado(b, "enviando");
   try {
     const j = await enviar({acao:"chuva", data:$("cData").value, mm, local:"", obs:""});
-    toast(j.msg); $("cMm").value = ""; $("cData").value = hojeIso(); await getListas(); $("cMm").blur(); window.scrollTo(0, 0);
+    toast(j.msg); $("cMm").value = ""; $("cData").value = hojeIso(); await getListas(); $("cMm").blur(); window.scrollTo(0, 0); Nadiana.estado(b, "feito");
   } catch (e) { msg("cMsg", "err", e.message || String(e)); }
-  finally { b.disabled = false; b.textContent = "Salvar chuva"; }
+  finally { if (b.dataset.estado !== "feito") Nadiana.estado(b, null); }
 });
 
 /* ---------- executar ---------- */
@@ -636,13 +655,13 @@ $("eSave").addEventListener("click", async () => {
   const erro = !sel ? "Escolha o talhão e a aplicação executada." : !$("eData").value ? "Informe a data executada." : !(a > 0) ? "Informe a área aplicada." : a > sel.area * 1.05 ? `A área aplicada é maior que a programada (${ha(sel.area)} ha).` : "";
   if (erro) { msg("eMsg", "err", erro); return; }
   const itens = [{id: sel.id, area: a, concluida: $("eConcl").checked}].concat(L.progs.filter(p => E.extras.has(p.id)).map(p => ({id: p.id, area: restante(p), concluida: true})));
-  const b = $("eSave"); b.disabled = true; b.textContent = "Salvando…";
+  const b = $("eSave"); Nadiana.estado(b, "enviando");
   try {
     const j = await enviar({acao:"executar", data:$("eData").value, modo:E.modo, os:$("eOS").value, obs:$("eObs").value, itens});
-    toast(j.msg); E.id = null; E.extras.clear(); ["eOS", "eObs", "eArea"].forEach(id => $(id).value = ""); $("eTal").value = ""; $("eConcl").checked = true;
+    feitoHome("Execução registrada", j.msg); E.id = null; E.extras.clear(); ["eOS", "eObs", "eArea"].forEach(id => $(id).value = ""); $("eTal").value = ""; $("eConcl").checked = true;
     await getListas(); location.hash = "home";
   } catch (e) { msg("eMsg", "err", e.message || String(e)); }
-  finally { b.disabled = false; b.textContent = "Salvar execução"; }
+  finally { Nadiana.estado(b, null); }
 });
 
 /* ---------- talhões ---------- */
@@ -662,22 +681,22 @@ $("tSave").addEventListener("click", async () => {
   msg("tMsg", "", "");
   if (!T.sel.size) { msg("tMsg", "err", "Marque pelo menos um talhão."); return; }
   if (!$("tPlant").value && !$("tGerm").value && !$("tVar").value.trim()) { msg("tMsg", "err", "Preencha a data de plantio, a de emergência ou a variedade."); return; }
-  const b = $("tSave"); b.disabled = true; b.textContent = "Salvando…";
+  const b = $("tSave"); Nadiana.estado(b, "enviando"); let ok = false;
   try {
     const j = await enviar({acao:"plantio", talhoes:[...T.sel], plantio:$("tPlant").value, germ:$("tGerm").value, variedade:$("tVar").value});
-    toast(j.msg); T.sel.clear(); ["tPlant", "tGerm", "tVar"].forEach(id => $(id).value = ""); await getListas(); renderTal();
+    toast(j.msg); T.sel.clear(); ["tPlant", "tGerm", "tVar"].forEach(id => $(id).value = ""); await getListas(); renderTal(); ok = true;
   } catch (e) { msg("tMsg", "err", e.message || String(e)); }
-  finally { b.disabled = false; renderTal(); }
+  finally { Nadiana.estado(b, null); renderTal(); if (ok) Nadiana.estado(b, "feito"); }
 });
 $("nSave").addEventListener("click", async () => {
   msg("nMsg", "", "");
   const t = $("nT").value.trim(), a = num($("nA").value);
   if (!t || !(a > 0)) { msg("nMsg", "err", "Informe o nome e a área do talhão."); return; }
   if (L && L.talhoes.some(x => norm(x.t) === norm(t))) { msg("nMsg", "err", `O talhão ${t.toUpperCase()} já existe.`); return; }
-  const b = $("nSave"); b.disabled = true;
-  try { const j = await enviar({acao:"talhao", t, area:a, cult:$("nC").value, vari:$("nV").value}); toast(j.msg); ["nT", "nA", "nV"].forEach(id => $(id).value = ""); await getListas(); }
+  const b = $("nSave"); Nadiana.estado(b, "enviando");
+  try { const j = await enviar({acao:"talhao", t, area:a, cult:$("nC").value, vari:$("nV").value}); toast(j.msg); ["nT", "nA", "nV"].forEach(id => $(id).value = ""); await getListas(); Nadiana.estado(b, "feito"); }
   catch (e) { msg("nMsg", "err", e.message || String(e)); }
-  finally { b.disabled = false; }
+  finally { if (b.dataset.estado !== "feito") Nadiana.estado(b, null); }
 });
 
 /* ---------- datas do painel de Plantio ---------- */
@@ -781,13 +800,13 @@ $("pcSave").addEventListener("click", async () => {
   const sel = pcLista().filter(x => !PC.fora.has(x.t.t)); if (!sel.length) return;
   const grupos = {};   // um envio por plantio, emergência e variedade; campo vazio não apaga o que já existe
   sel.forEach(({t, p, pl, gm}) => { const v = pl && !t.vari ? p.vari || "" : "", k = [pl, gm, v].join("|"); (grupos[k] ||= {plantio: pl, germ: gm, variedade: v, talhoes: []}).talhoes.push(t.t); });
-  const b = $("pcSave"); b.disabled = true; b.textContent = "Lançando…";
+  const b = $("pcSave"); Nadiana.estado(b, "enviando");
   let ok = 0;
   try {
     for (const g of Object.values(grupos)) { await enviar({acao:"plantio", talhoes: g.talhoes, plantio: g.plantio, germ: g.germ, variedade: g.variedade}); ok += g.talhoes.length; }
     toast(`Datas lançadas em ${ok} ${ok === 1 ? "talhão" : "talhões"}.`); PC.fora.clear();
   } catch (e) { msg("pcMsg", "err", (ok ? `Lancei ${ok} e parei: ` : "") + (e.message || String(e))); }
-  finally { await getListas(); renderPC(); }
+  finally { await getListas(); Nadiana.estado(b, null); renderPC(); }
 });
 
 /* ---------- início ---------- */
