@@ -285,6 +285,13 @@ form{border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:va
 /* barras de baixo: acima da navegação do celular */
 .backbar,.savebar{background:var(--panel);border-top:1px solid var(--line2);box-shadow:var(--sombra-3)}
 .backbar{bottom:calc(var(--nav-altura) + env(safe-area-inset-bottom,0px))}
+/* movimento da base: esqueleto das listas na primeira carga; menu de ações do experimento */
+.esq-cartoes{display:flex;flex-direction:column;gap:var(--space-3)}
+.esq-cartoes .nd-cartao{gap:var(--space-2)}
+#cargaExp:empty{display:none}
+#cargaExp{margin-bottom:var(--space-4)}
+.nd-menu > button.perigo{color:var(--bad)}
+.row .nd-menu-ancora > .btn{min-width:44px;justify-content:center}
 @media (min-width:900px){.backbar{bottom:0}}
 .backbar .btn,.savebar .btn{min-height:48px}
 .note{font-size:13.5px}
@@ -319,9 +326,9 @@ form{border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:va
   </form>
 </div>
 <div class="nd-app" id="app">
-<nav class="nd-nav" aria-label="Principal" role="tablist">
+<nav class="nd-nav desliza" aria-label="Principal" role="tablist">
   <div class="marca"><span class="nd-logo"><img src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-logo-vertical.svg" alt="Nadiana Agronegócios"></span></div>
-  <a href="#" role="tab" id="tab-lembretes" aria-selected="true" aria-current="page" data-tab="lembretes"><svg class="nd-ic" aria-hidden="true"><use href="#i-bell"/></svg>Lembretes</a>
+  <a href="#" role="tab" id="tab-lembretes" aria-selected="true" aria-current="page" data-tab="lembretes"><svg class="nd-ic" aria-hidden="true"><use href="#i-bell"/></svg>Lembretes<span class="nd-selo" id="seloLem" hidden></span></a>
   <a href="#" role="tab" id="tab-experimentos" aria-selected="false" data-tab="experimentos"><svg class="nd-ic" aria-hidden="true"><use href="#i-sprout"/></svg>Experimentos</a>
   <a href="#" role="tab" id="tab-resultados" aria-selected="false" data-tab="resultados"><svg class="nd-ic" aria-hidden="true"><use href="#i-chart-column"/></svg>Resultados</a>
   <a href="#" role="tab" id="tab-novo" aria-selected="false" data-tab="novo"><svg class="nd-ic" aria-hidden="true"><use href="#i-plus"/></svg>Novo</a>
@@ -336,6 +343,7 @@ form{border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:va
 <div class="wrap">
 <div class="nd-cartao nd-feito" id="feito" hidden role="status"><svg viewBox="0 0 76 76" aria-hidden="true"><circle cx="38" cy="38" r="34" pathLength="1"/><path d="M24 39l10 10 19-21" pathLength="1"/></svg><b id="feitoT">Avaliação salva</b><span id="feitoS"></span></div>
 
+  <div class="nd-cartao" id="cargaExp"></div>
   <div class="stats" id="stats">
     <div class="stat late"><b id="sLate">0</b><span>Atrasadas</span></div>
     <div class="stat now"><b id="sNow">0</b><span>Janela aberta</span></div>
@@ -350,10 +358,10 @@ form{border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:va
       <select id="fExp"><option value="">Todos</option></select>
       <label><input type="checkbox" id="fDone"> mostrar feitas</label>
     </div>
-    <div id="lembretes"></div>
+    <div class="nd-carrega" id="lemBox"><div class="esqueleto esq-cartoes" aria-hidden="true"><div class="nd-cartao"><span class="nd-esq t"></span><span class="nd-esq l"></span><span class="nd-esq c"></span></div><div class="nd-cartao"><span class="nd-esq t"></span><span class="nd-esq l"></span><span class="nd-esq c"></span></div></div><div class="conteudo"><div id="lembretes"></div></div></div>
   </section>
 
-  <section id="v-experimentos" hidden><div id="exps"></div></section>
+  <section id="v-experimentos" hidden><div class="nd-carrega" id="expBox"><div class="esqueleto esq-cartoes" aria-hidden="true"><div class="nd-cartao"><span class="nd-esq t"></span><span class="nd-esq l"></span><span class="nd-esq c"></span></div><div class="nd-cartao"><span class="nd-esq t"></span><span class="nd-esq l"></span><span class="nd-esq c"></span></div></div><div class="conteudo"><div id="exps"></div></div></div></section>
 
   <section id="v-resultados" hidden>
     <div class="toolbar"><label for="rExp">Experimento</label><select id="rExp"></select></div>
@@ -522,10 +530,13 @@ function eventos(){
 }
 
 function renderStats(evs){
-  const conta=(id,v)=>{const el=$(id);if(window.Nadiana&&Nadiana.contar)Nadiana.contar(el,v);else el.textContent=v;};
+  const conta=(id,v)=>{const el=$(id),N=window.Nadiana;if(!N){el.textContent=v;return;}if(el._jaContou&&N.rolar)N.rolar(el,v);else if(N.contar){el._jaContou=1;N.contar(el,v);}else el.textContent=v;}; // 1ª vez conta; depois o número rola
   conta('sLate',evs.filter(e=>e.st==='late').length);
   conta('sNow',evs.filter(e=>e.st==='now').length);
   conta('sSoon',evs.filter(e=>e.st==='soon').length);
+  const at=evs.filter(e=>e.st==='late').length, ag=at+evs.filter(e=>e.st==='now').length, sl=$('seloLem');  // selo: o que fazer agora (vermelho se houver atrasada)
+  sl.classList.toggle('erro',at>0);sl.setAttribute('aria-label',ag+(ag===1?' lembrete para fazer agora':' lembretes para fazer agora')+(at?', '+at+(at===1?' atrasado':' atrasados'):''));
+  if(window.Nadiana&&Nadiana.rolar)Nadiana.rolar(sl,ag);else{sl.textContent=ag;sl.hidden=!ag;}
 }
 function itemHTML(e){
   const pill=e.st==='late'?'<span class="pill late">Atrasada '+(-e.delta)+' d</span>':e.st==='now'?'<span class="pill now">'+(e.delta===0?'Hoje':e.delta>0?'em '+e.delta+' d':'há '+(-e.delta)+' d')+'</span>':e.st==='done'?'<span class="pill done">Feita '+esc(e.done.split('-').reverse().slice(0,2).join('/'))+'</span>':'';
@@ -545,7 +556,7 @@ function renderLembretes(){
   const box=$('lembretes');
   if(!exps.length){
     box.innerHTML=`<div class="empty"><h2>Nenhum experimento cadastrado</h2><p>Cadastre o primeiro experimento com a data de plantio. Cada avaliação vira um lembrete com data, estágio, o que fazer e a ficha a usar.</p><button class="btn nd-onda primary" id="goNew">Cadastrar experimento</button></div>`;
-    $('goNew').onclick=()=>show('novo'); return;
+    $('goNew').onclick=()=>show('novo',false,{modo:'frente'}); return;
   }
   const sec=[['late','Atrasadas','passou a janela de 3 dias'],['now','Janela aberta','fazer nestes dias'],['soon','Próximos 5 dias',''],['later','Mais adiante',''],['done','Feitas','']];
   let h='';
@@ -555,6 +566,7 @@ function renderLembretes(){
   const ad=f?0:evs.filter(e=>e.st==='later').length;
   box.innerHTML=(h||'<div class="empty"><p>Nada para fazer nos próximos 5 dias.</p></div>')+(ad?`<p class="sub" style="margin-top:14px">${ad} avaliações mais adiante não aparecem aqui. Para ver a agenda completa de um experimento, escolha-o no filtro acima.</p>`:'');
 }
+const idMenu=c=>String(c).replace(/[^A-Za-z0-9_-]/g,'_');
 function renderExps(){
   const sel=$('fExp'), cur=sel.value;
   sel.innerHTML='<option value="">Todos</option>'+exps.map(x=>`<option value="${esc(x.codigo)}">${esc(x.codigo)}</option>`).join('');
@@ -563,12 +575,12 @@ function renderExps(){
   if(!exps.length){box.innerHTML='<div class="empty"><h2>Sem experimentos ainda</h2><p>Use a aba “+ Novo experimento”.</p></div>';return;}
   box.innerHTML='<div class="exps">'+exps.map(x=>{
     const mine=evs.filter(e=>e.x===x), done=mine.filter(e=>e.done).length;
-    return `<div class="exp"><h3><span class="tag">${esc(x.codigo)}</span>${x.tipo==='Variedade'?'Variedade':'Produto'}</h3>
+    return `<div class="exp" data-cod="${esc(x.codigo)}"><h3><span class="tag">${esc(x.codigo)}</span>${x.tipo==='Variedade'?'Variedade':'Produto'}</h3>
       <dl>${catOf(x)?`<dt>Categoria</dt><dd>${esc(catOf(x))}${temApl(x)?' · aplicação aos '+esc(x.aplicDap)+' DAP':''}</dd>`:''}<dt>Local</dt><dd>${esc(x.talhao)||'—'}</dd>${(x.tratamentos||[]).some(t=>t.area!=null)?`<dt>Área</dt><dd>${(x.tratamentos||[]).reduce((a,t)=>a+(Number(t.area)||0),0).toFixed(2).replace('.',',')} ha medidos</dd>`:''}<dt>Testa</dt><dd>${esc(x.testado)||'—'}</dd><dt>Padrão</dt><dd>${esc(x.padrao)||'—'}</dd>
       <dt>Plantio</dt><dd>${x.plantio?esc(x.plantio.split('-').reverse().join('/')):'—'} · ciclo ${esc(x.ciclo)} d</dd></dl>
       <div class="chips">${(x.tratamentos||[]).map(t=>`<span class="tag" title="${esc(t.desc)}">${esc(t.cod)}${t.padrao?' (padrão)':''}${t.area!=null?' · '+String(t.area).replace('.',',')+' ha':''}</span>`).join('')}</div>
       <div><div class="bar"><i style="width:${mine.length?Math.round(done/mine.length*100):0}%"></i></div><small class="sub">${done} de ${mine.length} avaliações feitas</small></div>
-      ${canWrite?`<div class="row" id="r-${esc(x.codigo)}"><button class="btn nd-onda small" data-res="${esc(x.codigo)}">Resultados</button><button class="btn nd-onda small" data-edit="${esc(x.codigo)}">Editar</button><button class="btn nd-onda small danger" data-del="${esc(x.codigo)}">Excluir</button></div>`:''}</div>`;}).join('')+'</div>';
+      ${canWrite?`<div class="row" id="r-${esc(x.codigo)}"><button class="btn nd-onda small" data-res="${esc(x.codigo)}">Resultados</button><span class="nd-menu-ancora"><button type="button" class="btn nd-onda small" data-nd-menu="m-${idMenu(x.codigo)}" aria-haspopup="menu" aria-expanded="false" aria-label="Mais ações de ${esc(x.codigo)}"><svg class="nd-ic" aria-hidden="true"><use href="#i-ellipsis"/></svg></button><div class="nd-menu esquerda" id="m-${idMenu(x.codigo)}" role="menu"><button type="button" role="menuitem" data-edit="${esc(x.codigo)}"><svg class="nd-ic" aria-hidden="true"><use href="#i-pencil"/></svg>Editar</button><button type="button" role="menuitem" class="perigo" data-del="${esc(x.codigo)}"><svg class="nd-ic" aria-hidden="true"><use href="#i-trash-2"/></svg>Excluir</button></div></span></div>`:''}</div>`;}).join('')+'</div>';
 }
 function render(){renderExps();renderLembretes();renderRes();}
 function vals(cod,evk,trat){const a=avals[cod+'__'+evk];return a?.valores?.[trat]||null}
@@ -745,7 +757,7 @@ function abrirLanc(cod,evk){
      <div class="pts" id="pts-${ti}">${ps.map(p=>pontoHTML(ti,p,pf,v[p],pts[p])).join('')}</div>
      <button type="button" class="btn nd-onda addp" data-addp="${ti}"><svg class="nd-ic gira" aria-hidden="true"><use href="#i-plus"/></svg>Adicionar ponto</button>
      ${fts.length||pend?`<div class="ths">${thumbs(fts,pend)}</div>`:''}</section>`}).join('');
-  show('lancar');
+  show('lancar',false,{modo:'frente'});
 }
 function pedirGPS(ti,p){
   const h=$('lg-'+ti+'-'+p),s=$('gs-'+ti+'-'+p);if(!h||h.value||h.dataset.tent)return;h.dataset.tent='1';
@@ -814,10 +826,20 @@ $('lform').onsubmit=async e=>{
 };
 
 let hist=[],atual='lembretes';
-function show(tab,back){
+/* troca de tela (base Nadiana): suave nas abas, frente ao abrir, volta no Voltar; o cartão do experimento cresce até os resultados e encolhe de volta */
+const cresceDe={};
+function show(tab,back,op){
+  const ant=atual,de=$('v-'+ant),para=$('v-'+tab);
   if(!back&&tab!==atual){hist.push(atual);if(hist.length>20)hist.shift()}
   if(tab==='lembretes'&&!back)hist=[];
   atual=tab;
+  op=op||{};let modo=op.modo||(back?'volta':'suave'),cartao=op.cartao||null;
+  if(modo==='cresce'&&cartao)cresceDe[tab]={de:ant,cod:cartao.dataset.cod};else if(!back)delete cresceDe[tab];
+  if(back&&cresceDe[ant]&&cresceDe[ant].de===tab){const c=document.querySelector(`.exp[data-cod="${CSS.escape(cresceDe[ant].cod)}"]`);if(c){modo='encolhe';cartao=c;}delete cresceDe[ant];}
+  const muda=()=>mostrarTela(tab);
+  if(ant!==tab&&window.Nadiana&&Nadiana.trocar)Nadiana.trocar(muda,{modo,cartao,de,para});else muda();
+}
+function mostrarTela(tab){
   $('backbar').hidden=tab==='lancar'||(tab==='lembretes'&&!hist.length);
   ['lembretes','experimentos','resultados','novo','lancar'].forEach(t=>{$('v-'+t).hidden=t!==tab;const b=$('tab-'+t);if(b){b.setAttribute('aria-selected',t===tab);if(t===tab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')}});
   if(tab==='resultados') renderRes();
@@ -892,9 +914,9 @@ document.addEventListener('click',async e=>{
     const feitas={...(x.feitas||{})}; if(b.dataset.done) feitas[key]=iso(today()); else delete feitas[key];
     fila.push({id:Date.now(),tipo:'feitas',codigo:cod,set:{[key]:b.dataset.done?iso(today()):null},fotos:[]});salvaFila();atualizarTudo();sync();
   }
-  if(b.dataset.res){$('rExp').value=b.dataset.res;show('resultados');}
+  if(b.dataset.res){$('rExp').value=b.dataset.res;const c=b.closest('.exp');show('resultados',false,c?{modo:'cresce',cartao:c}:{modo:'frente'});}
   if(b.dataset.lancar){const [c,k]=b.dataset.lancar.split('|');abrirLanc(c,k);}
-  if(b.dataset.edit){editing=b.dataset.edit;fillForm(exps.find(x=>x.codigo===editing));show('novo');}
+  if(b.dataset.edit){editing=b.dataset.edit;fillForm(exps.find(x=>x.codigo===editing));show('novo',false,{modo:'frente'});}
   if(b.dataset.del){const r=$('r-'+b.dataset.del);r.innerHTML=`<span class="confirm">Excluir ${esc(b.dataset.del)} e todos os lembretes? <button class="btn small danger nd-segurar" data-delhold="${esc(b.dataset.del)}">Segure para excluir</button><button class="btn nd-onda small" data-delno="1">Manter</button></span>`;}
   if(b.dataset.delno) renderExps();
   if(b.dataset.delok) excluirExp(b.dataset.delok);
@@ -908,7 +930,24 @@ function feito(t){const el=$('feito');$('feitoT').textContent=t;
   $('feitoS').textContent=navigator.onLine===false?'Guardado no celular. Vai para a planilha quando tiver sinal.':'Enviando para a planilha.';
   el.hidden=false;if(window.Nadiana&&Nadiana.feito)Nadiana.feito(el);clearTimeout(feito.t);feito.t=setTimeout(()=>{el.hidden=true},6000);}
 const t=today(); $('today').textContent='Hoje, '+SEM[t.getDay()]+', '+String(t.getDate()).padStart(2,'0')+' '+MES[t.getMonth()]+' '+t.getFullYear();
+const PRIMEIRA=localStorage.getItem('cache_exps')===null; // nada guardado ainda: primeira carga deste aparelho
 sExps=LS.get('cache_exps',[]);sAvals=LS.get('cache_avals',{});atualizarTudo();
+/* carregamento (base Nadiana): esqueleto nas listas; na primeira carga, abertura com o símbolo e, passando de 3 s, a barra com etapas */
+const CARGA={on:false,c:null,t:null,i:0};
+function listasProntas(){if(window.Nadiana){Nadiana.pronto($('lemBox'));Nadiana.pronto($('expBox'));}else{$('lemBox').setAttribute('data-pronto','');$('expBox').setAttribute('data-pronto','');}}
+function cargaInicio(){
+  if(!CARGA.on||!window.Nadiana||!Nadiana.abertura)return;
+  Nadiana.abertura('Abrindo os Experimentos');
+  CARGA.t=setTimeout(()=>{Nadiana.abertura.fim();if(!CARGA.on||!Nadiana.etapas)return;
+    CARGA.c=Nadiana.etapas($('cargaExp'),['Conectando à planilha','Lendo experimentos e avaliações','Montando os lembretes'],{titulo:'Buscando os experimentos'});CARGA.c.etapa(CARGA.i);},3000);
+}
+function cargaEtapa(i){CARGA.i=i;if(CARGA.c)CARGA.c.etapa(i);}
+function cargaFim(){
+  CARGA.on=false;clearTimeout(CARGA.t);listasProntas();
+  if(window.Nadiana&&Nadiana.abertura)Nadiana.abertura.fim();
+  if(CARGA.c){CARGA.c.fim();CARGA.c=null;$('cargaExp').innerHTML='';$('cargaExp').className='nd-cartao';}
+}
+if(!PRIMEIRA)listasProntas();
 
 /* ---------- indicador de conexão (base Nadiana) ---------- */
 function netStatus(){const n=$('net');if(!n)return;const off=navigator.onLine===false,pend=fila.length;
@@ -944,7 +983,7 @@ async function subirFoto(blob,f,op){
 const fotoSrc=f=>f.id?'https://drive.google.com/thumbnail?id='+encodeURIComponent(f.id)+'&sz=w600':'';
 const fotoLink=f=>f.url||(f.id?'https://drive.google.com/file/d/'+encodeURIComponent(f.id)+'/view':'#');
 async function puxar(){
-  const j=await api('tudo',{});
+  const j=await api('tudo',{});cargaEtapa(2);
   sExps=(j.experimentos||[]).filter(Boolean);sAvals=j.avaliacoes||{};
   LS.set('cache_exps',sExps);LS.set('cache_avals',sAvals);
   $('note').textContent=NOTA;atualizarTudo();
@@ -953,7 +992,7 @@ function conectar(){
   if(!cfg)return Promise.resolve();
   db=db||criarDb();
   if(!conectando)conectando=(async()=>{
-    try{await puxar();}
+    try{await puxar();cargaFim();}
     catch(e){$('note').textContent=e?.code==='chave'?'A planilha recusou a chave de acesso. Toque em Trocar acesso.':'Sem sinal agora. O app mostra os dados guardados no celular e você pode lançar avaliações; elas sobem sozinhas quando o sinal voltar.';return;}
     await sync();
   })().finally(()=>{conectando=null});
@@ -978,7 +1017,9 @@ $('trocar').onclick=()=>telaConfig(true);
 if(navigator.storage?.persist)navigator.storage.persist().catch(()=>{});
 {const h=location.hash.slice(1);if(['experimentos','resultados','novo'].includes(h))show(h);}
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-if(cfg)conectar();else telaConfig(true);
+if(cfg){CARGA.on=PRIMEIRA;conectar().finally(cargaFim);}else{telaConfig(true);listasProntas();}
+{const comeca=()=>{cargaInicio();if(window.Nadiana&&Nadiana.marcaNav)Nadiana.marcaNav();atualizarTudo();}; // nadiana.js vem com defer: começa quando ele carregar
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',comeca);else comeca();}
 </script>
 </body>
 </html>
