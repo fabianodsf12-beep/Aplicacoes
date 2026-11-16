@@ -843,12 +843,17 @@ const DOBRAS = "tabuleiro.dobras";
     el.addEventListener("toggle", () => { d[el.dataset.dobra] = el.open; lsSet(DOBRAS, JSON.stringify(d)); }); }); })();
 const abrirAte = el => { for (let d = el && el.closest("details"); d; d = d.parentElement && d.parentElement.closest("details")) d.open = true; };
 function escolherTalhao(nome, ajustar){
-  if (ajustar && S.travado) { $("talhao").value = S.talhao; aviso("Ensaio travado: para outro talhão, toque em Novo ensaio"); return; }
+  let saiu = null;
+  if (ajustar && S.travado && nome !== S.talhao) { // sair de um ensaio travado: ele continua salvo e travado; a tela começa do zero no outro talhão
+    const ab = S.ensaioId && SALVOS.ensaios.find(e => e.id === S.ensaioId); saiu = ab ? ab.nome : S.talhao;
+    S = {...PADRAO, talhao:nome, trats:PADRAO.trats.map(t => ({...t}))}; VER = -1; APL = 0;
+  }
   S.talhao = nome; $("talhao").value = nome;
   if (ajustar) { S.ang = null; S.rumoFixo = false; S.pontoA = null; S.pontoB = null; S.abTxt = null; S.linhaId = null; S.ensaioId = null; ajustarAoTalhao(); }
   salvar(); preencherCampos(); desenharTalhoes(); enquadrar(); atualizar();
   if (ajustar) usarLinhaMaisRecente(true);
   renderSalvos();
+  if (saiu) aviso(`"${saiu}" continua salvo e travado. Agora você está no ${nome}`);
   $("mapMsg").textContent = "Mova o ensaio com os botões − e + da pista e da distância da cabeceira. Toque num quadrado para ver o tratamento.";
 }
 function preencherLista(){ // agrupa por bloco quando os limites trazem o bloco (FARM_NAME)
@@ -1524,7 +1529,7 @@ $("menuEns").addEventListener("click", e => {
 });
 /* ---------- trava: com o projeto em andamento, a estrutura do ensaio não muda por um clique errado ---------- */
 var TRAVA_OK = null; // null: não travado; true: o desenho de hoje bate com a fotografia; false: não bate
-const PASSOS_TRAVADOS = ["talhao", "pista", "tamanho", "trat"];
+const PASSOS_TRAVADOS = ["pista", "tamanho", "trat"]; // o talhão fica livre: escolher outro sai do ensaio travado sem mexer nele
 function fotoAtual(){ return GRADE ? GRADE.quads.filter(q => q.ok).map(q => [q.id, S.trats[q.ti].cod, +q.centro[1].toFixed(7), +q.centro[0].toFixed(7)]) : []; }
 function codigoFoto(foto){ let h = 0x811c9dc5; const t = JSON.stringify(foto); for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
   return `${semAcento(S.talhao).replace(/[^A-Za-z0-9]/g, "").toUpperCase()}-${h.toString(16).toUpperCase().padStart(8, "0").slice(0, 4)}`; }
@@ -1542,7 +1547,7 @@ function aplicarTrava(){
   const ruim = TRAVA_OK === false; box.className = "nd-msg " + (ruim ? "erro" : "ok");
   box.innerHTML = ruim
     ? `<svg class="nd-ic" aria-hidden="true"><use href="#i-circle-x"/></svg><div><b>O tabuleiro não bate com o travado</b>O desenho de hoje está diferente do que foi travado em ${esc(dataHora(tr.em))} (código ${esc(tr.codigo)}). Não baixe arquivos novos: use os que já foram para o Operations Center e avise para corrigir o app.</div>`
-    : `<svg class="nd-ic" aria-hidden="true"><use href="#i-circle-check"/></svg><div><b>Ensaio travado · código ${esc(tr.codigo)}</b>Travado em ${esc(dataHora(tr.em))}${tr.porNome ? " por " + esc(tr.porNome) : ""}${TRAVA_OK ? ", conferido agora" : ""}. Talhão, pista, posição, tamanho e tratamentos não mudam; as aplicações continuam editáveis.</div>`;
+    : `<svg class="nd-ic" aria-hidden="true"><use href="#i-circle-check"/></svg><div><b>Ensaio travado · código ${esc(tr.codigo)}</b>Travado em ${esc(dataHora(tr.em))}${tr.porNome ? " por " + esc(tr.porNome) : ""}${TRAVA_OK ? ", conferido agora" : ""}. Pista, posição, tamanho, tratamentos e sorteio não mudam; as aplicações continuam editáveis. Escolher outro talhão abre um ensaio novo, sem mexer neste.</div>`;
 }
 function travaBloqueia(onde){ if (TRAVA_OK !== false) return false; (onde || arqMsg)("erro", "<b>Arquivos bloqueados</b>O tabuleiro de hoje não bate com o que foi travado. Use os arquivos já enviados ao Operations Center."); return true; }
 async function gravarAberto(){ // grava o ensaio aberto como está (mesmo formato de Salvar alterações)
