@@ -245,6 +245,15 @@ tbody tr:hover td{background:var(--panel2)}
   .kpi .val{font-size:34px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* Tela que se adapta: o painel ocupa a largura de qualquer tela (até 2.560 px), com margem que cresce com ela;
+   gráficos ficam mais altos em tela larga e o mapa usa a altura visível */
+:root{--margem:clamp(16px,2vw,48px)}
+.wrap,.barra-inner,.top-inner{max-width:2560px;padding-left:max(var(--margem),env(safe-area-inset-left,0px));padding-right:max(var(--margem),env(safe-area-inset-right,0px))}
+.chart-box{height:clamp(300px,19vw,460px)}
+.chart-box.tall{height:clamp(340px,22vw,520px)}
+.brand,.brand > div{min-width:0;max-width:100%}
+.dline{flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -322,13 +331,13 @@ tbody tr:hover td{background:var(--panel2)}
       <div class="card">
         <div class="card-head"><div><h2>Situação das aplicações</h2><p class="sub">Clique numa situação para filtrar todo o painel.</p></div></div>
         <div class="donut-wrap">
-          <div class="chart-box" style="height:240px"><canvas id="chDonut" aria-label="Gráfico de situação das aplicações"></canvas></div>
+          <div class="chart-box" style="height:clamp(240px,15vw,340px)"><canvas id="chDonut" aria-label="Gráfico de situação das aplicações"></canvas></div>
           <div class="legend" id="donutLegend"></div>
         </div>
       </div>
       <div class="card">
         <div class="card-head"><div><h2>Avanço por operação</h2><p class="sub">Área (ha) por situação. Clique numa barra para filtrar a operação.</p></div><div class="kfig" id="kfOps"></div></div>
-        <div class="chart-box" style="height:340px"><canvas id="chOps" aria-label="Avanço por operação"></canvas></div>
+        <div class="chart-box" style="height:clamp(340px,22vw,540px)"><canvas id="chOps" aria-label="Avanço por operação"></canvas></div>
       </div>
     </div>
     <div class="grid g2" style="margin-top:16px">
@@ -342,21 +351,21 @@ tbody tr:hover td{background:var(--panel2)}
           <div class="kfig" id="kfLoad"></div>
           <label class="cap">Capacidade (ha/dia)<input type="number" id="cap" min="0" step="50" placeholder="ex.: 500"></label>
         </div>
-        <div class="chart-box tall" style="height:310px"><canvas id="chLoad" aria-label="Carga diária"></canvas></div>
+        <div class="chart-box tall" style="height:clamp(310px,20vw,480px)"><canvas id="chLoad" aria-label="Carga diária"></canvas></div>
         <div class="cap-msg" id="capMsg"></div>
       </div>
     </div>
     <div class="grid g2" style="margin-top:16px">
       <div class="card">
         <div class="card-head"><div><h2>Ritmo semanal</h2><p class="sub">Hectares aplicados por semana × programados para a semana.</p></div><div class="kfig" id="kfRitmo"></div></div>
-        <div class="chart-box tall" style="height:310px"><canvas id="chRitmo" aria-label="Ritmo semanal de aplicação"></canvas></div>
+        <div class="chart-box tall" style="height:clamp(310px,20vw,480px)"><canvas id="chRitmo" aria-label="Ritmo semanal de aplicação"></canvas></div>
         <div class="cap-msg" id="ritmoMsg"></div>
       </div>
       <div class="card">
         <div class="card-head"><div><h2>Aplicação × chuva</h2><p class="sub">Chuva (mm), chuva acumulada no período e área aplicada.</p></div>
           <div class="seg nd-desliza" role="group" aria-label="Agrupar chuva" id="segChuva" style="margin-left:auto"><button type="button" class="nd-onda" data-v="d" aria-pressed="true">Diário</button><button type="button" class="nd-onda" data-v="w" aria-pressed="false">Semanal</button></div>
           <div class="kfig" id="kfChuva" style="margin-left:14px"></div></div>
-        <div class="chart-box tall" style="height:310px"><canvas id="chChuva" aria-label="Aplicação e pluviometria"></canvas></div>
+        <div class="chart-box tall" style="height:clamp(310px,20vw,480px)"><canvas id="chChuva" aria-label="Aplicação e pluviometria"></canvas></div>
         <div class="cap-msg" id="chuvaMsg"></div>
       </div>
     </div>
@@ -405,7 +414,7 @@ tbody tr:hover td{background:var(--panel2)}
           <label class="check"><input type="checkbox" id="geoLbl" checked>Nomes</label>
         </div>
       </div>
-      <div id="geoMap" style="position:relative;z-index:0;isolation:isolate;height:min(70vh,640px);min-height:380px;border-radius:10px;overflow:hidden;background:var(--panel2)"></div>
+      <div id="geoMap" style="position:relative;z-index:0;isolation:isolate;height:clamp(380px,calc(100dvh - 190px),1300px);min-height:380px;border-radius:10px;overflow:hidden;background:var(--panel2)"></div>
       <div class="scale" id="geoScale"></div>
       <p class="sub" id="geoMsg" style="margin-top:8px"></p>
     </div>

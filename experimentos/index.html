@@ -312,6 +312,17 @@ form{border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:va
 .btn .nd-ic{width:18px;height:18px;vertical-align:-3px;margin-right:var(--space-1)}
 #feito{margin-bottom:var(--space-4)}
 .btn.nd-estado{display:inline-grid;place-items:center}
+
+/* Tela que se adapta: Lembretes, Experimentos e Resultados ocupam a tela toda (até 2.560 px, margem que cresce com a tela);
+   os formulários (Novo experimento, cabeçalho de Lançar dados, configuração) ficam numa coluna centrada */
+:root{--margem:clamp(16px,2vw,48px)}
+.wrap,.nd-topo .nd-wrap{max-width:2560px;padding-left:max(var(--margem),env(safe-area-inset-left,0px));padding-right:max(var(--margem),env(safe-area-inset-right,0px))}
+#lembretes .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,460px),1fr));gap:10px 12px}
+.exps{grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr))}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:12px}
+#form{max-width:900px;margin-inline:auto}
+#lform .lhead,#lform .lmeta,#lform > .f,#lMsg{max-width:900px}
+.backbar{margin-left:calc(-1 * max(var(--margem),env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(var(--margem),env(safe-area-inset-right,0px)));padding-left:max(var(--margem),env(safe-area-inset-left,0px));padding-right:max(var(--margem),env(safe-area-inset-right,0px))}
 </style>
 </head>
 <body>
