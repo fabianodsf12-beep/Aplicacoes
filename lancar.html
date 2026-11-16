@@ -90,7 +90,8 @@ select.inp{appearance:auto}
 .save:disabled{opacity:.55;cursor:default}
 .act{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:var(--sombra-1);padding:16px;text-decoration:none;color:var(--ink);min-height:80px;cursor:pointer;text-align:left;width:100%;transition:border-color var(--dur-media) var(--curva),box-shadow var(--dur-media) var(--curva),transform var(--dur-media) var(--curva)}
 .act:hover{border-color:var(--line);box-shadow:var(--sombra-2);transform:translateY(-2px)}
-.act:active{transform:none}
+.act:active{transform:scale(.97)}
+.back.nd-onda{border-radius:var(--radius-md);padding:0 8px;margin-left:-8px}
 .act .n{width:46px;height:46px;border-radius:12px;background:var(--brand-soft);display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:22px;font-weight:600;flex-shrink:0;color:var(--brand)}
 .act .tx{display:flex;flex-direction:column;gap:2px;flex-grow:1}
 .act .t{font-size:17px;font-weight:600}.act .s{font-size:14px;color:var(--muted)}
@@ -137,7 +138,7 @@ select.inp{appearance:auto}
 <header class="top">
   <div class="top-row">
     <a href="./index.html" aria-label="Início"><img class="nd-simbolo" src="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.svg" alt="Nadiana"></a>
-    <button type="button" class="back" id="btnBack" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Lançamentos</button>
+    <button type="button" class="back nd-onda" id="btnBack" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Lançamentos</button>
     <a id="brandMini" href="./index.html" style="font-size:14px;color:var(--muted);text-decoration:none;min-height:44px;display:inline-flex;align-items:center">Início · Fazenda Reata</a>
     <a class="link nd-onda" href="./painel.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Painel</a>
   </div>
@@ -165,10 +166,10 @@ select.inp{appearance:auto}
   <main>
     <div class="card carga-etapas" id="cargaEtapas" hidden></div>
     <div class="card nd-feito" id="feitoHome" hidden role="status"><svg viewBox="0 0 76 76" aria-hidden="true"><circle cx="38" cy="38" r="34" pathLength="1"/><path d="M24 39l10 10 19-21" pathLength="1"/></svg><b id="feitoT">Execução registrada</b><span class="hint" id="feitoS"></span></div>
-    <button type="button" class="act nd-onda" data-go="programar"><span class="n">1</span><span class="tx"><span class="t">Programar aplicação</span><span class="s">Talhões, operação, data e produtos</span></span></button>
-    <button type="button" class="act nd-onda" data-go="executar"><span class="n">2<span class="nd-selo erro" id="sVenc" role="img" hidden></span></span><span class="tx"><span class="t">Registrar execução</span><span class="s">Data, área aplicada e nº da OS do Protector</span></span><span class="badge" id="bPend" hidden></span></button>
-    <button type="button" class="act nd-onda" data-go="chuva"><span class="n" style="font-size:20px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 16a5 5 0 1 1 1.5-9.8A6 6 0 0 1 20 9a4 4 0 0 1-1 7.9M8 19l-1 2M12 19l-1 2M16 19l-1 2"/></svg></span><span class="tx"><span class="t">Chuva</span><span class="s">Registrar a pluviometria do dia</span></span><span class="badge" id="bChuva" hidden></span></button>
-    <button type="button" class="act nd-onda" data-go="talhoes"><span class="n">4</span><span class="tx"><span class="t">Talhões e plantio</span><span class="s">Lançar plantio em vários ou cadastrar talhão</span></span><span class="badge" id="bPlant" hidden></span></button>
+    <button type="button" class="act nd-onda nd-afunda" data-go="programar"><span class="n">1</span><span class="tx"><span class="t">Programar aplicação</span><span class="s">Talhões, operação, data e produtos</span></span></button>
+    <button type="button" class="act nd-onda nd-afunda" data-go="executar"><span class="n">2<span class="nd-selo erro" id="sVenc" role="img" hidden></span></span><span class="tx"><span class="t">Registrar execução</span><span class="s">Data, área aplicada e nº da OS do Protector</span></span><span class="badge" id="bPend" hidden></span></button>
+    <button type="button" class="act nd-onda nd-afunda" data-go="chuva"><span class="n" style="font-size:20px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 16a5 5 0 1 1 1.5-9.8A6 6 0 0 1 20 9a4 4 0 0 1-1 7.9M8 19l-1 2M12 19l-1 2M16 19l-1 2"/></svg></span><span class="tx"><span class="t">Chuva</span><span class="s">Registrar a pluviometria do dia</span></span><span class="badge" id="bChuva" hidden></span></button>
+    <button type="button" class="act nd-onda nd-afunda" data-go="talhoes"><span class="n">4</span><span class="tx"><span class="t">Talhões e plantio</span><span class="s">Lançar plantio em vários ou cadastrar talhão</span></span><span class="badge" id="bPlant" hidden></span></button>
     <div class="card" style="gap:4px">
       <h2 style="margin-bottom:6px">Últimos lançamentos</h2>
       <div class="nd-carrega recs-carga" id="recsCarga" aria-busy="true">
@@ -176,7 +177,7 @@ select.inp{appearance:auto}
         <div class="conteudo"><div id="recentes"></div></div>
       </div>
     </div>
-    <button type="button" class="back" id="btnCfg" style="color:var(--muted);align-self:center;font-size:14px">Trocar usuário ou senha</button>
+    <button type="button" class="back nd-onda" id="btnCfg" style="color:var(--muted);align-self:center;font-size:14px">Trocar usuário ou senha</button>
   </main>
 </section>
 
@@ -186,14 +187,14 @@ select.inp{appearance:auto}
     <div class="card">
       <h2>O quê e quando</h2>
       <label class="f">Operação<select class="inp" id="pOp"></select></label>
-      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Modalidade<div class="seg nd-desliza" id="pModo"><button type="button" data-v="T" aria-pressed="true">Terrestre</button><button type="button" data-v="A" aria-pressed="false">Aérea</button></div></div>
+      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Modalidade<div class="seg nd-desliza" id="pModo"><button type="button" class="nd-onda" data-v="T" aria-pressed="true">Terrestre</button><button type="button" class="nd-onda" data-v="A" aria-pressed="false">Aérea</button></div></div>
       <label class="f">Data programada<input class="inp" type="date" id="pData"></label>
     </div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h2>Talhões</h2><span class="hint" id="pSel">nenhum marcado</span></div>
       <div class="selist" id="pChips"></div>
       <p class="hint" id="pChipsHint" hidden>A área vem do cadastro do talhão. Altere se a aplicação for só em parte dele.</p>
-      <div class="seg nd-desliza" id="pVista" role="group" aria-label="Escolher talhões por"><button type="button" data-v="lista" aria-pressed="true">Lista</button><button type="button" data-v="mapa" aria-pressed="false">Mapa</button></div>
+      <div class="seg nd-desliza" id="pVista" role="group" aria-label="Escolher talhões por"><button type="button" class="nd-onda" data-v="lista" aria-pressed="true">Lista</button><button type="button" class="nd-onda" data-v="mapa" aria-pressed="false">Mapa</button></div>
       <div id="pVLista" style="display:flex;flex-direction:column;gap:14px">
         <label class="f">Buscar talhão<input class="inp" type="search" id="pBusca" placeholder="Digite RT, BT, SA…" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
         <div><p class="hint" style="margin-bottom:8px">Marcar ou desmarcar um grupo inteiro</p><div class="grp" id="pGrp"></div></div>
@@ -232,7 +233,7 @@ select.inp{appearance:auto}
       </div>
       <label class="check" id="eConclL"><input type="checkbox" id="eConcl" checked>Aplicação concluída neste talhão</label>
       <p class="hint" id="eParc"></p>
-      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Modalidade<div class="seg nd-desliza" id="eModo"><button type="button" data-v="T" aria-pressed="true">Terrestre</button><button type="button" data-v="A" aria-pressed="false">Aérea</button></div></div>
+      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Modalidade<div class="seg nd-desliza" id="eModo"><button type="button" class="nd-onda" data-v="T" aria-pressed="true">Terrestre</button><button type="button" class="nd-onda" data-v="A" aria-pressed="false">Aérea</button></div></div>
       <label class="f">Nº da OS no Protector<input class="inp" id="eOS" inputmode="numeric" placeholder="Opcional"></label>
 
     </div>
@@ -517,7 +518,7 @@ function renderProdsUI(){
       <div class="full pwrap"><label class="f">Produto<input class="inp" data-pi="${i}" data-k="p" value="${esc(x.p)}" placeholder="Digite parte do nome" autocomplete="off" autocapitalize="characters" spellcheck="false"></label><div class="sug" data-sug="${i}" hidden></div></div>
       <label class="f"><span>Dose <span data-un="${i}"></span></span><input class="inp" inputmode="decimal" data-pi="${i}" data-k="dose" value="${esc(x.dose)}" placeholder="0,0" autocomplete="off"></label>
       <span></span>
-      <button type="button" class="icon" data-prm="${i}" aria-label="Remover produto">${X}</button>
+      <button type="button" class="icon nd-onda" data-prm="${i}" aria-label="Remover produto">${X}</button>
       <div class="tot"><span data-st="${i}"></span><span>Total: <b data-tot="${i}">—</b></span></div></div>`).join("");
   P.prods.forEach((_, i) => atualizarLinha(i));
   resumoProg();

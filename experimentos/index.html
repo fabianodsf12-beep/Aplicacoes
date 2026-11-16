@@ -1023,7 +1023,7 @@ $('cfgForm').onsubmit=async e=>{
   catch(err){cfg=ant;$('cfgOk').disabled=false;$('cfgMsg').innerHTML=`<div class="msg err">${err?.code==='chave'?'Chave de acesso errada.':err?.code==='servidor'?'O script respondeu com erro: '+esc(err.msg||''):'Não consegui falar com a planilha. Confira o endereço e o sinal.'}</div>`;return;}
   LS.set('cfg_v1',cfg);$('cfgOk').disabled=false;$('cfgMsg').innerHTML='';db=null;telaConfig(false);if(semCache())cargaInicio();conectar();
 };
-$('note').insertAdjacentHTML('afterend','<p class="note"><button type="button" class="sair" id="trocar">Trocar acesso</button></p>');
+$('note').insertAdjacentHTML('afterend','<p class="note"><button type="button" class="sair nd-onda" id="trocar">Trocar acesso</button></p>');
 $('trocar').onclick=()=>telaConfig(true);
 if(navigator.storage?.persist)navigator.storage.persist().catch(()=>{});
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});

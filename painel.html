@@ -99,6 +99,7 @@ section.view.on{display:block}
 .kpi{text-align:left;background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius-2xl);padding:14px 16px;cursor:pointer;display:flex;flex-direction:column;gap:2px;box-shadow:var(--sombra-1);position:relative;overflow:hidden;transition:border-color var(--dur-media) var(--curva),box-shadow var(--dur-media) var(--curva),transform var(--dur-media) var(--curva)}
 .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:0;background:var(--k)}
 .kpi:hover{border-color:var(--line);box-shadow:var(--sombra-2);transform:translateY(-2px)}
+.kpi:active{transform:scale(.97)}
 .kpi[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
 .kpi .lab{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
 .kpi .val{font-family:'Barlow Condensed','Barlow',sans-serif;font-weight:600;font-size:40px;line-height:1.05}
@@ -274,9 +275,9 @@ tbody tr:hover td{background:var(--panel2)}
     <div class="filtros">
       <div class="ctl">Modalidade
         <div class="seg nd-desliza" role="group" aria-label="Modalidade" id="modoSeg">
-          <button type="button" data-v="todas" aria-pressed="true">Todas</button>
-          <button type="button" data-v="T" aria-pressed="false">Terrestre</button>
-          <button type="button" data-v="A" aria-pressed="false">Aérea</button>
+          <button type="button" class="nd-onda" data-v="todas" aria-pressed="true">Todas</button>
+          <button type="button" class="nd-onda" data-v="T" aria-pressed="false">Terrestre</button>
+          <button type="button" class="nd-onda" data-v="A" aria-pressed="false">Aérea</button>
         </div>
       </div>
       <label class="ctl">Operação<select id="opSel"></select></label>
@@ -295,11 +296,11 @@ tbody tr:hover td{background:var(--panel2)}
       <span id="tolOut" hidden></span>
     </div>
     <nav class="tabs" role="tablist" aria-label="Visões">
-      <button role="tab" data-tab="geral" aria-selected="true">Visão geral</button>
-      <button role="tab" data-tab="crono" aria-selected="false">Cronograma por talhão</button>
-      <button role="tab" data-tab="geo" aria-selected="false">Mapa</button>
-      <button role="tab" data-tab="mapa" aria-selected="false">Talhões</button>
-      <button role="tab" data-tab="tabela" aria-selected="false">Tabela</button>
+      <button role="tab" class="nd-onda" data-tab="geral" aria-selected="true">Visão geral</button>
+      <button role="tab" class="nd-onda" data-tab="crono" aria-selected="false">Cronograma por talhão</button>
+      <button role="tab" class="nd-onda" data-tab="geo" aria-selected="false">Mapa</button>
+      <button role="tab" class="nd-onda" data-tab="mapa" aria-selected="false">Talhões</button>
+      <button role="tab" class="nd-onda" data-tab="tabela" aria-selected="false">Tabela</button>
     </nav>
   </div>
 </div>
@@ -353,7 +354,7 @@ tbody tr:hover td{background:var(--panel2)}
       </div>
       <div class="card">
         <div class="card-head"><div><h2>Aplicação × chuva</h2><p class="sub">Chuva (mm), chuva acumulada no período e área aplicada.</p></div>
-          <div class="seg nd-desliza" role="group" aria-label="Agrupar chuva" id="segChuva" style="margin-left:auto"><button type="button" data-v="d" aria-pressed="true">Diário</button><button type="button" data-v="w" aria-pressed="false">Semanal</button></div>
+          <div class="seg nd-desliza" role="group" aria-label="Agrupar chuva" id="segChuva" style="margin-left:auto"><button type="button" class="nd-onda" data-v="d" aria-pressed="true">Diário</button><button type="button" class="nd-onda" data-v="w" aria-pressed="false">Semanal</button></div>
           <div class="kfig" id="kfChuva" style="margin-left:14px"></div></div>
         <div class="chart-box tall" style="height:310px"><canvas id="chChuva" aria-label="Aplicação e pluviometria"></canvas></div>
         <div class="cap-msg" id="chuvaMsg"></div>
@@ -375,10 +376,10 @@ tbody tr:hover td{background:var(--panel2)}
         <div><h2>Cronograma por talhão</h2><p class="sub">Programado contra executado, ancorado na data de plantio. Passe o mouse nos marcadores para ver detalhes.</p></div>
         <div class="gantt-tools">
           <div class="seg nd-desliza" role="group" aria-label="Período" id="zoomSeg">
-            <button type="button" data-v="15" aria-pressed="false">15 dias</button>
-            <button type="button" data-v="30" aria-pressed="true">30 dias</button>
-            <button type="button" data-v="60" aria-pressed="false">60 dias</button>
-            <button type="button" data-v="all" aria-pressed="false">Safra</button>
+            <button type="button" class="nd-onda" data-v="15" aria-pressed="false">15 dias</button>
+            <button type="button" class="nd-onda" data-v="30" aria-pressed="true">30 dias</button>
+            <button type="button" class="nd-onda" data-v="60" aria-pressed="false">60 dias</button>
+            <button type="button" class="nd-onda" data-v="all" aria-pressed="false">Safra</button>
           </div>
           <label class="ctl" style="flex-direction:row;align-items:center;gap:8px">Ordenar
             <select id="gSort"><option value="crit">Criticidade</option><option value="nome">Talhão</option><option value="plantio">Plantio</option><option value="area">Área</option></select>
@@ -397,9 +398,9 @@ tbody tr:hover td{background:var(--panel2)}
         <div><h2>Mapa dos talhões</h2><p class="sub">Contornos sobre imagem de satélite, coloridos pela situação. Os filtros e o período valem aqui também. Clique num talhão para ver os detalhes.</p></div>
         <div class="tm-tools">
           <div class="seg nd-desliza" role="group" aria-label="Colorir mapa por" id="geoSeg">
-            <button type="button" data-v="sit" aria-pressed="true">Situação crítica</button>
-            <button type="button" data-v="dap" aria-pressed="false">Dias após plantio</button>
-            <button type="button" data-v="exec" aria-pressed="false">% executado</button>
+            <button type="button" class="nd-onda" data-v="sit" aria-pressed="true">Situação crítica</button>
+            <button type="button" class="nd-onda" data-v="dap" aria-pressed="false">Dias após plantio</button>
+            <button type="button" class="nd-onda" data-v="exec" aria-pressed="false">% executado</button>
           </div>
           <label class="check"><input type="checkbox" id="geoLbl" checked>Nomes</label>
         </div>
@@ -416,9 +417,9 @@ tbody tr:hover td{background:var(--panel2)}
         <div><h2>Talhões por área</h2><p class="sub">Cada bloco é um talhão, proporcional à área. Clique para ver o histórico.</p></div>
         <div class="tm-tools">
           <div class="seg nd-desliza" role="group" aria-label="Colorir por" id="tmSeg">
-            <button type="button" data-v="sit" aria-pressed="true">Situação crítica</button>
-            <button type="button" data-v="dap" aria-pressed="false">Dias após plantio</button>
-            <button type="button" data-v="exec" aria-pressed="false">% executado</button>
+            <button type="button" class="nd-onda" data-v="sit" aria-pressed="true">Situação crítica</button>
+            <button type="button" class="nd-onda" data-v="dap" aria-pressed="false">Dias após plantio</button>
+            <button type="button" class="nd-onda" data-v="exec" aria-pressed="false">% executado</button>
           </div>
         </div>
       </div>
@@ -671,7 +672,7 @@ function renderKPIs(M){
   ];
   $("kpis").innerHTML = grp.map((g) => {
     const pct = g.k === "todas" ? 100 : Math.round(g.arr.length / n * 100);
-    return `<button type="button" class="kpi nd-onda" data-st="${g.k}" aria-pressed="${S.status===g.k}" style="--k:${g.c}">
+    return `<button type="button" class="kpi nd-onda nd-afunda" data-st="${g.k}" aria-pressed="${S.status===g.k}" style="--k:${g.c}">
       <span class="lab"><span class="dot" style="background:${g.c}"></span>${g.lab}</span>
       <span class="val"><span data-k="${g.k}" data-nd-conta="${g.arr.length}">${g.arr.length}</span>${g.k!=="todas"?`<small>${pct}%</small>`:""}</span>
       <span class="bar"><i style="width:${pct}%"></i></span>
@@ -741,7 +742,7 @@ function renderDonut(M){
     options:{maintainAspectRatio:false, cutout:"74%", layout:{padding:6}, plugins:{legend:{display:false}, tooltip:{callbacks:{label:(c)=>` ${c.label}: ${c.raw} (${ha(sumHa(cnt[c.dataIndex]),0)} ha)`}}},
       onClick:(e, el)=>{ if(el.length) setFilter("status", ORDEM[el[0].index]); }}});
   $("donutLegend").innerHTML = ORDEM.map((k, i) => { const p = base.length ? Math.round(cnt[i].length / base.length * 100) : 0;
-    return `<button type="button" data-st="${k}" aria-pressed="${S.status===k}">
+    return `<button type="button" class="nd-onda" data-st="${k}" aria-pressed="${S.status===k}">
     <span class="dot" style="background:${col(k)}"></span><span>${STATUS[k].t}<i class="lbar"><i style="width:${p}%;background:${col(k)}"></i></i></span><span class="n">${cnt[i].length}</span><span class="h">${ha(sumHa(cnt[i]),0)} ha</span></button>`; }).join("");
 }
 
@@ -900,7 +901,7 @@ function pill(s){ return `<span class="pill" style="--c:${col(s)}">${STATUS[s].t
 function renderPrio(M){
   const arr = M.items.filter(i => passModo(i) && passOp(i) && passSt(i) && ["atrasada","janela","prox7"].includes(i.s))
     .sort((a,b) => STATUS[a.s].ord - STATUS[b.s].ord || a.pd - b.pd || b.area - a.area);
-  $("prio").innerHTML = arr.length ? arr.slice(0, 12).map(i => `<button type="button" data-t="${esc(i.t)}">
+  $("prio").innerHTML = arr.length ? arr.slice(0, 12).map(i => `<button type="button" class="nd-onda nd-afunda" data-t="${esc(i.t)}">
       <span class="t">${esc(i.t)}</span><span><span>${esc(i.op)}</span> <span class="muted" style="font-size:13px">· ${modoNome(i.modo)} · programada ${fd(i.prog)} · ${i.devTxt}</span>${i.prods.length?`<span class="prods" style="display:block">${esc(prodTxt(i))}</span>`:""}</span>
       <span class="ha">${ha(i.area)} ha</span>${pill(i.s)}</button>`).join("") + (arr.length > 12 ? `<p class="muted" style="font-size:13px;margin:10px 4px 0">+${arr.length-12} na aba Tabela.</p>` : "")
     : '<div class="empty">Nada pendente com os filtros atuais.</div>';

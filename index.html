@@ -24,6 +24,7 @@ main{padding:0 max(20px,env(safe-area-inset-right,0px)) 40px max(20px,env(safe-a
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:var(--space-5)}
 a.card{display:flex;flex-direction:column;gap:var(--space-3_5);background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius-2xl);box-shadow:var(--sombra-1);padding:22px;text-decoration:none;color:var(--ink);min-height:200px;transition:border-color var(--dur-media) var(--curva),box-shadow var(--dur-media) var(--curva),transform var(--dur-media) var(--curva)}
 a.card:hover{border-color:var(--line);box-shadow:var(--sombra-2);transform:translateY(-2px)}
+a.card:active{transform:scale(.97)}
 .ic{position:relative;width:52px;height:52px;border-radius:var(--radius-2xl);background:var(--brand-soft);display:inline-flex;align-items:center;justify-content:center;color:var(--brand)}
 .card h2{margin:0;font-family:var(--font-display);font-weight:600;font-size:28px;line-height:1.05}
 .card p{margin:0;color:var(--muted);font-size:15px}
@@ -37,6 +38,8 @@ a.card:hover .go svg{transform:translateX(3px)}
 .etapas{margin-top:var(--space-5);max-width:520px}
 .pill{padding:var(--space-1) var(--space-3);border-radius:var(--radius-pill);font-weight:600;font-size:13.5px;background:var(--panel);border:1px solid var(--line2);color:var(--ink)}
 .pill.w{background:var(--warn-bg);color:var(--warn);border-color:transparent}.pill.b{background:var(--bad-bg);color:var(--bad);border-color:transparent}
+.erro-msg{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:14px}
+.erro-msg .nd-ic{width:18px;height:18px;color:var(--bad);flex-shrink:0}
 footer{font-size:12.5px;color:var(--muted);margin-top:28px}
 </style>
 </head>
@@ -50,13 +53,13 @@ footer{font-size:12.5px;color:var(--muted);margin-top:28px}
 <main>
   <div class="wrap">
     <div class="cards">
-      <a class="card nd-onda" href="./painel.html">
+      <a class="card nd-onda nd-afunda" href="./painel.html">
         <span class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
         <h2>Painel</h2>
         <p>Acompanhar o andamento: o que está no prazo, atrasado ou na janela, cronograma por talhão e consumo de produtos.</p>
         <span class="go">Abrir painel <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></span>
       </a>
-      <a class="card nd-onda" href="./lancar.html">
+      <a class="card nd-onda nd-afunda" href="./lancar.html">
         <span class="ic"><span class="nd-selo" id="seloLancar" hidden></span><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
         <h2>Lançamentos</h2>
         <p>Programar aplicação com produtos e doses, registrar execução com o nº da OS e lançar plantio.</p>
@@ -125,7 +128,9 @@ document.addEventListener("DOMContentLoaded", async function(){
     if (j.ok) { L = j; try { localStorage.setItem("lancar.listas", JSON.stringify(j)); } catch(e) {} }
     if (!L || !L.ok) throw new Error();
     pintar(contar(L));
-  } catch (e) { if (!temCache) $("status").textContent = ""; }
+  } catch (e) {
+    if (!temCache) $("status").innerHTML = '<span class="erro-msg"><svg class="nd-ic" aria-hidden="true"><use href="#i-wifi-off"/></svg>Não consegui buscar as pendências agora. Os apps abrem normalmente.</span>';
+  }
   finally {
     clearTimeout(demora);
     if (et) { et.fim(); setTimeout(() => { $("etapas").hidden = true; }, 600); }
