@@ -92,7 +92,7 @@ details[open] > summary > .seta{transform:rotate(180deg)}
 .tanque .nd-btn{grid-column:2;justify-self:start}
 .apl-cab{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3)}
 .apl-cab .nome{grid-column:1 / -1}
-#btnPdf,#rxBtns .nd-btn,.tanque .nd-btn{white-space:normal;text-align:left;height:auto;min-height:44px;overflow-wrap:anywhere} /* nomes longos de tratamento quebram a linha em vez de sair do cartão */
+#btnPdf,#btnKml,#rxBtns .nd-btn,.tanque .nd-btn{white-space:normal;text-align:left;height:auto;min-height:44px;overflow-wrap:anywhere} /* nomes longos de tratamento quebram a linha em vez de sair do cartão */
 .leg .leg-tit{font-weight:600}
 /* ensaio travado: estrutura só para consulta */
 .passo-d.travado > .corpo{opacity:.62}
@@ -440,13 +440,13 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
               <summary><h2 class="passo"><span class="n">7</span>Relatório</h2><span class="resumo" id="res-arquivos"></span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
               <div class="corpo">
                 <button class="nd-btn grande nd-onda nd-estado" type="button" id="btnPdf" data-enviando="Gerando o PDF…" data-feito="PDF pronto"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-file-text"/></svg>Relatório em PDF (croqui, pontos e áreas)</button>
+                <button class="nd-btn grande nd-onda" type="button" id="btnKml"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-map-pin"/></svg>Baixar KML (localizar os quadrados no campo)</button>
                 <div class="nd-msg aviso" id="rxTrava" hidden><svg class="nd-ic" aria-hidden="true"><use href="#i-triangle-alert"/></svg><div><b>Falta a linha AB</b>Escolha a pista (ou digite os pontos A e B) no passo 2 para baixar os arquivos de aplicação. Sem ele, as zonas podem cair entre duas pistas.</div></div>
                 <div class="trs" id="rxBtns"></div>
                 <div class="acoes-l" id="limBox"><button class="nd-btn nd-onda" type="button" id="btnLim"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>Testemunhas como limite</button></div>
                 <p class="dica" id="rxDica"></p>
                 <div id="arqMsg"></div>
-                <details class="alt"><summary><span>Outros formatos (Google Earth e planilha)</span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><div class="trs"><div class="acoes-l">
-                  <button class="nd-btn nd-onda" type="button" id="btnKml"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>KML (Google Earth)</button>
+                <details class="alt"><summary><span>Outros formatos (planilha e GeoJSON)</span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><div class="trs"><div class="acoes-l">
                   <button class="nd-btn nd-onda" type="button" id="btnCsv"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>Planilha (CSV)</button>
                   <button class="nd-btn nd-onda" type="button" id="btnGj"><svg class="nd-ic desce" aria-hidden="true"><use href="#i-download"/></svg>GeoJSON</button>
                 </div></div></details>
@@ -1245,11 +1245,14 @@ const hexKml = h => { h = (h || "#888888").replace("#", ""); return "c8" + h.sli
 $("btnKml").addEventListener("click", () => {
   if (!exigirGrade()) return;
   const est = S.trats.map((t, i) => `<Style id="t${i}"><LineStyle><color>ffffffff</color><width>1</width></LineStyle><PolyStyle><color>${hexKml(corTrat(i))}</color></PolyStyle></Style>`).join("");
-  const pm = GRADE.quads.filter(q => q.ok).map(q => { const t = S.trats[q.ti];
-    return `<Placemark><name>Q${q.id} ${esc(t.cod)}</name><description>${esc(t.nome)} | vazão ${esc(t.dose || "a definir")} L/ha | passada ${q.c}, quadrado ${q.r}</description><styleUrl>#t${q.ti}</styleUrl><Polygon><outerBoundaryIs><LinearRing><coordinates>${fechado(q).map(p => p[0].toFixed(7) + "," + p[1].toFixed(7) + ",0").join(" ")}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>`; }).join("");
-  const kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${esc(S.codigo || "Tabuleiro " + S.talhao)}</name>${est}${pm}</Document></kml>`;
+  const pmQ = q => { const t = S.trats[q.ti];
+    return `<Placemark><name>Q${q.id} ${esc(t.cod)}</name><description>${esc(t.nome)} | vazão ${esc(t.dose || "a definir")} L/ha | passada ${q.c}, quadrado ${q.r}</description><styleUrl>#t${q.ti}</styleUrl><Polygon><outerBoundaryIs><LinearRing><coordinates>${fechado(q).map(p => p[0].toFixed(7) + "," + p[1].toFixed(7) + ",0").join(" ")}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>`; };
+  const ok = GRADE.quads.filter(q => q.ok), t0 = talhaoAtual();
+  const pastas = S.trats.map((t, i) => { const qs = ok.filter(q => q.ti === i); return qs.length ? `<Folder><name>${esc(t.cod)} · ${esc(t.nome || t.cod)} (${qs.length})</name>${qs.map(pmQ).join("")}</Folder>` : ""; }).join("");
+  const limite = t0 ? `<Style id="lim"><LineStyle><color>ff65b304</color><width>3</width></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style><Folder><name>Talhão ${esc(t0.nome)}</name>${t0.rings.map(r => `<Placemark><name>Limite ${esc(t0.nome)}</name><styleUrl>#lim</styleUrl><LineString><tessellate>1</tessellate><coordinates>${r.map(p => (+p[0]).toFixed(7) + "," + (+p[1]).toFixed(7) + ",0").join(" ")}</coordinates></LineString></Placemark>`).join("")}</Folder>` : "";
+  const kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${esc(S.codigo || "Tabuleiro " + S.talhao)}</name>${est}${limite}${pastas}</Document></kml>`;
   baixar(new Blob([kml], {type:"application/vnd.google-earth.kml+xml"}), nomeBase() + ".kml");
-  arqMsg("", "<b>KML baixado</b>Abra no Google Earth ou no celular para achar os quadrados no campo.");
+  arqMsg("", `<b>KML baixado</b>${ok.length} quadrados em pastas por tratamento, com o limite do talhão. Importe no app de mapa do celular (Fields, Google Earth) e use o GPS para achar cada quadrado no campo.`);
 });
 $("btnCsv").addEventListener("click", () => {
   if (!exigirGrade()) return;
