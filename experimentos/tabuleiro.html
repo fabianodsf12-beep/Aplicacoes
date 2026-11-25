@@ -105,6 +105,7 @@ details[open] > summary > .seta{transform:rotate(180deg)}
 .leg span{display:inline-flex;align-items:center;gap:6px}
 .leg i{width:14px;height:14px;border-radius:var(--radius-xs);background:var(--c);border:1px solid var(--line)}
 .leg i.fora{background:transparent;border:1.5px dashed var(--muted)}
+.leg i.obst,.ctl.legmap i.obst{background:transparent;border:1.5px dashed var(--brand);border-radius:var(--radius-pill)}
 .leg i.ab,.ctl.legmap i.ab{height:0;border:0;border-top:2px dashed var(--muted);border-radius:0;background:transparent}
 details.alt summary{list-style:none;cursor:pointer;min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);font-weight:500;color:var(--muted);border-radius:var(--radius-md)}
 details.alt{border-top:1px solid var(--line2)}
@@ -239,6 +240,14 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
                   <select class="nd-inp" id="talhao"><option value="">Carregando…</option></select>
                 </label>
                 <p class="dica" id="talInfo"></p>
+                <div class="nd-campo" id="obstBox" hidden>
+                  <span>Obstáculos pequenos (árvore, pedra, ilha)</span>
+                  <div class="nd-seg desliza" id="obstSeg" role="group" aria-label="Obstáculos pequenos do limite">
+                    <button type="button" data-v="sim" aria-pressed="true">Aplicar por cima</button>
+                    <button type="button" data-v="nao" aria-pressed="false">Deixar fora</button>
+                  </div>
+                  <span class="dica" id="obstInfo"></span>
+                </div>
                 <details class="alt" id="limiteBox"><summary><span>Talhão fora da lista? Importar o limite</span><svg class="nd-ic seta" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary><div class="trs">
                   <div class="acoes-l">
                     <label class="nd-btn nd-onda" for="arqLimite"><svg class="nd-ic" aria-hidden="true"><use href="#i-upload"/></svg>Importar limite</label>
@@ -568,6 +577,22 @@ function pontoInterno(rings){
 /* ---------- cálculo da grade ---------- */
 function eixos(ang){ const a = ang * RAD; return {d:[Math.sin(a), Math.cos(a)], p:[Math.cos(a), -Math.sin(a)]}; }
 function talhaoAtual(){ return TALHOES.find(t => t.nome === S.talhao) || null; }
+/* obstáculos: buracos pequenos e redondos do limite (árvore, pedra, ilha), até 500 m². Carreadores são faixas compridas e continuam fora */
+const OBST_MAX = 500, OBST_FORMA = 0.3; // m²; compactação 4πA/P² (1 = círculo, perto de 0 = faixa comprida)
+function obstaculosDe(t){
+  if (t._obst) return t._obst;
+  const P = projecao(t.rings[0][0][1], t.rings[0][0][0]), xy = t.rings.map(r => r.map(P.fwd)), sai = new Set(), obst = [];
+  xy.forEach((r, i) => {
+    const prof = xy.filter((o, j) => j !== i && dentro([o], r[0])).length; if (prof % 2 !== 1) return; // só buracos
+    const a = Math.abs(areaAssinada(r)); let per = 0; for (let k = 1; k < r.length; k++) per += Math.hypot(r[k][0] - r[k-1][0], r[k][1] - r[k-1][1]);
+    if (a > OBST_MAX || !per || 4 * Math.PI * a / (per * per) < OBST_FORMA) return;
+    sai.add(i); xy.forEach((o, j) => { if (j !== i && dentro([r], o[0])) sai.add(j); }); // o que estiver dentro do obstáculo sai junto
+    obst.push({ring: t.rings[i], area: a});
+  });
+  return (t._obst = {limpo: t.rings.filter((r, i) => !sai.has(i)), obst});
+}
+const usaObst = () => S.obstaculos !== false && !(S.obstaculos === undefined && S.travado); // ensaio travado antes desta opção: fica como era
+function limiteDe(t){ return usaObst() ? obstaculosDe(t).limpo : t.rings; } // o limite que vale para o ensaio, a área e as zonas
 function rng(seed){ return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function embaralhar(n, r){ const a = [...Array(n).keys()]; for (let i = n - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 function tratamentoDe(c, r){
@@ -583,8 +608,9 @@ function calcular(){
   if (!t || !S.centro) { GRADE = null; return; }
   const P = projecao(S.centro[0], S.centro[1]);
   const {d, p} = eixos(S.ang);
-  const ringsUV = t.rings.map(r => r.map(ll => { const q = P.fwd(ll); return [q[0] * d[0] + q[1] * d[1], q[0] * p[0] + q[1] * p[1]]; }));
-  const ringsXY = t.rings.map(r => r.map(P.fwd));
+  const lim = limiteDe(t);
+  const ringsUV = lim.map(r => r.map(ll => { const q = P.fwd(ll); return [q[0] * d[0] + q[1] * d[1], q[0] * p[0] + q[1] * p[1]]; }));
+  const ringsXY = lim.map(r => r.map(P.fwd));
   const W = S.W, L = S.L, b = S.bord;
   let u0 = -S.nR * L / 2, v0 = -S.nC * W / 2, vA = null;
   if (S.pontoA) { // encaixa as colunas nas pistas: o centro de cada coluna fica a um número inteiro de pistas do Ponto A
@@ -628,7 +654,7 @@ function fixarPosicaoAtual(){ // transforma a posição atual (centrada) em pist
 function ajustarAoTalhao(){
   const t = talhaoAtual(); if (!t) return;
   const lat0 = t.rings[0][0][1], lon0 = t.rings[0][0][0], P = projecao(lat0, lon0);
-  const xy = t.rings.map(r => r.map(P.fwd));
+  const xy = limiteDe(t).map(r => r.map(P.fwd));
   if (!S.rumoFixo || S.ang == null || !isFinite(S.ang)) { S.ang = direcaoDominante(xy); S.rumoFixo = false; }
   S.centro = (([x, y]) => { const ll = P.inv([x, y]); return [ll[1], ll[0]]; })(pontoInterno(xy));
   S.posLivre = true; ajustarTamanho(); fixarPosicaoAtual();
@@ -676,10 +702,12 @@ function desenharTalhoes(){
   LT.clearLayers();
   TALHOES.forEach(t => {
     const sel = t.nome === S.talhao;
-    const pg = L.polygon(t.rings.map(r => r.map(p => [p[1], p[0]])), {color: sel ? COR.limite : COR.branco, weight: sel ? 3 : 1.2, fillOpacity: sel ? 0 : .08, fillColor: COR.branco, interactive: !sel});
+    const pg = L.polygon((sel ? limiteDe(t) : t.rings).map(r => r.map(p => [p[1], p[0]])), {color: sel ? COR.limite : COR.branco, weight: sel ? 3 : 1.2, fillOpacity: sel ? 0 : .08, fillColor: COR.branco, interactive: !sel});
     pg.bindTooltip(esc(t.nome), {permanent:!sel, direction:"center", className:"tlbl"});
     pg.on("click", () => { if (medir || t.nome === S.talhao) return; escolherTalhao(t.nome, true); }); // clicar no próprio talhão não zera a pista nem a posição
     pg.addTo(LT);
+    if (sel && usaObst()) obstaculosDe(t).obst.forEach(o => L.polygon(o.ring.map(p => [p[1], p[0]]), {color: COR.limite, weight: 1.5, dashArray: "3 3", fillOpacity: 0})
+      .bindTooltip(`Obstáculo de ${fmt(o.area, 0)} m²: os quadrados passam por cima e as zonas cobrem`).addTo(LT));
   });
 }
 const ehTest = t => num(t.dose) === 0;
@@ -787,7 +815,7 @@ function renderTrats(){
   $("trDica").textContent += S.modo === "produtos" ? " Produtos diferentes: cada produto vai numa passada própria, com a sua prescrição (bicos abertos só nos quadrados dele)." : " Vazões diferentes: uma passada só, com a vazão mudando de zona para zona.";
 }
 function renderLegenda(){
-  const itens = legendaItensHtml() + '<span><i class="fora"></i>Fora (bordadura)</span>' + (S.pontoA ? '<span><i class="ab"></i>Linha AB</span>' : "");
+  const itens = legendaItensHtml() + '<span><i class="fora"></i>Fora (bordadura)</span>' + (talhaoAtual() && usaObst() && obstaculosDe(talhaoAtual()).obst.length ? '<span><i class="obst"></i>Obstáculo (aplica por cima)</span>' : '') + (S.pontoA ? '<span><i class="ab"></i>Linha AB</span>' : "");
   $("legenda").innerHTML = itens;
   const lm = $("legMapa"); if (lm) lm.innerHTML = itens;
 }
@@ -821,8 +849,18 @@ function atualizar(){
   $("posInfo").textContent = $("posInfo2").textContent = textoPosicao();
   const t = talhaoAtual();
   $("talInfo").textContent = t && GRADE ? `${t.nome}: ${fmt(GRADE.areaTal, 2)} ha${t.origem === "importado" ? " (limite importado)" : ""}.` : "";
+  renderObst(t);
   renderResumos();
 }
+function renderObst(t){ // a opção só aparece quando o talhão tem obstáculo pequeno
+  const ob = t ? obstaculosDe(t).obst : [], on = usaObst(); $("obstBox").hidden = !ob.length; if (!ob.length) return;
+  [...$("obstSeg").children].forEach(b => { if (b.dataset.v) b.setAttribute("aria-pressed", String((b.dataset.v === "sim") === on)); });
+  [...$("obstSeg").querySelectorAll("button")].forEach(b => { b.disabled = !!S.travado; });
+  const a = ob.reduce((x, o) => x + o.area, 0);
+  $("obstInfo").textContent = `${ob.length} ${ob.length === 1 ? "obstáculo" : "obstáculos"} de até ${fmt(OBST_MAX)} m² no ${t.nome}, somando ${fmt(a, 0)} m². ` + (on ? "Contam como talhão: os quadrados passam por cima, sem bordadura em volta, e as zonas cobrem. Carreadores continuam fora." : "Ficam fora, como buracos do limite, com bordadura em volta.") + (S.travado ? " Ensaio travado: não muda." : "");
+}
+$("obstSeg").addEventListener("click", e => { const b = e.target.closest("[data-v]"); if (!b || S.travado) return;
+  const on = b.dataset.v === "sim"; if (on === usaObst()) return; S.obstaculos = on; salvar(); desenharTalhoes(); atualizar(); });
 function renderResumos(){
   const t = talhaoAtual(), ok = GRADE ? GRADE.quads.filter(q => q.ok).length : 0, pu = pistasDoTalhao().find(pistaEmUso);
   const rumo = S.pontoA && S.pontoB ? fmtMax(rumoMonitor(S.pontoA, S.pontoB), 4) + "°" : S.ang != null ? fmtMax(S.ang, 4) + "°" : "";
@@ -1004,7 +1042,7 @@ $("posBox").addEventListener("click", e => {
   }
 });
 $("btnCentro").addEventListener("click", () => { if (!talhaoAtual()) return; const t = talhaoAtual(), P = projecao(t.rings[0][0][1], t.rings[0][0][0]);
-  S.centro = (([x, y]) => { const ll = P.inv([x, y]); return [ll[1], ll[0]]; })(pontoInterno(t.rings.map(r => r.map(P.fwd))));
+  S.centro = (([x, y]) => { const ll = P.inv([x, y]); return [ll[1], ll[0]]; })(pontoInterno(limiteDe(t).map(r => r.map(P.fwd))));
   fixarPosicaoAtual(); salvar(); preencherCampos(); atualizar(); aviso("Ensaio no centro do talhão"); });
 $("btnInverter").addEventListener("click", () => { S.inverter = !S.inverter; salvar(); atualizar(); });
 $("btnSortear").addEventListener("click", () => { S.semente = (S.semente % 9999) + 1; salvar(); atualizar(); aviso("Novo sorteio feito"); });
@@ -1561,7 +1599,7 @@ $("btnTravar").addEventListener("click", async () => {
   SALVOS.confTrava = null; clearTimeout(SALVOS._tt);
   const foto = fotoAtual(); if (!foto.length) { msgSalvos("ensMsg", "Nada para travar: o ensaio não tem quadrados dentro do talhão."); return; }
   let porNome = null; try { const n = SALVOS.uid ? await nomesDe([SALVOS.uid]) : {}; porNome = n[SALVOS.uid] && n[SALVOS.uid].name || null; } catch (e) {}
-  S.travado = {em:agoraISO(), por:SALVOS.uid || null, porNome, codigo:codigoFoto(foto), foto};
+  S.obstaculos = usaObst(); S.travado = {em:agoraISO(), por:SALVOS.uid || null, porNome, codigo:codigoFoto(foto), foto};
   try { const ab = await gravarAberto(); salvar(); atualizar(); renderSalvos(); aviso(`"${ab.nome}" travado · código ${S.travado.codigo}`); }
   catch (e) { delete S.travado; atualizar(); renderSalvos(); msgSalvos("ensMsg", erroSalvar(e)); }
 });
@@ -1730,7 +1768,7 @@ async function gerarPDF(){
     const legH0 = legenda(0, false, undefined, true); // espaço da legenda embaixo do mapa
     if (PH - M - 6 - legH0 - r.y < 115) r.y = 1e4; // mapa vai para a página seguinte só se não couber
     r.secao("Mapa de localização no talhão");
-    const P = projecao(S.centro[0], S.centro[1]), xy = t.rings.map(rg => rg.map(P.fwd)), todos = xy.flat();
+    const P = projecao(S.centro[0], S.centro[1]), xy = limiteDe(t).map(rg => rg.map(P.fwd)), todos = xy.flat();
     const mnx = Math.min(...todos.map(q => q[0])), mxx = Math.max(...todos.map(q => q[0])), mny = Math.min(...todos.map(q => q[1])), mxy = Math.max(...todos.map(q => q[1]));
     const bx = M, by = r.y, bw = PW - 2 * M, bh = Math.min(PH - M - 6 - legH0 - by, 175);
     const esc1 = Math.min((bw - 10) / (mxx - mnx), (bh - 10) / (mxy - mny)), ox = bx + (bw - (mxx - mnx) * esc1) / 2, oy = by + (bh - (mxy - mny) * esc1) / 2;
