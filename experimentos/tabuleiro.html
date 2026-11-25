@@ -78,8 +78,7 @@ details[open] > summary > .seta{transform:rotate(180deg)}
 .ver-mapa{align-self:flex-start}
 .apl-trs{display:flex;flex-direction:column;gap:var(--space-2)}
 .apl-tr{display:grid;grid-template-columns:20px minmax(0,1fr);gap:var(--space-1) var(--space-2);align-items:center}
-.apl-tr > .nd-inp{grid-column:1 / -1} /* a calda costuma ser longa: campo na largura toda */
-.apl-tr.vz{grid-template-columns:20px minmax(0,1fr) 150px} /* mesmo produto: a vazão ao lado do tratamento */
+.apl-linha{grid-column:1 / -1;display:grid;grid-template-columns:minmax(0,1fr) 128px;gap:var(--space-2)} /* nome do produto (longo) e a vazão ao lado */
 .apl-tr .un{display:flex;align-items:center;gap:var(--space-2);min-width:0}
 .apl-tr .un .nd-inp{text-align:right;min-width:0;flex:1 1 auto}
 .apl-tr .un span{color:var(--muted);font-weight:500;white-space:nowrap}
@@ -1441,21 +1440,18 @@ const MAX_APL = 8;
 function aplicacoes(){ return Array.isArray(S.aplic) ? S.aplic : []; }
 function normCalda(x){ return String(x || "").trim().replace(/\s+/g, " "); }
 function chaveCalda(x){ return semAcento(normCalda(x)).toLowerCase().replace(/\s*\+\s*/g, "+"); }
-function mesmoProduto(ap){ return ap.tipo === "mesmo"; }
-function tanquesDe(ap){
-  const grupos = [], sem = [];
-  if (mesmoProduto(ap)) { // mesmo produto, vazões diferentes: um tanque só; cada tratamento com a sua vazão (vazia = sem aplicação)
-    const tis = [], porTi = new Map();
-    S.trats.forEach((t, ti) => { const v = num((ap.vazoes || {})[t.cod]); if (isFinite(v) && v > 0) { tis.push(ti); porTi.set(ti, Math.round(v)); } else sem.push(ti); });
-    if (tis.length) { const vs = [...porTi.values()], taxas = [...new Set(vs)].sort((a, b) => a - b);
-      grupos.push({calda: normCalda(ap.produto) || "Mesmo produto", tis, v: {porTi, taxas, varia: taxas.length > 1, razao: Math.max(...vs) / Math.min(...vs)}}); }
-    return {grupos, sem};
-  }
-  // produtos diferentes: tratamentos com a mesma calda (sem diferenciar maiúsculas e acentos) formam um tanque, todos na vazão da aplicação
-  const porChave = new Map(), vz = num(ap.vazao);
+function migrarAp(ap){ // aplicações feitas na opção "Mesmo produto" viram nome + vazão em cada tratamento
+  if (ap.tipo !== "mesmo") return; const p = normCalda(ap.produto) || "Mesmo produto";
+  ap.caldas = Object.fromEntries(S.trats.filter(t => num((ap.vazoes || {})[t.cod]) > 0).map(t => [t.cod, p])); delete ap.tipo; delete ap.produto;
+}
+function vazaoPadrao(ap, t){ const b = num(ap.vazao); if (isFinite(b) && b > 0) return Math.round(b); const d = num(t.dose); return isFinite(d) && d > 0 ? Math.round(d) : NaN; } // a que aparece apagada no campo
+function vazaoDe(ap, t){ const v = num((ap.vazoes || {})[t.cod]); return isFinite(v) && v > 0 ? Math.round(v) : vazaoPadrao(ap, t); }
+function tanquesDe(ap){ // nome igual (sem diferenciar maiúsculas e acentos) = mesmo tanque e mesmo arquivo; vazões diferentes no tanque = uma zona por vazão
+  const grupos = [], sem = [], porChave = new Map();
   S.trats.forEach((t, ti) => { const c = normCalda((ap.caldas || {})[t.cod]); if (!c) { sem.push(ti); return; }
     const k = chaveCalda(c); if (!porChave.has(k)) { const g = {calda:c, tis:[]}; porChave.set(k, g); grupos.push(g); } porChave.get(k).tis.push(ti); });
-  grupos.forEach(g => { const porTi = new Map(g.tis.map(ti => [ti, isFinite(vz) && vz > 0 ? Math.round(vz) : NaN])); g.v = {porTi, taxas: [...new Set(porTi.values())], varia: false, razao: 1}; });
+  grupos.forEach(g => { const porTi = new Map(g.tis.map(ti => [ti, vazaoDe(ap, S.trats[ti])])), vs = [...porTi.values()].filter(v => isFinite(v)), taxas = [...new Set(vs)].sort((a, b) => a - b);
+    g.v = {porTi, taxas, varia: taxas.length > 1, razao: vs.length ? Math.max(...vs) / Math.min(...vs) : 1, falta: g.tis.filter(ti => !isFinite(porTi.get(ti)))}; });
   return {grupos, sem};
 }
 function coresTanques(ap){ // cor do primeiro tratamento do tanque; nunca o cinza, que é o "sem aplicação"
@@ -1467,10 +1463,10 @@ function codsDe(tis){ return tis.map(i => S.trats[i].cod).join(", "); }
 function nomeAp(ap, a){ return normCalda(ap.nome) || `${a + 1}ª aplicação`; }
 function dataBr(iso){ const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ""); return m ? `${m[3]}/${m[2]}/${m[1]}` : ""; }
 function nomeArqTanque(a, g){ return `${nomeBase()}_AP${a + 1}_${g.tis.map(i => semAcento(S.trats[i].cod).replace(/[^A-Za-z0-9]/g, "")).join("")}`; }
-function zonasVer(ap){ // o que o mapa e o PDF pintam: um tanque por cor; no "mesmo produto", uma cor por vazão (para ver qual quadrado vai a 50 e qual a 75)
+function zonasVer(ap){ // o que o mapa e o PDF pintam: um tanque por cor; tanque com vazões diferentes, uma cor por vazão (para ver qual quadrado vai a 50 e qual a 75)
   const {grupos, sem} = tanquesDe(ap), cores = coresTanques(ap), out = [];
   grupos.forEach((g, k) => {
-    if (!mesmoProduto(ap) || !g.v.varia) { out.push({cor: cores[k], tis: g.tis, rot: `Tanque ${k + 1} · ${g.calda} (${codsDe(g.tis)})`}); return; }
+    if (!g.v.varia) { out.push({cor: cores[k], tis: g.tis, rot: `Tanque ${k + 1} · ${g.calda} (${codsDe(g.tis)})`}); return; }
     const usadas = new Set([COR.test]);
     g.v.taxas.forEach(t => { const tis = g.tis.filter(ti => g.v.porTi.get(ti) === t); let c = corTrat(tis[0]); if (usadas.has(c)) c = (PALETA.slice(0, 8).find(p => !usadas.has(p.hex)) || PALETA[0]).hex; usadas.add(c);
       out.push({cor: c, tis, rot: `${g.calda} · ${fmt(t)} L/ha (${codsDe(tis)})`}); });
@@ -1493,8 +1489,8 @@ function legendaItensHtml(){
 }
 function aplMsg(tipo, texto){ $("aplMsg").innerHTML = texto ? `<div class="nd-msg ${tipo}"><svg class="nd-ic" aria-hidden="true"><use href="#i-${tipo === "erro" ? "circle-x" : "circle-check"}"/></svg><div>${texto}</div></div>` : ""; }
 function renderAplic(forcar){
-  const aps = aplicacoes(); if (APL >= aps.length) APL = Math.max(0, aps.length - 1); if (VER >= aps.length) VER = -1;
-  const sig = JSON.stringify([aps.length, APL, APL_CONF, aps[APL] && aps[APL].tipo, S.trats.map(t => [t.cod, t.nome, t.cor, t.dose])]);
+  const aps = aplicacoes(); aps.forEach(migrarAp); if (APL >= aps.length) APL = Math.max(0, aps.length - 1); if (VER >= aps.length) VER = -1;
+  const sig = JSON.stringify([aps.length, APL, APL_CONF, S.trats.map(t => [t.cod, t.nome, t.cor, t.dose])]);
   if (forcar || sig !== APL_SIG) { APL_SIG = sig; montarAplic(); pilulas(); }
   renderTanques(); renderVerMapa();
   $("btnAddApl").disabled = aps.length >= MAX_APL;
@@ -1502,25 +1498,18 @@ function renderAplic(forcar){
 function montarAplic(){ // só remonta quando muda a estrutura: assim o que está sendo digitado não perde o foco
   const aps = aplicacoes(), box = $("aplBox"); $("aplDica").hidden = aps.length > 0;
   if (!aps.length) { box.innerHTML = ""; return; }
-  const ap = aps[APL], mesmo = mesmoProduto(ap);
+  const ap = aps[APL];
   box.innerHTML = `<div class="nd-seg desliza" id="aplSeg" role="group" aria-label="Aplicação aberta">${aps.map((a, k) => `<button type="button" data-apl="${k}" aria-pressed="${k === APL}">${rotAba(a, k)}</button>`).join("")}</div>
     <div class="apl-cab">
-      <label class="nd-campo nome">Nome<input class="nd-inp" data-ap="nome" value="${esc(ap.nome || "")}" placeholder="${APL + 1}ª aplicação" autocomplete="off" maxlength="40"></label>
+      <label class="nd-campo">Nome<input class="nd-inp" data-ap="nome" value="${esc(ap.nome || "")}" placeholder="${APL + 1}ª aplicação" autocomplete="off" maxlength="40"></label>
       <label class="nd-campo">Data<input class="nd-inp" type="date" data-ap="data" value="${esc(ap.data || "")}"></label>
-      ${mesmo ? `<label class="nd-campo">Produto no tanque<input class="nd-inp" data-ap="produto" value="${esc(ap.produto || "")}" placeholder="Ex.: Stay Up" autocomplete="off" maxlength="60"></label>`
-        : `<label class="nd-campo">Vazão<span class="un"><input class="nd-inp" data-ap="vazao" inputmode="numeric" value="${esc(ap.vazao ?? "")}" placeholder="50"><span>L/ha</span></span></label>`}
     </div>
-    <div class="nd-campo"><span>Os tratamentos desta aplicação são</span>
-      <div class="nd-seg desliza" id="aplTipo" role="group" aria-label="Os tratamentos desta aplicação são"><button type="button" data-tipo="produtos" aria-pressed="${!mesmo}">Produtos diferentes</button><button type="button" data-tipo="mesmo" aria-pressed="${mesmo}">Mesmo produto</button></div>
-    </div>
-    <div class="apl-trs" role="group" aria-label="${mesmo ? "Vazão" : "Calda"} de cada tratamento">
-      ${S.trats.map((t, i) => `<div class="apl-tr${mesmo ? " vz" : ""}"><span class="cor" style="--c:${corTrat(i)}" aria-hidden="true"></span><span class="apl-cod" aria-hidden="true">${esc(t.cod)}<small>${esc(t.nome || "")}</small></span>${mesmo
-        ? `<span class="un"><input class="nd-inp" data-vazao="${esc(t.cod)}" inputmode="numeric" value="${esc((ap.vazoes || {})[t.cod] || "")}" placeholder="sem aplicação" autocomplete="off" aria-label="Vazão do ${esc(t.cod)}${t.nome ? " (" + esc(t.nome) + ")" : ""} em L/ha; vazio é sem aplicação"><span>L/ha</span></span>`
-        : `<input class="nd-inp" data-calda="${esc(t.cod)}" list="aplCaldas" value="${esc((ap.caldas || {})[t.cod] || "")}" placeholder="Sem aplicação" autocomplete="off" aria-label="Calda do ${esc(t.cod)}${t.nome ? " (" + esc(t.nome) + ")" : ""} na ${esc(nomeAp(ap, APL))}">`}</div>`).join("")}
+    <div class="apl-trs" role="group" aria-label="Produto e vazão de cada tratamento">
+      ${S.trats.map((t, i) => { const pad = vazaoPadrao(ap, t);
+        return `<div class="apl-tr"><span class="cor" style="--c:${corTrat(i)}" aria-hidden="true"></span><span class="apl-cod" aria-hidden="true">${esc(t.cod)}<small>${esc(t.nome || "")}</small></span><div class="apl-linha"><input class="nd-inp" data-calda="${esc(t.cod)}" list="aplCaldas" value="${esc((ap.caldas || {})[t.cod] || "")}" placeholder="Sem aplicação" autocomplete="off" aria-label="Produto ou mistura do ${esc(t.cod)}${t.nome ? " (" + esc(t.nome) + ")" : ""} na ${esc(nomeAp(ap, APL))}"><span class="un"><input class="nd-inp" data-vazao="${esc(t.cod)}" inputmode="numeric" value="${esc((ap.vazoes || {})[t.cod] || "")}" placeholder="${isFinite(pad) ? pad : "vazão"}" autocomplete="off" aria-label="Vazão do ${esc(t.cod)} em L/ha"><span>L/ha</span></span></div></div>`; }).join("")}
     </div>
     <datalist id="aplCaldas"></datalist>
-    <p class="dica">${mesmo ? "Mesmo produto no tanque para todos: cada tratamento recebe a sua vazão (a dose muda com a vazão; ela já vai no nome do tratamento). Vazio é sem aplicação. Sai um arquivo só, com uma zona por vazão, numa entrada só no talhão."
-      : "Escreva a calda de cada tratamento neste dia; em branco é sem aplicação. Calda com o mesmo texto vai no mesmo tanque e no mesmo arquivo, todos na vazão da aplicação. No campo, as caldas já escritas aparecem para escolher."}</p>
+    <p class="dica">Para cada tratamento: o produto (ou mistura) e a vazão; em branco é sem aplicação. Nome igual vai no mesmo tanque e no mesmo arquivo; se as vazões forem diferentes, o arquivo sai com uma zona por vazão, numa entrada só no talhão. Nome diferente é outro tanque.</p>
     <div class="tanques" id="aplTanques" aria-live="polite"></div>
     <div class="acoes-l"><button class="nd-btn leve nd-onda" type="button" id="btnApagarApl"><svg class="nd-ic" aria-hidden="true"><use href="#i-trash-2"/></svg>${APL_CONF === APL ? "Toque de novo para apagar" : "Apagar esta aplicação"}</button></div>`;
 }
@@ -1532,8 +1521,8 @@ function renderTanques(){
   box.innerHTML = (grupos.length ? `<span class="tq-tit">${grupos.length} ${grupos.length === 1 ? "tanque" : "tanques"} nesta aplicação</span>` : '<p class="dica">Nenhum tratamento com calda nesta aplicação.</p>')
     + grupos.map((g, k) => { const nq = quadsDe(g.tis), ha = nq * aQ, v = g.v, cod = ti => S.trats[ti].cod;
       const calda = g.tis.reduce((s2, ti) => s2 + (isFinite(v.porTi.get(ti)) ? v.porTi.get(ti) * quadsDe([ti]) * aQ : 0), 0);
-      const conta = mesmoProduto(ap) ? `<div class="tq-conta"><span>${g.tis.map(ti => `${esc(cod(ti))}: ${fmt(v.porTi.get(ti))} L/ha`).join(" · ")}</span><span>1 arquivo${v.varia ? ` com ${v.taxas.length} zonas (TAXA ${v.taxas.map(x => fmt(x)).join(" e ")})` : ""} · uma entrada no talhão</span></div>` : "";
-      const pressao = v.razao > 1 ? `<div class="nd-msg ${v.razao > 1.5 ? "aviso" : ""}"><svg class="nd-ic" aria-hidden="true"><use href="#i-${v.razao > 1.5 ? "triangle-alert" : "info"}"/></svg><div>A maior vazão é ${fmtMax(v.razao, 2)}× a menor: com o mesmo bico, a pressão sobe cerca de ${fmtMax(v.razao * v.razao, 2)}×. Confira a faixa do bico${v.razao > 1.5 ? " ou faça um teste com água antes" : ""}.</div></div>` : "", falta = "";
+      const conta = `<div class="tq-conta"><span>${v.varia || g.tis.length > 1 ? g.tis.map(ti => `${esc(cod(ti))}: ${isFinite(v.porTi.get(ti)) ? fmt(v.porTi.get(ti)) + " L/ha" : "sem vazão"}`).join(" · ") : `Vazão: ${isFinite(v.porTi.get(g.tis[0])) ? fmt(v.porTi.get(g.tis[0])) + " L/ha" : "falta"}`}</span>${v.varia ? `<span>1 arquivo com ${v.taxas.length} zonas (TAXA ${v.taxas.map(x => fmt(x)).join(" e ")}) · uma entrada no talhão</span>` : ""}</div>`;
+      const pressao = v.razao > 1 ? `<div class="nd-msg ${v.razao > 1.5 ? "aviso" : ""}"><svg class="nd-ic" aria-hidden="true"><use href="#i-${v.razao > 1.5 ? "triangle-alert" : "info"}"/></svg><div>A maior vazão é ${fmtMax(v.razao, 2)}× a menor: com o mesmo bico, a pressão sobe cerca de ${fmtMax(v.razao * v.razao, 2)}×. Confira a faixa do bico${v.razao > 1.5 ? " ou faça um teste com água antes" : ""}.</div></div>` : "", falta = v.falta.length ? `<div class="nd-msg aviso"><svg class="nd-ic" aria-hidden="true"><use href="#i-triangle-alert"/></svg><div><b>Falta a vazão de ${esc(codsDe(v.falta))}</b>Digite a vazão ao lado do nome.</div></div>` : "";
       return `<div class="tanque"><span class="cor" style="--c:${cores[k]}" aria-hidden="true"></span><div class="tq-txt"><b>Tanque ${k + 1} · ${esc(g.calda)}</b><span>${g.tis.length > 1 ? "Juntos: " : ""}${esc(codsDe(g.tis))} · ${fmt(nq)} quadrados · ${fmt(ha, 2)} ha${calda ? ` · ${fmt(calda, 0)} L de calda` : ""}</span>${conta}</div>${pressao}${falta}<button class="nd-btn ${k ? "" : "primario"} nd-onda" type="button" data-tanque="${k}" ${trava}>${ic}Arquivo do tanque ${k + 1}</button></div>`; }).join("")
     + (sem.length ? `<div class="tanque"><span class="cor" style="--c:${COR.test}" aria-hidden="true"></span><div class="tq-txt"><b>Sem aplicação</b><span>${esc(codsDe(sem))} · ${fmt(quadsDe(sem))} quadrados · ${fmt(quadsDe(sem) * aQ, 2)} ha</span></div><button class="nd-btn leve nd-onda" type="button" data-semapl ${trava}>${ic}Sem aplicação como limite</button></div>` : "")
     + (trava ? '<p class="dica">Os arquivos saem depois de escolher a pista (linha AB) no passo 2.</p>' : "");
@@ -1546,17 +1535,17 @@ function renderVerMapa(){
 }
 function pilulas(){ if (window.Nadiana && Nadiana.pilulas) requestAnimationFrame(() => Nadiana.pilulas()); } // seletor redesenhado: a pílula volta para a opção escolhida
 function verNoMapa(v){ VER = v; if (v >= 0) APL = v; renderAplic(true); desenharGrade(); renderLegenda(); }
-function vazaoApOk(a){
-  const ap = aplicacoes()[a], v = num(ap.vazao); if (mesmoProduto(ap) || (isFinite(v) && v > 0)) return true; // mesmo produto: cada tratamento já tem a sua vazão
-  aplMsg("erro", `<b>Falta a vazão da ${esc(nomeAp(ap, a))}</b>Ela vai na coluna TAXA de todos os arquivos deste dia, em L/ha.`);
-  const c = document.querySelector('#aplBox [data-ap="vazao"]'); if (c) { abrirAte(c); c.setAttribute("aria-invalid", "true"); c.focus(); }
+function vazaoApOk(a, g){ // cada tratamento do tanque precisa da sua vazão (vai na coluna TAXA)
+  if (!g || !g.v.falta.length) return true;
+  aplMsg("erro", `<b>Falta a vazão de ${esc(codsDe(g.v.falta))}</b>Digite a vazão ao lado do nome, em L/ha. Ela vai na coluna TAXA do arquivo.`);
+  const c = document.querySelector(`#aplBox [data-vazao="${CSS.escape(S.trats[g.v.falta[0]].cod)}"]`); if (c) { abrirAte(c); c.setAttribute("aria-invalid", "true"); c.focus(); }
   return false;
 }
 function baixarTanque(a, k){
   if (travaBloqueia(aplMsg)) return;
   const ap = aplicacoes()[a], g = ap && tanquesDe(ap).grupos[k]; if (!g) return;
   const nq = quadsDe(g.tis); if (!nq) { aplMsg("erro", "<b>Tanque sem quadrados</b>Esses tratamentos não têm quadrados dentro do talhão."); return; }
-  if (!vazaoApOk(a)) return;
+  if (!vazaoApOk(a, g)) return;
   const b = nomeArqTanque(a, g), porTaxa = new Map();
   g.tis.forEach(ti => { const t = g.v.porTi.get(ti); if (!porTaxa.has(t)) porTaxa.set(t, []); porTaxa.get(t).push(ti); });
   const fe = [...porTaxa].sort((x, y) => x[0] - y[0]).filter(([t, tis]) => quadsDe(tis)).map(([t, tis]) => ({aneis:aneisDaZona(tis), props:{TAXA:taxa(t)}}));
@@ -1585,12 +1574,6 @@ $("btnAddApl").addEventListener("click", () => {
 $("verMapa").addEventListener("click", e => { const b = e.target.closest("[data-ver]"); if (b) verNoMapa(+b.dataset.ver); });
 $("aplBox").addEventListener("click", e => {
   const ab = e.target.closest("[data-apl]"); if (ab) { APL_CONF = null; aplMsg("", ""); const k = +ab.dataset.apl; if (k !== APL && window.Nadiana && Nadiana.trocar) Nadiana.trocar(() => verNoMapa(k), {modo:"suave", para:$("aplBox")}); else verNoMapa(k); return; }
-  const tp = e.target.closest("[data-tipo]"); if (tp) { const ap = aplicacoes()[APL], novo = tp.dataset.tipo; if (!ap || (ap.tipo || "produtos") === novo) return;
-    ap.tipo = novo;
-    if (novo === "mesmo") { // começa do que já estava: quem tinha calda vai na vazão da aplicação; o produto vem da primeira calda
-      if (!ap.vazoes || !Object.keys(ap.vazoes).length) ap.vazoes = Object.fromEntries(S.trats.filter(t => normCalda((ap.caldas || {})[t.cod])).map(t => [t.cod, String(ap.vazao || "")]));
-      if (!ap.produto) ap.produto = normCalda(Object.values(ap.caldas || {}).find(c => normCalda(c)) || ""); }
-    salvar(); aplMsg("", ""); renderAplic(true); if (VER === APL) { desenharGrade(); renderLegenda(); } renderResumos(); return; }
   const tq = e.target.closest("[data-tanque]"); if (tq) { baixarTanque(APL, +tq.dataset.tanque); return; }
   if (e.target.closest("[data-semapl]")) { baixarSemAplic(APL); return; }
   if (e.target.closest("#btnApagarApl")) {
@@ -1602,7 +1585,9 @@ $("aplBox").addEventListener("click", e => {
 $("aplBox").addEventListener("input", e => {
   const ap = aplicacoes()[APL], el = e.target; if (!ap) return;
   if (el.dataset.ap) { ap[el.dataset.ap] = el.value; el.removeAttribute("aria-invalid"); if (el.dataset.ap === "data") { const b = document.querySelector(`#aplSeg [data-apl="${APL}"]`); if (b) b.textContent = rotAba(ap, APL); renderVerMapa(); } }
-  else if (el.dataset.calda) { ap.caldas = {...(ap.caldas || {}), [el.dataset.calda]: el.value}; }
+  else if (el.dataset.calda) { ap.caldas = {...(ap.caldas || {}), [el.dataset.calda]: el.value};
+    const vz = el.closest(".apl-linha")?.querySelector("[data-vazao]"), t = S.trats.find(x => x.cod === el.dataset.calda), pad = t ? vazaoPadrao(ap, t) : NaN;
+    if (vz && el.value.trim() && !vz.value.trim() && isFinite(pad)) { vz.value = String(pad); ap.vazoes = {...(ap.vazoes || {}), [el.dataset.calda]: String(pad)}; } } // o que aparece no campo é o que vai no arquivo
   else if (el.dataset.vazao) { ap.vazoes = {...(ap.vazoes || {}), [el.dataset.vazao]: el.value.trim()}; el.removeAttribute("aria-invalid"); }
   else return;
   salvar(); clearTimeout(APL_T);
@@ -1612,7 +1597,6 @@ $("aplBox").addEventListener("change", e => { const ap = aplicacoes()[APL], el =
   if (el.dataset.ap === "vazao" && el.value.trim()) { const v = num(el.value); if (!(v > 0)) { aplMsg("erro", "<b>Vazão inválida</b>Use L/ha, por exemplo 50."); return; } if (String(Math.round(v)) !== el.value.trim()) { ap.vazao = String(Math.round(v)); el.value = ap.vazao; salvar(); aviso(`Vazão arredondada para ${ap.vazao} L/ha: a taxa vai como número inteiro.`); } }
   if (el.dataset.vazao && el.value.trim()) { const v = num(el.value); if (!(v > 0)) { el.setAttribute("aria-invalid", "true"); aplMsg("erro", "<b>Vazão inválida</b>Use L/ha, por exemplo 50. Vazio é sem aplicação."); return; } aplMsg("", "");
     if (String(Math.round(v)) !== el.value.trim()) { el.value = String(Math.round(v)); ap.vazoes[el.dataset.vazao] = el.value; salvar(); renderTanques(); aviso(`Vazão arredondada para ${el.value} L/ha: a taxa vai como número inteiro.`); } }
-  if (el.dataset.ap === "produto") { const v = normCalda(el.value); if (v !== el.value) { el.value = v; ap.produto = v; salvar(); } }
   if (el.dataset.calda || el.dataset.ap === "nome") { const v = normCalda(el.value); if (v !== el.value) { el.value = v; if (el.dataset.calda) ap.caldas[el.dataset.calda] = v; else ap.nome = v; salvar(); } } });
 
 $("menuEns").addEventListener("click", e => {
@@ -1782,8 +1766,8 @@ async function gerarPDF(){
     if (aplicacoes().length) { // programa: o que cada tratamento recebe em cada aplicação
       r.secao("Programa de aplicações");
       r.tabela({cabecalho:["Tratamento", ...aplicacoes().map((ap, a) => `${nomeAp(ap, a)}${ap.data ? " · " + dataBr(ap.data) : ""}`)],
-        linhas:S.trats.map(tr => [`${tr.cod}${tr.nome ? " · " + tr.nome : ""}`, ...aplicacoes().map(ap => { const ti = S.trats.indexOf(tr), g = tanquesDe(ap).grupos.find(x => x.tis.includes(ti)); return g ? g.calda + (mesmoProduto(ap) ? ` · ${fmt(g.v.porTi.get(ti))} L/ha` : "") : "—"; })])});
-      r.texto(`Em cada aplicação, os tratamentos com a mesma calda vão no mesmo tanque e no mesmo arquivo (uma zona só). Traço: sem aplicação. As páginas seguintes trazem o croqui e os tanques de cada aplicação.`);
+        linhas:S.trats.map(tr => [`${tr.cod}${tr.nome ? " · " + tr.nome : ""}`, ...aplicacoes().map(ap => { const ti = S.trats.indexOf(tr), g = tanquesDe(ap).grupos.find(x => x.tis.includes(ti)); return g ? g.calda + (isFinite(g.v.porTi.get(ti)) ? ` · ${fmt(g.v.porTi.get(ti))} L/ha` : "") : "—"; })])});
+      r.texto(`Em cada aplicação, os tratamentos com o mesmo produto vão no mesmo tanque e no mesmo arquivo, com uma zona por vazão. Traço: sem aplicação. As páginas seguintes trazem o croqui e os tanques de cada aplicação.`);
     } else r.texto(S.modo === "produtos"
       ? `${prods.length} aplicações, uma por teste, cada uma com o seu produto no tanque e o arquivo da zona daquele teste. A testemunha fica fora de todas as zonas e não recebe nada.`
       : "Uma aplicação só, com a vazão mudando de zona para zona (arquivo único com todas as zonas).");
@@ -1887,7 +1871,7 @@ async function gerarPDF(){
     aplicacoes().forEach((ap, a) => {
       const {grupos, sem} = tanquesDe(ap), cores = coresTanques(ap), vz = num(ap.vazao), idx = new Map();
       grupos.forEach((g, k) => g.tis.forEach(ti => idx.set(ti, k)));
-      const vzTit = mesmoProduto(ap) ? (grupos[0] ? " · " + grupos[0].v.taxas.map(x => fmt(x)).join(" e ") + " L/ha" : "") : isFinite(vz) && vz > 0 ? " · " + fmt(vz) + " L/ha" : "";
+      const todas = [...new Set(grupos.flatMap(g => g.v.taxas))].sort((x, y) => x - y), vzTit = todas.length ? " · " + todas.map(x => fmt(x)).join(" e ") + " L/ha" : "";
       const zv = zonasVer(ap);
       croqui(`${nomeAp(ap, a)}${ap.data ? " · " + dataBr(ap.data) : ""}${vzTit}`, q => { const z = zv.find(z => z.tis.includes(q.ti)); return z ? z.cor : COR.test; },
         zv.map(z => [z.cor, z.rot]),
@@ -1895,7 +1879,7 @@ async function gerarPDF(){
           linhas:[...grupos.map((g, k) => { const ha = quadsDe(g.tis) * aQ, v = g.v, calda = g.tis.reduce((s2, ti) => s2 + (isFinite(v.porTi.get(ti)) ? v.porTi.get(ti) * quadsDe([ti]) * aQ : 0), 0);
               return [String(k + 1), g.calda, g.tis.map(ti => `${S.trats[ti].cod}: ${isFinite(v.porTi.get(ti)) ? fmt(v.porTi.get(ti)) + " L/ha" : "—"}`).join(" · "), fmt(ha, 2) + " ha", calda ? fmt(calda, 0) + " L" : "—", nomeArqTanque(a, g) + ".zip"]; }),
             ...(sem.length ? [["—", "Sem aplicação", codsDe(sem), fmt(quadsDe(sem) * aQ, 2) + " ha", "—", "fora das zonas"]] : [])], numericas:[3, 4]});
-          grupos.forEach((g, k) => { if (g.v.varia) r.texto(`Tanque ${k + 1}: mesmo produto para todos, uma entrada no talhão, com a vazão mudando de zona para zona (TAXA ${g.v.taxas.map(x => fmt(x)).join(" e ")}). Com o mesmo bico, a pressão sobe cerca de ${fmtMax(g.v.razao * g.v.razao, 2)}× na maior vazão: confira a faixa do bico.`); }); });
+          grupos.forEach((g, k) => { if (g.v.varia) r.texto(`Tanque ${k + 1} (${g.calda}): uma entrada no talhão, com a vazão mudando de zona para zona (TAXA ${g.v.taxas.map(x => fmt(x)).join(" e ")}). Com o mesmo bico, a pressão sobe cerca de ${fmtMax(g.v.razao * g.v.razao, 2)}× na maior vazão: confira a faixa do bico.`); }); });
     });
 
     const blob = r.salvar(null).output("blob");
