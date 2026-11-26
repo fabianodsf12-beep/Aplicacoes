@@ -1446,12 +1446,38 @@ function migrarAp(ap){ // aplicações feitas na opção "Mesmo produto" viram n
 }
 function vazaoPadrao(ap, t){ const b = num(ap.vazao); if (isFinite(b) && b > 0) return Math.round(b); const d = num(t.dose); return isFinite(d) && d > 0 ? Math.round(d) : NaN; } // a que aparece apagada no campo
 function vazaoDe(ap, t){ const v = num((ap.vazoes || {})[t.cod]); return isFinite(v) && v > 0 ? Math.round(v) : vazaoPadrao(ap, t); }
-function tanquesDe(ap){ // nome igual (sem diferenciar maiúsculas e acentos) = mesmo tanque e mesmo arquivo; vazões diferentes no tanque = uma zona por vazão
-  const grupos = [], sem = [], porChave = new Map();
-  S.trats.forEach((t, ti) => { const c = normCalda((ap.caldas || {})[t.cod]); if (!c) { sem.push(ti); return; }
-    const k = chaveCalda(c); if (!porChave.has(k)) { const g = {calda:c, tis:[]}; porChave.set(k, g); grupos.push(g); } porChave.get(k).tis.push(ti); });
-  grupos.forEach(g => { const porTi = new Map(g.tis.map(ti => [ti, vazaoDe(ap, S.trats[ti])])), vs = [...porTi.values()].filter(v => isFinite(v)), taxas = [...new Set(vs)].sort((a, b) => a - b);
-    g.v = {porTi, taxas, varia: taxas.length > 1, razao: vs.length ? Math.max(...vs) / Math.min(...vs) : 1, falta: g.tis.filter(ti => !isFinite(porTi.get(ti)))}; });
+/* "Stay Up 0,3 l/ha" → produto "Stay Up" e doses [0,3]. Os números e as unidades saem do nome para comparar o produto */
+const NUM_UN = /\d+(?:[.,]\d+)?\s*(?:l\/ha|lt\/ha|ml\/ha|kg\/ha|g\/ha|lts?|litros?|ml|kg|gr?|l|%)?(?![a-z])/gi;
+function partesCalda(c){
+  const nums = [...c.matchAll(/\d+(?:[.,]\d+)?/g)].map(m => parseFloat(m[0].replace(",", ".")));
+  const rot = c.replace(NUM_UN, " ").replace(/(^|\s)(?:x|×|de)(?=\s|$)/gi, " ").replace(/\s+/g, " ").replace(/^[\s+·,-]+|[\s+·,-]+$/g, "").trim();
+  return {nums, rot: rot || c, base: semAcento(rot || c).toLowerCase().replace(/\s*\+\s*/g, "+")};
+}
+const quase = (a, b) => Math.abs(a - b) <= 0.01 * Math.max(Math.abs(a), Math.abs(b));
+function tanquesDe(ap){
+  // um tanque = mesma mistura na mesma concentração. Mesmo produto com doses proporcionais à vazão (0,45 ÷ 0,30 = 75 ÷ 50) vai no mesmo tanque:
+  // um arquivo com uma zona por vazão, numa entrada só. Nome igual sem dose também. O resto vira outro tanque.
+  const grupos = [], sem = [], itens = [];
+  S.trats.forEach((t, ti) => { const c = normCalda((ap.caldas || {})[t.cod]); if (!c) { sem.push(ti); return; } itens.push({ti, c, ...partesCalda(c), vz: vazaoDe(ap, t)}); });
+  const proporcao = (a, r) => { // fator entre as doses de a e r, se forem a mesma mistura em proporção; senão null
+    if (a.base !== r.base || a.nums.length !== r.nums.length) return null;
+    if (!a.nums.length) return chaveCalda(a.c) === chaveCalda(r.c) ? NaN : null; // sem dose no nome: nome igual
+    const f = a.nums[0] / r.nums[0]; return isFinite(f) && a.nums.every((x, k) => quase(x / r.nums[k], f)) ? f : null; };
+  itens.forEach(it => {
+    let g = grupos.find(g => { const f = proporcao(it, g.ref); return f !== null && (Number.isNaN(f) || (isFinite(it.vz) && isFinite(g.ref.vz) && quase(it.vz / g.ref.vz, f))); });
+    if (!g) { g = {ref: it, membros: [], tis: []}; grupos.push(g); }
+    g.membros.push(it); g.tis.push(it.ti);
+  });
+  grupos.forEach(g => {
+    const nomes = new Set(g.membros.map(m => chaveCalda(m.c)));
+    g.calda = nomes.size > 1 ? g.ref.rot : g.ref.c; // nomes diferentes (doses no nome): mostra só o produto
+    g.nomes = nomes.size > 1;
+    const porTi = new Map(g.tis.map(ti => [ti, vazaoDe(ap, S.trats[ti])])), vs = [...porTi.values()].filter(v => isFinite(v)), taxas = [...new Set(vs)].sort((a, b) => a - b);
+    g.v = {porTi, taxas, varia: taxas.length > 1, razao: vs.length ? Math.max(...vs) / Math.min(...vs) : 1, falta: g.tis.filter(ti => !isFinite(porTi.get(ti)))};
+    // mesma mistura em dose proporcional, mas a vazão não acompanha: sugere a vazão que juntaria com o tanque anterior
+    const ant = grupos.find(o => o !== g && grupos.indexOf(o) < grupos.indexOf(g) && proporcao(g.ref, o.ref) > 0 && isFinite(o.ref.vz));
+    g.sugere = ant ? {cod: S.trats[g.ref.ti].cod, vz: Math.round(ant.ref.vz * proporcao(g.ref, ant.ref)), com: codsDe(ant.tis)} : null;
+  });
   return {grupos, sem};
 }
 function coresTanques(ap){ // cor do primeiro tratamento do tanque; nunca o cinza, que é o "sem aplicação"
@@ -1521,9 +1547,11 @@ function renderTanques(){
   box.innerHTML = (grupos.length ? `<span class="tq-tit">${grupos.length} ${grupos.length === 1 ? "tanque" : "tanques"} nesta aplicação</span>` : '<p class="dica">Nenhum tratamento com calda nesta aplicação.</p>')
     + grupos.map((g, k) => { const nq = quadsDe(g.tis), ha = nq * aQ, v = g.v, cod = ti => S.trats[ti].cod;
       const calda = g.tis.reduce((s2, ti) => s2 + (isFinite(v.porTi.get(ti)) ? v.porTi.get(ti) * quadsDe([ti]) * aQ : 0), 0);
-      const conta = `<div class="tq-conta"><span>${v.varia || g.tis.length > 1 ? g.tis.map(ti => `${esc(cod(ti))}: ${isFinite(v.porTi.get(ti)) ? fmt(v.porTi.get(ti)) + " L/ha" : "sem vazão"}`).join(" · ") : `Vazão: ${isFinite(v.porTi.get(g.tis[0])) ? fmt(v.porTi.get(g.tis[0])) + " L/ha" : "falta"}`}</span>${v.varia ? `<span>1 arquivo com ${v.taxas.length} zonas (TAXA ${v.taxas.map(x => fmt(x)).join(" e ")}) · uma entrada no talhão</span>` : ""}</div>`;
+      const nomeDe = ti => g.nomes ? ` (${esc(normCalda(ap.caldas[cod(ti)]))})` : "";
+      const conta = `<div class="tq-conta"><span>${v.varia || g.tis.length > 1 ? g.tis.map(ti => `${esc(cod(ti))}: ${isFinite(v.porTi.get(ti)) ? fmt(v.porTi.get(ti)) + " L/ha" : "sem vazão"}${nomeDe(ti)}`).join(" · ") : `Vazão: ${isFinite(v.porTi.get(g.tis[0])) ? fmt(v.porTi.get(g.tis[0])) + " L/ha" : "falta"}`}</span>${v.varia ? `<span>1 arquivo com ${v.taxas.length} zonas (TAXA ${v.taxas.map(x => fmt(x)).join(" e ")}) · uma entrada no talhão</span>` : ""}</div>`;
+      const sugere = g.sugere ? `<div class="nd-msg"><svg class="nd-ic" aria-hidden="true"><use href="#i-info"/></svg><div>Mesmo produto de ${esc(g.sugere.com)} em outra dose. Para ir no mesmo tanque, numa entrada só, use ${esc(g.sugere.cod)} a ${fmt(g.sugere.vz)} L/ha.</div></div>` : "";
       const pressao = v.razao > 1 ? `<div class="nd-msg ${v.razao > 1.5 ? "aviso" : ""}"><svg class="nd-ic" aria-hidden="true"><use href="#i-${v.razao > 1.5 ? "triangle-alert" : "info"}"/></svg><div>A maior vazão é ${fmtMax(v.razao, 2)}× a menor: com o mesmo bico, a pressão sobe cerca de ${fmtMax(v.razao * v.razao, 2)}×. Confira a faixa do bico${v.razao > 1.5 ? " ou faça um teste com água antes" : ""}.</div></div>` : "", falta = v.falta.length ? `<div class="nd-msg aviso"><svg class="nd-ic" aria-hidden="true"><use href="#i-triangle-alert"/></svg><div><b>Falta a vazão de ${esc(codsDe(v.falta))}</b>Digite a vazão ao lado do nome.</div></div>` : "";
-      return `<div class="tanque"><span class="cor" style="--c:${cores[k]}" aria-hidden="true"></span><div class="tq-txt"><b>Tanque ${k + 1} · ${esc(g.calda)}</b><span>${g.tis.length > 1 ? "Juntos: " : ""}${esc(codsDe(g.tis))} · ${fmt(nq)} quadrados · ${fmt(ha, 2)} ha${calda ? ` · ${fmt(calda, 0)} L de calda` : ""}</span>${conta}</div>${pressao}${falta}<button class="nd-btn ${k ? "" : "primario"} nd-onda" type="button" data-tanque="${k}" ${trava}>${ic}Arquivo do tanque ${k + 1}</button></div>`; }).join("")
+      return `<div class="tanque"><span class="cor" style="--c:${cores[k]}" aria-hidden="true"></span><div class="tq-txt"><b>Tanque ${k + 1} · ${esc(g.calda)}</b><span>${g.tis.length > 1 ? "Juntos: " : ""}${esc(codsDe(g.tis))} · ${fmt(nq)} quadrados · ${fmt(ha, 2)} ha${calda ? ` · ${fmt(calda, 0)} L de calda` : ""}</span>${conta}</div>${pressao}${falta}${sugere}<button class="nd-btn ${k ? "" : "primario"} nd-onda" type="button" data-tanque="${k}" ${trava}>${ic}Arquivo do tanque ${k + 1}</button></div>`; }).join("")
     + (sem.length ? `<div class="tanque"><span class="cor" style="--c:${COR.test}" aria-hidden="true"></span><div class="tq-txt"><b>Sem aplicação</b><span>${esc(codsDe(sem))} · ${fmt(quadsDe(sem))} quadrados · ${fmt(quadsDe(sem) * aQ, 2)} ha</span></div><button class="nd-btn leve nd-onda" type="button" data-semapl ${trava}>${ic}Sem aplicação como limite</button></div>` : "")
     + (trava ? '<p class="dica">Os arquivos saem depois de escolher a pista (linha AB) no passo 2.</p>' : "");
   const dl = $("aplCaldas"); if (dl) dl.innerHTML = [...new Map(aplicacoes().flatMap(a => Object.values(a.caldas || {})).map(normCalda).filter(Boolean).map(c => [chaveCalda(c), c])).values()].map(c => `<option value="${esc(c)}">`).join("");
